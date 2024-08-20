@@ -51,6 +51,11 @@ SettingsWindow::SettingsWindow(AssetCollection &assetCollection, Status &status)
                                           glm::vec2{ui.shadowMapSize->currentText().toInt(),
                                                     ui.shadowMapSize->currentText().toInt()});
 
+    connect(ui.ebrStrength, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [this](double d) {
+        std::unique_lock lock1(this->m_assetCollection.accessMutex);
+        this->m_assetCollection.comp.parameters.set("ebr_strength", (float)d);
+    });
+
     // list methods
     for (auto &category : assetCollection.methodCategories) {
         auto combobox = new QComboBox(ui.shading_methods_group);
