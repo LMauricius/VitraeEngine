@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Types/BoundingBox.hpp"
 #include "Vitrae/Types/GraphicPrimitives.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
+#include "Vitrae/Util/StringId.hpp"
+#include "Vitrae/Util/Variant.hpp"
 
 #include "assimp/mesh.h"
 #include "assimp/scene.h"

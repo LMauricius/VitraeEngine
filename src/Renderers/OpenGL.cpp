@@ -1,4 +1,5 @@
 #include "Vitrae/Renderers/OpenGL.hpp"
+#include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/ClearRender.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/Compute.hpp"

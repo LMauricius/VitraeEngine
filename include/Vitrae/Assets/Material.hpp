@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
@@ -11,6 +10,7 @@
 #include "dynasma/managers/abstract.hpp"
 #include "dynasma/pointer.hpp"
 
+#include <filesystem>
 #include <variant>
 
 namespace Vitrae

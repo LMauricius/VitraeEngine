@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Types/Typedefs.hpp"
 
 #include "assimp/mesh.h"
 #include "assimp/scene.h"
@@ -15,6 +15,7 @@
 namespace Vitrae
 {
 class ComponentRoot;
+class Mesh;
 
 /**
  * A mesh is a 3D polygonal piece of geometry,

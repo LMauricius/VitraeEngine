@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Vitrae/Assets/Mesh.hpp"
 #include "Vitrae/Types/Transformation.hpp"
 
 #include "assimp/scene.h"
@@ -13,6 +12,7 @@
 namespace Vitrae
 {
 class ComponentRoot;
+class Mesh;
 
 class Camera : public SimpleTransformation
 {

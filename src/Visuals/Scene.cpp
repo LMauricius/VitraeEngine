@@ -1,5 +1,7 @@
 #include "Vitrae/Visuals/Scene.hpp"
 
+#include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Assets/Mesh.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 
 #include "assimp/Importer.hpp"

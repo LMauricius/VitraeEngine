@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Vitrae/Assets/Mesh.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Util/Rasterizing.hpp"
 
@@ -10,6 +9,7 @@
 
 namespace Vitrae
 {
+class Mesh;
 
 class ComposeDataRender : public ComposeTask
 {

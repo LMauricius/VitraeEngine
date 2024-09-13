@@ -1,4 +1,5 @@
 #include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 

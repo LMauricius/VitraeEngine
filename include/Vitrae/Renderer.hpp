@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Vitrae/Assets/Mesh.hpp"
-#include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
 
 #include "dynasma/managers/abstract.hpp"
