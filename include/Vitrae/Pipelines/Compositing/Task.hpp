@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Pipelines/Task.hpp"
@@ -11,6 +10,7 @@ namespace Vitrae
 class Renderer;
 class FrameStore;
 class Texture;
+class ComponentRoot;
 
 struct RenderSetupContext
 {

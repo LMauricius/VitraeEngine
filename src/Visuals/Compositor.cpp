@@ -1,4 +1,5 @@
 #include "Vitrae/Visuals/Compositor.hpp"
+#include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
 
