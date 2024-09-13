@@ -10,5 +10,5 @@
 	path = dependencies/DynAsMa
 	url = https://github.com/LMauricius/DynAsMa.git
 [submodule "VitraeEngine/dependencies/MMeter"]
-	path = VitraeEngine/dependencies/MMeter
+	path = dependencies/MMeter
 	url = https://github.com/LMauricius/MMeter.git
