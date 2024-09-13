@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.7.0)
+project(VitraeEngine VERSION 0.1.0)
+
+include(CTest)
+enable_testing()
 
 set(VITRAE_ENABLE_STRINGID_DEBUGGING OFF CACHE BOOL "Whether StringId objects will keep info on original strings for debugging purposes. Has performance penalty.")
 set(VITRAE_ENABLE_MMETER OFF CACHE BOOL "Whether MMeter profiling is enabled. If On, VitraeEngine/dependencies/MMeter/src/MMeter.cpp has to be added to the application's source file list")
@@ -30,3 +34,8 @@ endif()
 if(VITRAE_ENABLE_DETERMINISTIC_RENDERING_TIMES)
     target_compile_definitions(VitraeEngine PUBLIC VITRAE_ENABLE_DETERMINISTIC_RENDERING)
 endif()
+
+
+set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+include(CPack)
