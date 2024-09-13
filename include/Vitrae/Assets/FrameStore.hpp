@@ -1,12 +1,10 @@
 #pragma once
 
-#include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
-#include "Vitrae/Util/PropertyList.hpp"
+#include "Vitrae/Util/PropertySpec.hpp"
 
-#include "dynasma/core_concepts.hpp"
-#include "dynasma/keepers/abstract.hpp"
 #include "dynasma/managers/abstract.hpp"
+#include "dynasma/pointer.hpp"
 
 #include "glm/glm.hpp"
 
@@ -15,6 +13,8 @@
 namespace Vitrae
 {
 class ComponentRoot;
+class Texture;
+class PropertyList;
 
 /**
  * A FrameStore is a single image-like resource

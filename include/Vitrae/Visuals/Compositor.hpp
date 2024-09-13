@@ -2,6 +2,7 @@
 
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
+#include "Vitrae/Util/PropertyList.hpp"
 #include "Vitrae/Visuals/Scene.hpp"
 
 #include "dynasma/keepers/abstract.hpp"

@@ -3,7 +3,7 @@
 #include "Vitrae/Util/Hashing.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
-#include "Vitrae/Util/Variant.hpp"
+#include "Vitrae/Util/PropertySpec.hpp"
 
 #include "dynasma/util/dynamic_typing.hpp"
 
@@ -13,12 +13,6 @@
 
 namespace Vitrae
 {
-
-struct PropertySpec
-{
-    std::string name;
-    const TypeInfo &typeInfo;
-};
 
 class PropertyList : public dynasma::PolymorphicBase
 {

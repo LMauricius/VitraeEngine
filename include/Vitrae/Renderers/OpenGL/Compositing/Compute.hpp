@@ -10,9 +10,9 @@ namespace Vitrae
 {
 
 class OpenGLRenderer;
+class PropertyList;
 
-class OpenGLComposeCompute : public ComposeCompute
-{
+class OpenGLComposeCompute : public ComposeCompute {
   public:
     using ComposeCompute::ComposeCompute;
 

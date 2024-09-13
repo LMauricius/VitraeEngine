@@ -2,6 +2,7 @@
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
+#include "Vitrae/Util/PropertyList.hpp"
 
 #include "MMeter.h"
 

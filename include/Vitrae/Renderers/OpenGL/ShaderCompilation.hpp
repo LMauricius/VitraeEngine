@@ -18,6 +18,7 @@ namespace Vitrae
 {
 class OpenGLRenderer;
 class ComponentRoot;
+class PropertyList;
 
 class CompiledGLSLShader : public dynasma::PolymorphicBase
 {

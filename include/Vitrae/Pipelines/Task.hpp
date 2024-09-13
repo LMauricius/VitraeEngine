@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Vitrae/Types/Typedefs.hpp"
-#include "Vitrae/Util/PropertyList.hpp"
+#include "Vitrae/Util/PropertySpec.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
 #include "Vitrae/Util/Variant.hpp"
