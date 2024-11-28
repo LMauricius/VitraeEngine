@@ -113,7 +113,8 @@ void OpenGLShaderSnippet::outputFunctionDeclaration(BuildContext args) const {
             if (hadFirstArg) {
                 args.output << ", ";
             }
-            args.output << glTypeSpec.glConstTypeName;
+            args.output << "in " << glTypeSpec.glConstTypeName << " "
+                        << spec.name;
             hadFirstArg = true;
         }
     }
@@ -126,7 +127,8 @@ void OpenGLShaderSnippet::outputFunctionDeclaration(BuildContext args) const {
             if (hadFirstArg) {
                 args.output << ", ";
             }
-            args.output << "out " << glTypeSpec.glMutableTypeName;
+            args.output << "out " << glTypeSpec.glMutableTypeName << " "
+                        << spec.name;
             hadFirstArg = true;
         }
     }
