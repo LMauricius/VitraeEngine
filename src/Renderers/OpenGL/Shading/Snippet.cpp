@@ -1,34 +1,18 @@
-#include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/Shading/Snippet.hpp"
+#include "Vitrae/Renderers/OpenGL.hpp"
+#include "Vitrae/Renderers/OpenGL/ConstantDefs.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 
 #include <fstream>
 
-namespace Vitrae
-{
-
-OpenGLShaderSnippet::OpenGLShaderSnippet(const FileLoadParams &params)
-    : ShaderSnippet(params) {
-    for (const auto &spec : params.inputSpecs) {
-        if (spec.typeInfo != Variant::getTypeInfo<void>()) {
-            m_inputOrder.emplace_back(spec.name);
-        }
-    }
-    for (const auto &spec : params.outputSpecs) {
-        if (spec.typeInfo != Variant::getTypeInfo<void>()) {
-            m_outputOrder.emplace_back(spec.name);
-        }
-    }
-
-    std::ifstream stream(params.filepath);
-    std::ostringstream sstr;
-    sstr << stream.rdbuf();
-    m_fileSnippet = clearIndents(sstr.str());
-    m_functionName = params.functionName;
-}
+namespace Vitrae {
 
 OpenGLShaderSnippet::OpenGLShaderSnippet(const StringParams &params)
     : ShaderSnippet(params) {
+
+    m_bodySnippet = clearIndents(params.snippet);
+    m_functionName = String(GLSL_SHADER_INTERNAL_FUNCTION_PREFIX) + "calc";
+
     for (const auto &spec : params.inputSpecs) {
         if (spec.typeInfo != Variant::getTypeInfo<void>()) {
             m_inputOrder.emplace_back(spec.name);
@@ -38,10 +22,9 @@ OpenGLShaderSnippet::OpenGLShaderSnippet(const StringParams &params)
         if (spec.typeInfo != Variant::getTypeInfo<void>()) {
             m_outputOrder.emplace_back(spec.name);
         }
-    }
 
-    m_fileSnippet = clearIndents(params.snippet);
-    m_functionName = params.functionName;
+        m_functionName += "_" + spec.name;
+    }
 }
 
 std::size_t OpenGLShaderSnippet::memory_cost() const {
@@ -64,39 +47,15 @@ void OpenGLShaderSnippet::extractSubTasks(
 }
 
 void OpenGLShaderSnippet::outputDeclarationCode(BuildContext args) const {
-    OpenGLRenderer &renderer = static_cast<OpenGLRenderer &>(args.renderer);
-
-    args.output << "void " << m_functionName << "(";
-    bool hadFirstArg = false;
-    for (const auto &nameId : m_inputOrder) {
-        const PropertySpec &spec = m_inputSpecs.at(nameId);
-        const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
-        if (renderer.getGpuStorageMethod(glTypeSpec) !=
-            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
-            if (hadFirstArg) {
-                args.output << ", ";
-            }
-            args.output << glTypeSpec.glConstTypeName;
-            hadFirstArg = true;
-        }
-    }
-    for (const auto &nameId : m_outputOrder) {
-        const PropertySpec &spec = m_outputSpecs.at(nameId);
-        const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
-        if (renderer.getGpuStorageMethod(glTypeSpec) !=
-            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
-            if (hadFirstArg) {
-                args.output << ", ";
-            }
-            args.output << "out " << glTypeSpec.glMutableTypeName;
-            hadFirstArg = true;
-        }
-    }
-    args.output << ");";
+    outputFunctionDeclaration(args);
+    args.output << ";";
 }
 
 void OpenGLShaderSnippet::outputDefinitionCode(BuildContext args) const {
-    args.output << m_fileSnippet;
+    outputFunctionDeclaration(args);
+    args.output << " {\n";
+    args.output << m_bodySnippet;
+    args.output << "}";
 }
 
 void OpenGLShaderSnippet::outputUsageCode(
@@ -109,7 +68,8 @@ void OpenGLShaderSnippet::outputUsageCode(
     bool hadFirstArg = false;
     for (const auto &nameId : m_inputOrder) {
         const PropertySpec &spec = m_inputSpecs.at(nameId);
-        const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
+        const GLTypeSpec &glTypeSpec =
+            renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
         if (renderer.getGpuStorageMethod(glTypeSpec) !=
             OpenGLRenderer::GpuValueStorageMethod::SSBO) {
             if (hadFirstArg) {
@@ -121,7 +81,8 @@ void OpenGLShaderSnippet::outputUsageCode(
     }
     for (const auto &nameId : m_outputOrder) {
         const PropertySpec &spec = m_outputSpecs.at(nameId);
-        const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
+        const GLTypeSpec &glTypeSpec =
+            renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
         if (renderer.getGpuStorageMethod(glTypeSpec) !=
             OpenGLRenderer::GpuValueStorageMethod::SSBO) {
             if (hadFirstArg) {
@@ -136,6 +97,40 @@ void OpenGLShaderSnippet::outputUsageCode(
 
 StringView OpenGLShaderSnippet::getFriendlyName() const {
     return m_functionName;
+}
+
+void OpenGLShaderSnippet::outputFunctionDeclaration(BuildContext args) const {
+    OpenGLRenderer &renderer = static_cast<OpenGLRenderer &>(args.renderer);
+
+    args.output << "void " << m_functionName << "(";
+    bool hadFirstArg = false;
+    for (const auto &nameId : m_inputOrder) {
+        const PropertySpec &spec = m_inputSpecs.at(nameId);
+        const GLTypeSpec &glTypeSpec =
+            renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
+        if (renderer.getGpuStorageMethod(glTypeSpec) !=
+            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
+            if (hadFirstArg) {
+                args.output << ", ";
+            }
+            args.output << glTypeSpec.glConstTypeName;
+            hadFirstArg = true;
+        }
+    }
+    for (const auto &nameId : m_outputOrder) {
+        const PropertySpec &spec = m_outputSpecs.at(nameId);
+        const GLTypeSpec &glTypeSpec =
+            renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
+        if (renderer.getGpuStorageMethod(glTypeSpec) !=
+            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
+            if (hadFirstArg) {
+                args.output << ", ";
+            }
+            args.output << "out " << glTypeSpec.glMutableTypeName;
+            hadFirstArg = true;
+        }
+    }
+    args.output << ")";
 }
 
 } // namespace Vitrae

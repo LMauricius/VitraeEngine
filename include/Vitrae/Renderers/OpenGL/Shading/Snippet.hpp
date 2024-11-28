@@ -14,10 +14,9 @@ class OpenGLShaderSnippet : public ShaderSnippet {
     std::vector<StringId> m_inputOrder;
     std::vector<StringId> m_outputOrder;
     String m_functionName;
-    String m_fileSnippet;
+    String m_bodySnippet;
 
   public:
-    OpenGLShaderSnippet(const FileLoadParams &params);
     OpenGLShaderSnippet(const StringParams &params);
     ~OpenGLShaderSnippet() = default;
 
@@ -32,6 +31,9 @@ class OpenGLShaderSnippet : public ShaderSnippet {
         const StableMap<StringId, String> &outputParamsToSharedVariables) const override;
 
     virtual StringView getFriendlyName() const override;
+
+  protected:
+    void outputFunctionDeclaration(BuildContext args) const;
 };
 
 } // namespace Vitrae

@@ -12,23 +12,12 @@ namespace Vitrae
 
 class ShaderSnippet : public ShaderTask {
   public:
-    struct FileLoadParams
-    {
-        std::vector<PropertySpec> inputSpecs;
-        std::vector<PropertySpec> outputSpecs;
-        std::filesystem::path filepath;
-        String functionName;
-    };
     struct StringParams
     {
         std::vector<PropertySpec> inputSpecs;
         std::vector<PropertySpec> outputSpecs;
         String snippet;
-        String functionName;
     };
-
-    inline ShaderSnippet(const FileLoadParams &params)
-        : ShaderTask(params.inputSpecs, params.outputSpecs) {}
 
     inline ShaderSnippet(const StringParams &params)
         : ShaderTask(params.inputSpecs, params.outputSpecs) {}
@@ -36,8 +25,7 @@ class ShaderSnippet : public ShaderTask {
 
 struct ShaderSnippetKeeperSeed {
     using Asset = ShaderSnippet;
-    std::variant<ShaderSnippet::FileLoadParams, ShaderSnippet::StringParams>
-        kernel;
+    std::variant<ShaderSnippet::StringParams> kernel;
     inline std::size_t load_cost() const { return 1; }
 };
 
