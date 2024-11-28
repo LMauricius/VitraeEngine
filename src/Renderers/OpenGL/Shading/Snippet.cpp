@@ -7,8 +7,8 @@
 namespace Vitrae
 {
 
-OpenGLShaderFunction::OpenGLShaderFunction(const FileLoadParams &params) : ShaderFunction(params)
-{
+OpenGLShaderSnippet::OpenGLShaderSnippet(const FileLoadParams &params)
+    : ShaderSnippet(params) {
     for (const auto &spec : params.inputSpecs) {
         if (spec.typeInfo != Variant::getTypeInfo<void>()) {
             m_inputOrder.emplace_back(spec.name);
@@ -27,8 +27,8 @@ OpenGLShaderFunction::OpenGLShaderFunction(const FileLoadParams &params) : Shade
     m_functionName = params.functionName;
 }
 
-OpenGLShaderFunction::OpenGLShaderFunction(const StringParams &params) : ShaderFunction(params)
-{
+OpenGLShaderSnippet::OpenGLShaderSnippet(const StringParams &params)
+    : ShaderSnippet(params) {
     for (const auto &spec : params.inputSpecs) {
         if (spec.typeInfo != Variant::getTypeInfo<void>()) {
             m_inputOrder.emplace_back(spec.name);
@@ -44,14 +44,13 @@ OpenGLShaderFunction::OpenGLShaderFunction(const StringParams &params) : ShaderF
     m_functionName = params.functionName;
 }
 
-std::size_t OpenGLShaderFunction::memory_cost() const
-{
+std::size_t OpenGLShaderSnippet::memory_cost() const {
     /// TODO: Calculate the cost of the function
     return 1;
 }
 
-void OpenGLShaderFunction::extractUsedTypes(std::set<const TypeInfo *> &typeSet) const
-{
+void OpenGLShaderSnippet::extractUsedTypes(
+    std::set<const TypeInfo *> &typeSet) const {
     for (auto &specs : {m_inputSpecs, m_outputSpecs}) {
         for (auto [nameId, spec] : specs) {
             typeSet.insert(&spec.typeInfo);
@@ -59,13 +58,12 @@ void OpenGLShaderFunction::extractUsedTypes(std::set<const TypeInfo *> &typeSet)
     }
 }
 
-void OpenGLShaderFunction::extractSubTasks(std::set<const Task *> &taskSet) const
-{
+void OpenGLShaderSnippet::extractSubTasks(
+    std::set<const Task *> &taskSet) const {
     taskSet.insert(this);
 }
 
-void OpenGLShaderFunction::outputDeclarationCode(BuildContext args) const
-{
+void OpenGLShaderSnippet::outputDeclarationCode(BuildContext args) const {
     OpenGLRenderer &renderer = static_cast<OpenGLRenderer &>(args.renderer);
 
     args.output << "void " << m_functionName << "(";
@@ -97,15 +95,14 @@ void OpenGLShaderFunction::outputDeclarationCode(BuildContext args) const
     args.output << ");";
 }
 
-void OpenGLShaderFunction::outputDefinitionCode(BuildContext args) const
-{
+void OpenGLShaderSnippet::outputDefinitionCode(BuildContext args) const {
     args.output << m_fileSnippet;
 }
 
-void OpenGLShaderFunction::outputUsageCode(
-    BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
-    const StableMap<StringId, String> &outputParamsToSharedVariables) const
-{
+void OpenGLShaderSnippet::outputUsageCode(
+    BuildContext args,
+    const StableMap<StringId, String> &inputParamsToSharedVariables,
+    const StableMap<StringId, String> &outputParamsToSharedVariables) const {
     OpenGLRenderer &renderer = static_cast<OpenGLRenderer &>(args.renderer);
 
     args.output << m_functionName << "(";
@@ -137,8 +134,7 @@ void OpenGLShaderFunction::outputUsageCode(
     args.output << ");";
 }
 
-StringView OpenGLShaderFunction::getFriendlyName() const
-{
+StringView OpenGLShaderSnippet::getFriendlyName() const {
     return m_functionName;
 }
 

@@ -10,17 +10,16 @@
 namespace Vitrae
 {
 
-class OpenGLShaderFunction : public ShaderFunction
-{
+class OpenGLShaderSnippet : public ShaderSnippet {
     std::vector<StringId> m_inputOrder;
     std::vector<StringId> m_outputOrder;
     String m_functionName;
     String m_fileSnippet;
 
   public:
-    OpenGLShaderFunction(const FileLoadParams &params);
-    OpenGLShaderFunction(const StringParams &params);
-    ~OpenGLShaderFunction() = default;
+    OpenGLShaderSnippet(const FileLoadParams &params);
+    OpenGLShaderSnippet(const StringParams &params);
+    ~OpenGLShaderSnippet() = default;
 
     std::size_t memory_cost() const override;
     void extractUsedTypes(std::set<const TypeInfo *> &typeSet) const override;

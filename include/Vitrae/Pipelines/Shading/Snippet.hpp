@@ -10,8 +10,7 @@
 namespace Vitrae
 {
 
-class ShaderFunction : public ShaderTask
-{
+class ShaderSnippet : public ShaderTask {
   public:
     struct FileLoadParams
     {
@@ -28,22 +27,20 @@ class ShaderFunction : public ShaderTask
         String functionName;
     };
 
-    inline ShaderFunction(const FileLoadParams &params)
-        : ShaderTask(params.inputSpecs, params.outputSpecs)
-    {}
+    inline ShaderSnippet(const FileLoadParams &params)
+        : ShaderTask(params.inputSpecs, params.outputSpecs) {}
 
-    inline ShaderFunction(const StringParams &params)
-        : ShaderTask(params.inputSpecs, params.outputSpecs)
-    {}
+    inline ShaderSnippet(const StringParams &params)
+        : ShaderTask(params.inputSpecs, params.outputSpecs) {}
 };
 
-struct ShaderFunctionKeeperSeed
-{
-    using Asset = ShaderFunction;
-    std::variant<ShaderFunction::FileLoadParams, ShaderFunction::StringParams> kernel;
+struct ShaderSnippetKeeperSeed {
+    using Asset = ShaderSnippet;
+    std::variant<ShaderSnippet::FileLoadParams, ShaderSnippet::StringParams>
+        kernel;
     inline std::size_t load_cost() const { return 1; }
 };
 
-using ShaderFunctionKeeper = dynasma::AbstractKeeper<ShaderFunctionKeeperSeed>;
+using ShaderSnippetKeeper = dynasma::AbstractKeeper<ShaderSnippetKeeperSeed>;
 
 } // namespace Vitrae

@@ -153,7 +153,7 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
     root.setComponent<       FrameStoreManager>(new dynasma::BasicManager<              FrameStoreSeed, std::allocator<        OpenGLFrameStore>>());
     root.setComponent<   RawSharedBufferKeeper>(new  dynasma::NaiveKeeper<   RawSharedBufferKeeperSeed, std::allocator<   OpenGLRawSharedBuffer>>());
     root.setComponent<    ShaderConstantKeeper>(new  dynasma::NaiveKeeper<    ShaderConstantKeeperSeed, std::allocator<    OpenGLShaderConstant>>());
-    root.setComponent<    ShaderFunctionKeeper>(new  dynasma::NaiveKeeper<    ShaderFunctionKeeperSeed, std::allocator<    OpenGLShaderFunction>>());
+    root.setComponent<     ShaderSnippetKeeper>(new  dynasma::NaiveKeeper<     ShaderSnippetKeeperSeed, std::allocator<     OpenGLShaderSnippet>>());
     root.setComponent<ShaderFunctionCallKeeper>(new  dynasma::NaiveKeeper<ShaderFunctionCallKeeperSeed, std::allocator<OpenGLShaderFunctionCall>>());
     root.setComponent<      ShaderHeaderKeeper>(new  dynasma::NaiveKeeper<      ShaderHeaderKeeperSeed, std::allocator<      OpenGLShaderHeader>>());
     root.setComponent<ComposeSceneRenderKeeper>(new  dynasma::NaiveKeeper<ComposeSceneRenderKeeperSeed, std::allocator<OpenGLComposeSceneRender>>());
