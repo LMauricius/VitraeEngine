@@ -10,6 +10,7 @@
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Shading/Constant.hpp"
 #include "Vitrae/Renderers/OpenGL/Shading/Function.hpp"
+#include "Vitrae/Renderers/OpenGL/Shading/FunctionCall.hpp"
 #include "Vitrae/Renderers/OpenGL/Shading/Header.hpp"
 #include "Vitrae/Renderers/OpenGL/SharedBuffer.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
@@ -153,6 +154,7 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
     root.setComponent<   RawSharedBufferKeeper>(new  dynasma::NaiveKeeper<   RawSharedBufferKeeperSeed, std::allocator<   OpenGLRawSharedBuffer>>());
     root.setComponent<    ShaderConstantKeeper>(new  dynasma::NaiveKeeper<    ShaderConstantKeeperSeed, std::allocator<    OpenGLShaderConstant>>());
     root.setComponent<    ShaderFunctionKeeper>(new  dynasma::NaiveKeeper<    ShaderFunctionKeeperSeed, std::allocator<    OpenGLShaderFunction>>());
+    root.setComponent<ShaderFunctionCallKeeper>(new  dynasma::NaiveKeeper<ShaderFunctionCallKeeperSeed, std::allocator<OpenGLShaderFunctionCall>>());
     root.setComponent<      ShaderHeaderKeeper>(new  dynasma::NaiveKeeper<      ShaderHeaderKeeperSeed, std::allocator<      OpenGLShaderHeader>>());
     root.setComponent<ComposeSceneRenderKeeper>(new  dynasma::NaiveKeeper<ComposeSceneRenderKeeperSeed, std::allocator<OpenGLComposeSceneRender>>());
     root.setComponent< ComposeDataRenderKeeper>(new  dynasma::NaiveKeeper< ComposeDataRenderKeeperSeed, std::allocator< OpenGLComposeDataRender>>());
