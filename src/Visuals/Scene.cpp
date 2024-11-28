@@ -58,6 +58,7 @@ void Scene::loadFromAssimp(const AssimpLoadParams &params)
     }
 
     // load meshes
+    std::vector<dynasma::FirmPtr<Mesh>> meshById;
     if (params.p_extScene->HasMeshes()) {
         for (unsigned int i = 0; i < params.p_extScene->mNumMeshes; ++i) {
             dynasma::FirmPtr<Mesh> p_mesh = meshKeeper.new_asset({Mesh::AssimpLoadParams{
@@ -66,23 +67,56 @@ void Scene::loadFromAssimp(const AssimpLoadParams &params)
             // set material
             p_mesh->setMaterial(matById[params.p_extScene->mMeshes[i]->mMaterialIndex]);
 
-            meshProps.emplace_back(MeshProp{p_mesh, SimpleTransformation{.position = {0, 0, 0},
-                                                                         .rotation = glm::quat(),
-                                                                         .scaling = {1, 1, 1}}});
+            meshById.emplace_back(p_mesh);
         }
     }
+
+    std::function<void(const aiNode *, const aiMatrix4x4 &)> processNode =
+        [&](const aiNode *p_node, const aiMatrix4x4 &parentTransform) {
+            aiMatrix4x4 current = parentTransform * p_node->mTransformation;
+            aiVector3D aiPosition;
+            aiVector3D aiScaling;
+            aiQuaternion aiRotation;
+
+            current.Decompose(aiScaling, aiRotation, aiPosition);
+
+            SimpleTransformation transf = {
+                .position = {aiPosition.x, aiPosition.y, aiPosition.z},
+                .rotation =
+                    {
+                        aiRotation.w,
+                        aiRotation.x,
+                        aiRotation.y,
+                        aiRotation.z,
+                    },
+                .scaling = {aiScaling.x, aiScaling.y, aiScaling.z}};
+
+            for (std::size_t i = 0; i < p_node->mNumMeshes; ++i) {
+                dynasma::FirmPtr<Mesh> p_mesh = meshById[p_node->mMeshes[i]];
+
+                meshProps.emplace_back(MeshProp{p_mesh, transf});
+            }
+
+            for (std::size_t i = 0; i < p_node->mNumChildren; ++i) {
+                processNode(p_node->mChildren[i], current);
+            }
+        };
+
+    processNode(params.p_extScene->mRootNode, aiMatrix4x4());
 
     // load the camera
     if (params.p_extScene->HasCameras()) {
         const aiCamera *p_ext_camera = params.p_extScene->mCameras[0];
 
-        camera.position = glm::vec3(p_ext_camera->mPosition.x, p_ext_camera->mPosition.y,
-                                    p_ext_camera->mPosition.z);
-        camera.rotation = glm::lookAt(camera.position,
-                                      camera.position + glm::vec3(p_ext_camera->mLookAt.x,
-                                                                  p_ext_camera->mLookAt.y,
-                                                                  p_ext_camera->mLookAt.z),
-                                      glm::vec3(0, 1, 0));
+        camera.position =
+            glm::vec3(p_ext_camera->mPosition.x, p_ext_camera->mPosition.y,
+                      p_ext_camera->mPosition.z);
+        camera.rotation =
+            glm::lookAt(camera.position,
+                        camera.position + glm::vec3(p_ext_camera->mLookAt.x,
+                                                    p_ext_camera->mLookAt.y,
+                                                    p_ext_camera->mLookAt.z),
+                        glm::vec3(0, 1, 0));
     }
 }
 
