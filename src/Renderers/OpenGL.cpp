@@ -9,9 +9,9 @@
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Shading/Constant.hpp"
-#include "Vitrae/Renderers/OpenGL/Shading/Function.hpp"
 #include "Vitrae/Renderers/OpenGL/Shading/FunctionCall.hpp"
 #include "Vitrae/Renderers/OpenGL/Shading/Header.hpp"
+#include "Vitrae/Renderers/OpenGL/Shading/Snippet.hpp"
 #include "Vitrae/Renderers/OpenGL/SharedBuffer.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
 

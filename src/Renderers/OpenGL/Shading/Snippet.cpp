@@ -1,5 +1,5 @@
-#include "Vitrae/Renderers/OpenGL/Shading/Function.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
+#include "Vitrae/Renderers/OpenGL/Shading/Snippet.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 
 #include <fstream>

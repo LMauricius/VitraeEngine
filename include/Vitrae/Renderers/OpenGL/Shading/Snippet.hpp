@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Pipelines/Shading/Function.hpp"
+#include "Vitrae/Pipelines/Shading/Snippet.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 
