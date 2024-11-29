@@ -44,6 +44,41 @@ template <TaskChild BasicTask> class Pipeline
         }
     }
 
+    /**
+     * Constructs a partial pipeline using the preffered method to get desired
+     * results The pipeline is partial because only tasks that directly or
+     * indirectly depend on parametric inputs are included
+     * @note Usually used as a sub-pipeline, so that unused tasks go to the
+     * parent
+     * @param method The preffered method
+     * @param parametricInputSpecs The inputs that the tasks in this pipeline
+     * depend on
+     * @param desiredOutputNameIds The desired outputs
+     */
+    Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method,
+             std::span<const PropertySpec> parametricInputSpecs,
+             std::span<const PropertySpec> desiredOutputSpecs,
+             const BasicTask::InputSpecsDeducingContext &ctx) {
+        // store outputs
+        for (auto &outputSpec : desiredOutputSpecs) {
+            outputSpecs.emplace(outputSpec.name, outputSpec);
+        }
+
+        // solve dependencies
+        std::set<StringId> visitedOutputs;
+
+        // convert parameters
+        for (auto &inputSpec : parametricInputSpecs) {
+            visitedOutputs.insert(inputSpec.name);
+            inputSpecs.emplace(inputSpec.name, inputSpec);
+        }
+
+        for (auto &outputSpec : desiredOutputSpecs) {
+            tryAddParametricDependency(*p_method, ctx, visitedOutputs,
+                                       outputSpec, true);
+        }
+    }
+
     // pipethrough variables are those that are just passed from inputs to outputs, unprocessed
     StableMap<StringId, PropertySpec> localSpecs, inputSpecs, outputSpecs;
     std::set<StringId> pipethroughInputNames;
@@ -89,6 +124,87 @@ template <TaskChild BasicTask> class Pipeline
 
                 items.push_back({task.value(), inputToLocalVariables, outputToLocalVariables});
             } else {
+                inputSpecs.emplace(desiredOutputSpec.name, desiredOutputSpec);
+
+                if (isFinalOutput) {
+                    pipethroughInputNames.insert(desiredOutputSpec.name);
+                }
+
+                visitedOutputs.insert(desiredOutputSpec.name);
+            }
+        }
+    };
+
+    void
+    tryAddParametricDependency(const Method<BasicTask> &method,
+                               const BasicTask::InputSpecsDeducingContext &ctx,
+                               std::set<StringId> &visitedOutputs,
+                               const PropertySpec &desiredOutputSpec,
+                               bool isFinalOutput) {
+        if (visitedOutputs.find(desiredOutputSpec.name) ==
+            visitedOutputs.end()) {
+            std::optional<dynasma::FirmPtr<BasicTask>> task =
+                method.getTask(desiredOutputSpec.name);
+
+            bool dependsOnParameters = false;
+
+            if (task.has_value()) {
+                if (task.value() == dynasma::FirmPtr<BasicTask>() ||
+                    &*task.value() == nullptr) {
+                    throw std::runtime_error("No task found for output " +
+                                             desiredOutputSpec.name);
+                }
+
+                // task inputs (also handle deps)
+                std::map<StringId, StringId> inputToLocalVariables;
+                for (auto [inputNameId, inputSpec] :
+                     task.value()->getInputSpecs(ctx)) {
+                    if (task.value()->getOutputSpecs().find(inputNameId) ==
+                        task.value()->getOutputSpecs().end()) {
+                        tryAddDependency(method, ctx, visitedOutputs, inputSpec,
+                                         false);
+
+                        if (visitedOutputs.find(inputNameId) !=
+                            visitedOutputs.end()) {
+                            dependsOnParameters = true;
+                        }
+                    }
+                    inputToLocalVariables.emplace(inputSpec.name,
+                                                  inputSpec.name);
+                }
+
+                if (dependsOnParameters) {
+                    // add filter outputs
+                    for (auto [inputNameId, inputSpec] :
+                         task.value()->getInputSpecs(ctx)) {
+                        if (task.value()->getOutputSpecs().find(inputNameId) !=
+                            task.value()->getOutputSpecs().end()) {
+                            inputSpecs.emplace(inputNameId, inputSpec);
+                        }
+                    }
+
+                    // task outputs (store the outputs as visited)
+                    std::map<StringId, StringId> outputToLocalVariables;
+                    for (auto [taskOutputNameId, taskOutputSpec] :
+                         task.value()->getOutputSpecs()) {
+                        if (outputSpecs.find(taskOutputSpec.name) ==
+                                outputSpecs.end() &&
+                            localSpecs.find(taskOutputSpec.name) ==
+                                localSpecs.end()) {
+                            localSpecs.emplace(taskOutputSpec.name,
+                                               taskOutputSpec);
+                        }
+                        visitedOutputs.insert(taskOutputSpec.name);
+                        outputToLocalVariables.emplace(taskOutputSpec.name,
+                                                       taskOutputSpec.name);
+                    }
+
+                    items.push_back({task.value(), inputToLocalVariables,
+                                     outputToLocalVariables});
+                }
+            }
+
+            if (!dependsOnParameters) {
                 inputSpecs.emplace(desiredOutputSpec.name, desiredOutputSpec);
 
                 if (isFinalOutput) {

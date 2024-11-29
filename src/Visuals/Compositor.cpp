@@ -73,10 +73,12 @@ void Compositor::compose()
     RenderRunContext context{.properties = m_localProperties,
                              .renderer = rend,
                              .methodCombinator = m_shadingMethodCombinator,
+                             .p_composeMethod = mp_composeMethod,
                              .p_defaultVertexMethod = m_defaultVertexMethod,
                              .p_defaultFragmentMethod = m_defaultFragmentMethod,
                              .p_defaultComputeMethod = m_defaultComputeMethod,
-                             .preparedCompositorFrameStores = m_preparedFrameStores,
+                             .preparedCompositorFrameStores =
+                                 m_preparedFrameStores,
                              .preparedCompositorTextures = m_preparedTextures};
 
     bool tryExecute = true;
@@ -128,6 +130,7 @@ void Compositor::rebuildPipeline()
 
     RenderSetupContext context{
         .renderer = m_root.getComponent<Renderer>(),
+        .p_composeMethod = mp_composeMethod,
         .p_defaultVertexMethod = m_defaultVertexMethod,
         .p_defaultFragmentMethod = m_defaultFragmentMethod,
         .p_defaultComputeMethod = m_defaultComputeMethod,
@@ -160,6 +163,14 @@ void Compositor::regenerateFrameStores()
 
     m_needsFrameStoreRegeneration = false;
 
+    RenderSetupContext context{
+        .renderer = m_root.getComponent<Renderer>(),
+        .p_composeMethod = mp_composeMethod,
+        .p_defaultVertexMethod = m_defaultVertexMethod,
+        .p_defaultFragmentMethod = m_defaultFragmentMethod,
+        .p_defaultComputeMethod = m_defaultComputeMethod,
+    };
+
     // clear the buffers (except for the final output)
     m_preparedFrameStores.clear();
     m_uniqueFrameStores.clear();
@@ -170,8 +181,8 @@ void Compositor::regenerateFrameStores()
 
     // fill the buffers
     for (auto &pipeitem : std::ranges::reverse_view{m_pipeline.items}) {
-        pipeitem.p_task->prepareRequiredLocalAssets(m_preparedFrameStores, m_preparedTextures,
-                                                    parameters);
+        pipeitem.p_task->prepareRequiredLocalAssets(
+            m_preparedFrameStores, m_preparedTextures, parameters, context);
     }
 
     // build list of unique framestore

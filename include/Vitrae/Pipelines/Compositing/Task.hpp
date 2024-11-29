@@ -12,23 +12,8 @@ class FrameStore;
 class Texture;
 class ComponentRoot;
 
-struct RenderSetupContext
-{
-    Renderer &renderer;
-    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod,
-        p_defaultComputeMethod;
-};
-
-struct RenderRunContext
-{
-    ScopedDict &properties;
-    Renderer &renderer;
-    MethodCombinator<ShaderTask> &methodCombinator;
-    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod, p_defaultFragmentMethod,
-        p_defaultComputeMethod;
-    const StableMap<StringId, dynasma::FirmPtr<FrameStore>> &preparedCompositorFrameStores;
-    const StableMap<StringId, dynasma::FirmPtr<Texture>> &preparedCompositorTextures;
-};
+struct RenderSetupContext;
+struct RenderRunContext;
 
 /*
 Common exceptions of compose tasks
@@ -63,7 +48,8 @@ class ComposeTask : public Task
     virtual void prepareRequiredLocalAssets(
         StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
         StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-        const ScopedDict &properties) const = 0;
+        const ScopedDict &properties,
+        const RenderSetupContext &context) const = 0;
 
     /// TODO: implement this and move to sources
 
@@ -91,6 +77,26 @@ class ComposeTask : public Task
     {
         taskSet.insert(this);
     }
+};
+
+struct RenderSetupContext {
+    Renderer &renderer;
+    dynasma::FirmPtr<Method<ComposeTask>> p_composeMethod;
+    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod,
+        p_defaultFragmentMethod, p_defaultComputeMethod;
+};
+
+struct RenderRunContext {
+    ScopedDict &properties;
+    Renderer &renderer;
+    MethodCombinator<ShaderTask> &methodCombinator;
+    dynasma::FirmPtr<Method<ComposeTask>> p_composeMethod;
+    dynasma::FirmPtr<Method<ShaderTask>> p_defaultVertexMethod,
+        p_defaultFragmentMethod, p_defaultComputeMethod;
+    const StableMap<StringId, dynasma::FirmPtr<FrameStore>>
+        &preparedCompositorFrameStores;
+    const StableMap<StringId, dynasma::FirmPtr<Texture>>
+        &preparedCompositorTextures;
 };
 
 namespace StandardCompositorOutputNames

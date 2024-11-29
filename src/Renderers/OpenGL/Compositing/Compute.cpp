@@ -185,8 +185,8 @@ void OpenGLComposeCompute::run(RenderRunContext args) const
 
 void OpenGLComposeCompute::prepareRequiredLocalAssets(
     StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
-{}
+    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
+    const ScopedDict &properties, const RenderSetupContext &context) const {}
 
 StringView OpenGLComposeCompute::getFriendlyName() const
 {

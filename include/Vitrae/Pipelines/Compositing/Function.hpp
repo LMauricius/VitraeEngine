@@ -28,9 +28,11 @@ class ComposeFunction : public ComposeTask
     ~ComposeFunction() = default;
 
     void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-                                    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-                                    const ScopedDict &properties) const override;
+    void prepareRequiredLocalAssets(
+        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
+        const ScopedDict &properties,
+        const RenderSetupContext &context) const override;
 
     StringView getFriendlyName() const override;
 };

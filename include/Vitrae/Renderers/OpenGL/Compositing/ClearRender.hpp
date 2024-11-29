@@ -15,9 +15,11 @@ class OpenGLComposeClearRender : public ComposeClearRender
     OpenGLComposeClearRender(const SetupParams &params);
 
     void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-                                    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-                                    const ScopedDict &properties) const override;
+    void prepareRequiredLocalAssets(
+        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
+        const ScopedDict &properties,
+        const RenderSetupContext &context) const override;
 
     StringView getFriendlyName() const override;
 

@@ -23,9 +23,11 @@ class OpenGLComposeCompute : public ComposeCompute {
     const StableMap<StringId, PropertySpec> &getOutputSpecs() const override;
 
     void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-                                    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-                                    const ScopedDict &properties) const override;
+    void prepareRequiredLocalAssets(
+        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
+        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
+        const ScopedDict &properties,
+        const RenderSetupContext &context) const override;
 
     StringView getFriendlyName() const override;
 

@@ -400,8 +400,8 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 
 void OpenGLComposeSceneRender::prepareRequiredLocalAssets(
     StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
-{
+    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
+    const ScopedDict &properties, const RenderSetupContext &context) const {
     // We just need to check whether the frame store is already prepared and make it input also
     if (auto it = frameStores.find(m_displayOutputNameId); it != frameStores.end()) {
         if (m_displayInputNameId.has_value()) {

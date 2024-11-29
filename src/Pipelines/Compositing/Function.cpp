@@ -19,8 +19,8 @@ void ComposeFunction::run(RenderRunContext args) const
 
 void ComposeFunction::prepareRequiredLocalAssets(
     StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures, const ScopedDict &properties) const
-{}
+    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
+    const ScopedDict &properties, const RenderSetupContext &context) const {}
 
 StringView ComposeFunction::getFriendlyName() const
 {
