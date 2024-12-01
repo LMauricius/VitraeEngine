@@ -35,14 +35,12 @@ class PropertyList : public dynasma::PolymorphicBase
             m_mappedSpecs.emplace(spec.name, spec);
         }
 
-        m_hash = 0;
         for (auto [nameId, spec] : m_mappedSpecs) {
             m_specNameIds.push_back(nameId);
             m_specList.push_back(spec);
-
-            m_hash = combinedHashes<3>(
-                {{m_hash, std::hash<StringId>{}(nameId), spec.typeInfo.p_id->hash_code()}});
         }
+
+        recalculateHash();
     }
 
     template <class ContainerT>
@@ -54,103 +52,68 @@ class PropertyList : public dynasma::PolymorphicBase
             m_mappedSpecs.emplace(spec.name, spec);
         }
 
-        m_hash = 0;
         for (auto [nameId, spec] : m_mappedSpecs) {
             m_specNameIds.push_back(nameId);
             m_specList.push_back(spec);
-
-            m_hash = combinedHashes<3>(
-                {{m_hash, std::hash<StringId>{}(nameId), spec.typeInfo.p_id->hash_code()}});
         }
+
+        recalculateHash();
     }
 
     inline PropertyList(const StableMap<StringId, PropertySpec> &mappedSpecs)
         : m_mappedSpecs(mappedSpecs)
     {
-        m_hash = 0;
         for (auto [nameId, spec] : m_mappedSpecs) {
             m_specNameIds.push_back(nameId);
             m_specList.push_back(spec);
-
-            m_hash = combinedHashes<3>(
-                {{m_hash, std::hash<StringId>{}(nameId), spec.typeInfo.p_id->hash_code()}});
         }
+
+        recalculateHash();
     }
 
     inline PropertyList(StableMap<StringId, PropertySpec> &&mappedSpecs)
         : m_mappedSpecs(std::move(mappedSpecs))
     {
-        m_hash = 0;
         for (auto [nameId, spec] : m_mappedSpecs) {
             m_specNameIds.push_back(nameId);
             m_specList.push_back(spec);
-
-            m_hash = combinedHashes<3>(
-                {{m_hash, std::hash<StringId>{}(nameId), spec.typeInfo.p_id->hash_code()}});
         }
+
+        recalculateHash();
     }
 
     virtual ~PropertyList() = default;
 
-    PropertyList &operator=(const PropertyList &other)
-    {
-        m_mappedSpecs.clear();
-        m_specNameIds.clear();
-        m_specList.clear();
+    PropertyList &operator=(const PropertyList &other) = default;
+    PropertyList &operator=(PropertyList &&other) = default;
 
-        for (const auto &spec : other.m_specList) {
-            m_mappedSpecs.emplace(spec.name, spec);
-        }
-
-        m_hash = 0;
-        for (auto [nameId, spec] : m_mappedSpecs) {
-            m_specNameIds.push_back(nameId);
-            m_specList.push_back(spec);
-
-            m_hash = combinedHashes<3>(
-                {{m_hash, std::hash<StringId>{}(nameId), spec.typeInfo.p_id->hash_code()}});
-        }
-
-        return *this;
-    }
-    PropertyList &operator=(PropertyList &&other)
-    {
-        m_mappedSpecs.clear();
-        m_specNameIds.clear();
-        m_specList.clear();
-
-        for (const auto &spec : other.m_specList) {
-            m_mappedSpecs.emplace(spec.name, spec);
-        }
-
-        m_hash = 0;
-        for (auto [nameId, spec] : m_mappedSpecs) {
-            m_specNameIds.push_back(nameId);
-            m_specList.push_back(spec);
-
-            m_hash = combinedHashes<3>(
-                {{m_hash, std::hash<StringId>{}(nameId), spec.typeInfo.p_id->hash_code()}});
-        }
-
-        return *this;
-    }
-
+    /**
+     * Inserts specs from other at the end of this list, if they are not already in the list
+     */
     void merge(const PropertyList &other)
     {
-        m_specNameIds.clear();
-        m_specList.clear();
-
         for (const auto &spec : other.m_specList) {
-            m_mappedSpecs.emplace(spec.name, spec);
+            if (m_mappedSpecs.find(spec.name) == m_mappedSpecs.end()) {
+                m_mappedSpecs.emplace(spec.name, spec);
+                m_specNameIds.push_back(spec.name);
+                m_specList.push_back(spec);
+            }
         }
 
-        m_hash = 0;
-        for (auto [nameId, spec] : m_mappedSpecs) {
-            m_specNameIds.push_back(nameId);
+        recalculateHash();
+    }
+
+    /**
+     * Inserts a spec at the end of the list if it is not already in the list
+     */
+    void insert_back(const PropertySpec &spec)
+    {
+        if (m_mappedSpecs.find(spec.name) == m_mappedSpecs.end()) {
+            m_mappedSpecs.emplace(spec.name, spec);
+            m_specNameIds.push_back(spec.name);
             m_specList.push_back(spec);
 
-            m_hash = combinedHashes<3>(
-                {{m_hash, std::hash<StringId>{}(nameId), spec.typeInfo.p_id->hash_code()}});
+            recalculateHash();
         }
     }
 
@@ -176,6 +139,19 @@ class PropertyList : public dynasma::PolymorphicBase
     bool operator<=(const PropertyList &other) const { return m_hash <= other.m_hash; }
     bool operator>(const PropertyList &other) const { return m_hash > other.m_hash; }
     bool operator>=(const PropertyList &other) const { return m_hash >= other.m_hash; }
+
+  private:
+    void recalculateHash()
+    {
+        m_hash = 0;
+        for (int i = 0; i < m_specList.size(); i++) {
+            m_hash = combinedHashes<3>({{
+                m_hash,
+                std::hash<StringId>{}(m_specNameIds[i]),
+                m_specList[i].typeInfo.p_id->hash_code(),
+            }});
+        }
+    }
 };
 
 } // namespace Vitrae
