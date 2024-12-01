@@ -117,6 +117,27 @@ class PropertyList : public dynasma::PolymorphicBase
         }
     }
 
+    /**
+     * Erases the spec from the list if it exists
+     */
+    void erase(const PropertySpec &spec) { erase(spec.name); }
+
+    /**
+     * Erases the spec with the given name if it exists
+     */
+    void erase(const StringId &nameId)
+    {
+        if (m_mappedSpecs.erase(nameId) > 0) {
+            m_mappedSpecs.erase(nameId);
+            std::size_t ind = std::find(m_specNameIds.begin(), m_specNameIds.end(), nameId) -
+                              m_specNameIds.begin();
+            m_specNameIds.erase(m_specNameIds.begin() + ind);
+            m_specList.erase(m_specList.begin() + ind);
+
+            recalculateHash();
+        }
+    }
+
     /*
     Getters
     */
