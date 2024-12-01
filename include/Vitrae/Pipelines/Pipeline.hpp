@@ -2,19 +2,20 @@
 
 #include "Vitrae/Pipelines/Method.hpp"
 
+#include <stdexcept>
+
 namespace Vitrae
 {
+
+class PipelineSetupException : public std::runtime_error
+{
+  public:
+    using std::runtime_error::runtime_error;
+};
 
 template <TaskChild BasicTask> class Pipeline
 {
   public:
-    struct PipeItem
-    {
-        dynasma::FirmPtr<BasicTask> p_task;
-        StableMap<StringId, StringId> inputToLocalVariables;
-        StableMap<StringId, StringId> outputToLocalVariables;
-    };
-
     Pipeline() = default;
     Pipeline(Pipeline &&) = default;
     Pipeline(const Pipeline &) = default;
@@ -27,26 +28,22 @@ template <TaskChild BasicTask> class Pipeline
      * @param method The preffered method
      * @param desiredOutputNameIds The desired outputs
      */
-    Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method,
-             std::span<const PropertySpec> desiredOutputSpecs,
-             const BasicTask::InputSpecsDeducingContext &ctx)
+    Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method, const PropertyList &desiredOutputSpecs,
+             const PropertySelection &selection)
     {
-        // store outputs
-        for (auto &outputSpec : desiredOutputSpecs) {
-            outputSpecs.emplace(outputSpec.name, outputSpec);
-        }
-
         // solve dependencies
         std::set<StringId> visitedOutputs;
-
-        for (auto &outputSpec : desiredOutputSpecs) {
-            tryAddDependency(*p_method, ctx, visitedOutputs, outputSpec, true);
+        for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
+            tryAddDependency(outputSpec, *p_method, visitedOutputs, selection);
         }
+
+        // Process tasks' properties and add them to the pipeline
+        setupPropertiesFromTasks({{}}, desiredOutputSpecs, selection);
     }
 
     /**
      * Constructs a partial pipeline using the preffered method to get desired
-     * results The pipeline is partial because only tasks that directly or
+     * results. The pipeline is partial because only tasks that directly or
      * indirectly depend on parametric inputs are included
      * @note Usually used as a sub-pipeline, so that unused tasks go to the
      * parent
@@ -57,163 +54,296 @@ template <TaskChild BasicTask> class Pipeline
      */
     Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method,
              std::span<const PropertySpec> parametricInputSpecs,
-             std::span<const PropertySpec> desiredOutputSpecs,
-             const BasicTask::InputSpecsDeducingContext &ctx) {
-        // store outputs
-        for (auto &outputSpec : desiredOutputSpecs) {
-            outputSpecs.emplace(outputSpec.name, outputSpec);
-        }
-
+             std::span<const PropertySpec> desiredOutputSpecs, const PropertySelection &selection)
+    {
         // solve dependencies
         std::set<StringId> visitedOutputs;
-
-        // convert parameters
-        for (auto &inputSpec : parametricInputSpecs) {
-            visitedOutputs.insert(inputSpec.name);
-            inputSpecs.emplace(inputSpec.name, inputSpec);
+        for (auto &paramSpec : parametricInputSpecs) {
+            visitedOutputs.insert(paramSpec.name);
         }
 
         for (auto &outputSpec : desiredOutputSpecs) {
-            tryAddParametricDependency(*p_method, ctx, visitedOutputs,
-                                       outputSpec, true);
+            tryAddDependencyIfParametrized(outputSpec, *p_method, visitedOutputs, selection);
         }
+
+        // Process tasks' properties and add them to the pipeline
+        setupPropertiesFromTasks(parametricInputSpecs, desiredOutputSpecs, selection);
     }
 
-    // pipethrough variables are those that are just passed from inputs to outputs, unprocessed
-    StableMap<StringId, PropertySpec> localSpecs, inputSpecs, outputSpecs;
-    std::set<StringId> pipethroughInputNames;
-    std::vector<PipeItem> items;
+    /**
+     * The list of tasks in the pipeline
+     */
+    std::vector<dynasma::FirmPtr<BasicTask>> items;
+
+    /**
+     * Properties that have to be set before running the pipeline and are not modified
+     */
+    PropertyList inputSpecs;
+
+    /**
+     * Properties that didn't exist beforehand but are set by running the pipeline, and were
+     * requested as desired outputs
+     */
+    PropertyList outputSpecs;
+
+    /**
+     * Properties that have to be set before running the pipeline and don't exist afterwards
+     */
+    PropertyList consumingSpecs;
+
+    /**
+     * Properties that have to be set before running the pipeline and exist afterwards, but might be
+     * modified by running the pipeline
+     */
+    PropertyList filterSpecs;
+
+    /**
+     * Properties that are just passed from inputs to outputs, unprocessed
+     */
+    PropertyList pipethroughSpecs;
+
+    /**
+     * Properties used by the pipeline internally.
+     * They don't exist beforehand but are set by running the pipeline, and weren't requested as
+     * desired outputs
+     */
+    PropertyList localSpecs;
 
   protected:
-    void tryAddDependency(const Method<BasicTask> &method,
-                          const BasicTask::InputSpecsDeducingContext &ctx,
-                          std::set<StringId> &visitedOutputs, const PropertySpec &desiredOutputSpec,
-                          bool isFinalOutput)
+    /**
+     * Adds the desiredOutputSpec name to the visitedOutputs set.
+     * Adds a task outputting the desired property if possible and all its dependency properties.
+     * If a task is added, all its outputs are added to the visitedOutputs set
+     * @param desiredOutputSpec The dependency property
+     * @param method The method we use to get the task
+     * @param visitedOutputs The set of visited outputs
+     * @param selection The property mapping
+     */
+    void tryAddDependency(const PropertySpec &desiredOutputSpec, const Method<BasicTask> &method,
+                          std::set<StringId> &visitedOutputs, const PropertySelection &selection)
     {
         if (visitedOutputs.find(desiredOutputSpec.name) == visitedOutputs.end()) {
-            std::optional<dynasma::FirmPtr<BasicTask>> task =
+            std::optional<dynasma::FirmPtr<BasicTask>> maybeTask =
                 method.getTask(desiredOutputSpec.name);
 
-            if (task.has_value()) {
-                if (task.value() == dynasma::FirmPtr<BasicTask>() || &*task.value() == nullptr) {
-                    throw std::runtime_error("No task found for output " + desiredOutputSpec.name);
-                }
+            if (maybeTask.has_value()) {
+                const Task &task = *maybeTask.value();
 
                 // task outputs (store the outputs as visited)
-                std::map<StringId, StringId> outputToLocalVariables;
-                for (auto [taskOutputNameId, taskOutputSpec] : task.value()->getOutputSpecs()) {
-                    if (outputSpecs.find(taskOutputSpec.name) == outputSpecs.end() &&
-                        localSpecs.find(taskOutputSpec.name) == localSpecs.end()) {
-                        localSpecs.emplace(taskOutputSpec.name, taskOutputSpec);
-                    }
-                    visitedOutputs.insert(taskOutputSpec.name);
-                    outputToLocalVariables.emplace(taskOutputSpec.name, taskOutputSpec.name);
+                for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
+                    visitedOutputs.insert(nameId);
                 }
 
-                // task inputs (also handle deps)
-                std::map<StringId, StringId> inputToLocalVariables;
-                for (auto [inputNameId, inputSpec] : task.value()->getInputSpecs(ctx)) {
-                    if (task.value()->getOutputSpecs().find(inputNameId) !=
-                        task.value()->getOutputSpecs().end()) {
-                        inputSpecs.emplace(inputNameId, inputSpec);
-                    } else {
-                        tryAddDependency(method, ctx, visitedOutputs, inputSpec, false);
-                    }
-                    inputToLocalVariables.emplace(inputSpec.name, inputSpec.name);
+                // task deps (input + filter + consuming)
+                for (auto [nameId, spec] : task.getInputSpecs(selection).getMappedSpecs()) {
+                    tryAddDependency(spec, method, visitedOutputs, selection);
+                }
+                for (auto [nameId, spec] : task.getFilterSpecs().getMappedSpecs()) {
+                    tryAddDependency(spec, method, visitedOutputs, selection);
+                }
+                for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
+                    tryAddDependency(spec, method, visitedOutputs, selection);
                 }
 
-                items.push_back({task.value(), inputToLocalVariables, outputToLocalVariables});
+                // consume specs by removing them from the visited list
+                for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
+                    visitedOutputs.erase(nameId);
+                }
+
+                items.push_back(maybeTask.value());
             } else {
-                inputSpecs.emplace(desiredOutputSpec.name, desiredOutputSpec);
-
-                if (isFinalOutput) {
-                    pipethroughInputNames.insert(desiredOutputSpec.name);
-                }
-
                 visitedOutputs.insert(desiredOutputSpec.name);
             }
         }
     };
 
-    void
-    tryAddParametricDependency(const Method<BasicTask> &method,
-                               const BasicTask::InputSpecsDeducingContext &ctx,
-                               std::set<StringId> &visitedOutputs,
-                               const PropertySpec &desiredOutputSpec,
-                               bool isFinalOutput) {
-        if (visitedOutputs.find(desiredOutputSpec.name) ==
-            visitedOutputs.end()) {
-            std::optional<dynasma::FirmPtr<BasicTask>> task =
-                method.getTask(desiredOutputSpec.name);
+    /**
+     * Adds a task outputting the desired property if possible and all its dependency properties,
+     * but only if it directly or indirectly depends on one of already visited outputs.
+     * If a task is added, all its outputs are added to the visitedOutputs set
+     * @param desiredOutputSpec The dependency property
+     * @param method The method we use to get the task
+     * @param visitedOutputs The set of visited outputs
+     * @param selection The property mapping
+     * @returns Whether the dependency is satisfied
+     */
+    bool tryAddDependencyIfParametrized(const PropertySpec &desiredOutputSpec,
+                                        const Method<BasicTask> &method,
+                                        std::set<StringId> &visitedOutputs,
+                                        const PropertySelection &selection)
+    {
+        if (visitedOutputs.find(desiredOutputSpec.name) != visitedOutputs.end()) {
+            return true;
+        }
 
-            bool dependsOnParameters = false;
+        std::optional<dynasma::FirmPtr<BasicTask>> maybeTask =
+            method.getTask(desiredOutputSpec.name);
 
-            if (task.has_value()) {
-                if (task.value() == dynasma::FirmPtr<BasicTask>() ||
-                    &*task.value() == nullptr) {
-                    throw std::runtime_error("No task found for output " +
-                                             desiredOutputSpec.name);
-                }
+        if (maybeTask.has_value()) {
+            const Task &task = *maybeTask.value();
 
-                // task inputs (also handle deps)
-                std::map<StringId, StringId> inputToLocalVariables;
-                for (auto [inputNameId, inputSpec] :
-                     task.value()->getInputSpecs(ctx)) {
-                    if (task.value()->getOutputSpecs().find(inputNameId) ==
-                        task.value()->getOutputSpecs().end()) {
-                        tryAddDependency(method, ctx, visitedOutputs, inputSpec,
-                                         false);
+            bool satisfiedAnyDependencies = false;
 
-                        if (visitedOutputs.find(inputNameId) !=
-                            visitedOutputs.end()) {
-                            dependsOnParameters = true;
-                        }
-                    }
-                    inputToLocalVariables.emplace(inputSpec.name,
-                                                  inputSpec.name);
-                }
-
-                if (dependsOnParameters) {
-                    // add filter outputs
-                    for (auto [inputNameId, inputSpec] :
-                         task.value()->getInputSpecs(ctx)) {
-                        if (task.value()->getOutputSpecs().find(inputNameId) !=
-                            task.value()->getOutputSpecs().end()) {
-                            inputSpecs.emplace(inputNameId, inputSpec);
-                        }
-                    }
-
-                    // task outputs (store the outputs as visited)
-                    std::map<StringId, StringId> outputToLocalVariables;
-                    for (auto [taskOutputNameId, taskOutputSpec] :
-                         task.value()->getOutputSpecs()) {
-                        if (outputSpecs.find(taskOutputSpec.name) ==
-                                outputSpecs.end() &&
-                            localSpecs.find(taskOutputSpec.name) ==
-                                localSpecs.end()) {
-                            localSpecs.emplace(taskOutputSpec.name,
-                                               taskOutputSpec);
-                        }
-                        visitedOutputs.insert(taskOutputSpec.name);
-                        outputToLocalVariables.emplace(taskOutputSpec.name,
-                                                       taskOutputSpec.name);
-                    }
-
-                    items.push_back({task.value(), inputToLocalVariables,
-                                     outputToLocalVariables});
-                }
+            // task deps (input + filter + consuming)
+            for (auto [nameId, spec] : task.getInputSpecs(selection).getMappedSpecs()) {
+                satisfiedAnyDependencies |=
+                    tryAddDependencyIfParametrized(spec, method, visitedOutputs, selection);
+            }
+            for (auto [nameId, spec] : task.getFilterSpecs().getMappedSpecs()) {
+                satisfiedAnyDependencies |=
+                    tryAddDependencyIfParametrized(spec, method, visitedOutputs, selection);
+            }
+            for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
+                satisfiedAnyDependencies |=
+                    tryAddDependencyIfParametrized(spec, method, visitedOutputs, selection);
             }
 
-            if (!dependsOnParameters) {
-                inputSpecs.emplace(desiredOutputSpec.name, desiredOutputSpec);
-
-                if (isFinalOutput) {
-                    pipethroughInputNames.insert(desiredOutputSpec.name);
+            if (satisfiedAnyDependencies) {
+                // task outputs (store the outputs as visited)
+                for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
+                    visitedOutputs.insert(nameId);
                 }
 
-                visitedOutputs.insert(desiredOutputSpec.name);
+                // consume specs by removing them from the visited list
+                for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
+                    visitedOutputs.erase(nameId);
+                }
+
+                items.push_back(maybeTask.value());
+
+                return true;
             }
         }
-    };
+
+        return false;
+    }
+
+    /**
+     * Adds all used properties in the pipeline's tasks to the correct PropertyLists.
+     * (i.e this->inputSpecs, this->outputSpecs, this->filterSpecs, this->consumedSpecs,
+     * this->pipethroughSpecs, this->localSpecs)
+     * @param fixedInputSpecs The known input specs
+     * @param desiredOutputSpecs The desired output specs
+     * @param selection The property mapping
+     */
+    void setupPropertiesFromTasks(const PropertyList &fixedInputSpecs,
+                                  const PropertyList &desiredOutputSpecs,
+                                  const PropertySelection &selection)
+    {
+        // 4 maps/sets needed to know how we use properties
+        std::set<StringId> missingPropertyNames;
+        std::map<StringId, PropertySpec> everUsedProperties;
+        std::set<StringId> currentPropertyNames;
+        std::set<StringId> modifiedPropertyNames;
+
+        // helper functions for controlling the maps/sets
+
+        auto requireProperty = [&](const PropertySpec &propertySpec) {
+            if (currentPropertyNames.find(propertySpec.name) == currentPropertyNames.end()) {
+                if (everUsedProperties.find(propertySpec.name) == everUsedProperties.end()) {
+                    missingPropertyNames.insert(propertySpec.name);
+                    currentPropertyNames.insert(propertySpec.name);
+                } else {
+                    throw PipelineSetupException(
+                        std::string("Property ") + propertySpec.name +
+                        "' was consumed, but also depended on later in the pipeline");
+                }
+            }
+        };
+
+        auto usingProperty = [&](const PropertySpec &propertySpec, const String &byWho) {
+            auto it = everUsedProperties.find(propertySpec.name);
+            if (it != everUsedProperties.end()) {
+                if ((*it).second.typeInfo != propertySpec.typeInfo) {
+                    throw PipelineSetupException(
+                        String("Property '") + propertySpec.name + "' was first used as " +
+                        String((*it).second.typeInfo.getShortTypeName()) + " but late as " +
+                        String(propertySpec.typeInfo.getShortTypeName()) + " by " + byWho);
+                }
+            } else {
+                everUsedProperties.emplace(propertySpec.name, propertySpec);
+            }
+        };
+
+        auto setProperty = [&](const PropertySpec &propertySpec) {
+            modifiedPropertyNames.insert(propertySpec.name);
+            currentPropertyNames.insert(propertySpec.name);
+        };
+
+        auto consumeProperty = [&](const PropertySpec &propertySpec) {
+            currentPropertyNames.erase(propertySpec.name);
+        };
+
+        // use fixed input properties before the tasks need them
+        for (auto &spec : fixedInputSpecs.getSpecList()) {
+            requireProperty(spec);
+            usingProperty(spec, "pipeline parameters");
+        }
+
+        // iterate over the tasks and simulate property usage
+        for (auto &p_item : items) {
+            const Task &task = *p_item;
+            String taskContextName = "task '" + String(task.getFriendlyName()) + "'";
+
+            for (auto &spec : task.getInputSpecs(selection).getSpecList()) {
+                requireProperty(spec);
+                usingProperty(spec, taskContextName);
+            }
+
+            for (auto &spec : task.getConsumingSpecs(selection).getSpecList()) {
+                requireProperty(spec);
+                usingProperty(spec, taskContextName);
+                consumeProperty(spec);
+            }
+
+            for (auto &spec : task.getOutputSpecs().getSpecList()) {
+                usingProperty(spec, taskContextName);
+                setProperty(spec);
+            }
+
+            for (auto &spec : task.getFilterSpecs().getSpecList()) {
+                requireProperty(spec);
+                usingProperty(spec, taskContextName);
+                setProperty(spec);
+            }
+        }
+
+        // also use the desired outputs, even if not used by the tasks
+        for (auto &spec : desiredOutputSpecs.getSpecList()) {
+            requireProperty(spec);
+            usingProperty(spec, "pipeline outputs");
+        }
+
+        // analyze the sets and add property specs to proper lists
+        for (auto &[nameId, spec] : everUsedProperties) {
+            if (missingPropertyNames.find(nameId) != missingPropertyNames.end()) {
+                // property  existed beforehand
+                if (currentPropertyNames.find(nameId) == currentPropertyNames.end()) {
+                    // property was consumed at some point
+                    consumingSpecs.insert_back(spec);
+                } else if (modifiedPropertyNames.find(nameId) != modifiedPropertyNames.end()) {
+                    // property was modified and still exists
+                    filterSpecs.insert_back(spec);
+                } else if (desiredOutputSpecs.getMappedSpecs().find(nameId) !=
+                           desiredOutputSpecs.getMappedSpecs().end()) {
+                    // property was desired and but only set externally
+                    pipethroughSpecs.insert_back(spec);
+                } else {
+                    // property was externally set and has the same value afterwards
+                    inputSpecs.insert_back(spec);
+                }
+            } else {
+                // property was introduced by the pipeline
+                if (desiredOutputSpecs.getMappedSpecs().find(nameId) !=
+                    desiredOutputSpecs.getMappedSpecs().end()) {
+                    // property was desired and is set by the pipeline
+                    outputSpecs.insert_back(spec);
+                } else {
+                    // property was set by the pipeline, but not desired
+                    localSpecs.insert_back(spec);
+                }
+            }
+        }
+    }
 };
 } // namespace Vitrae
