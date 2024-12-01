@@ -1,4 +1,4 @@
-#include "Vitrae/Pipelines/PropertySelection.hpp"
+#include "Vitrae/Util/PropertySelection.hpp"
 
 #include "Vitrae/Util/Hashing.hpp"
 
