@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vitrae/Util/PropertyList.hpp"
+#include "Vitrae/Util/PropertySelection.hpp"
 #include "Vitrae/Util/PropertySpec.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
@@ -17,54 +19,53 @@ namespace Vitrae
 
 class Task : public dynasma::PolymorphicBase
 {
-  protected:
-    StableMap<StringId, PropertySpec> m_inputSpecs;
-    StableMap<StringId, PropertySpec> m_outputSpecs;
-
   public:
-    Task() = delete;
-    Task(Task const &) = default;
-    Task(Task &&) = default;
-
-    template <class ContainerT>
-    inline Task(const ContainerT &inputSpecs, const ContainerT &outputSpecs)
-        requires(std::ranges::range<ContainerT> &&
-                 std::convertible_to<std::ranges::range_value_t<ContainerT>, const PropertySpec &>)
-    {
-        for (const auto &spec : inputSpecs) {
-            m_inputSpecs.emplace(spec.name, spec);
-        }
-        for (const auto &spec : outputSpecs) {
-            m_outputSpecs.emplace(spec.name, spec);
-        }
-    }
-    inline Task(const StableMap<StringId, PropertySpec> &inputSpecs,
-                const StableMap<StringId, PropertySpec> &outputSpecs)
-        : m_inputSpecs(inputSpecs), m_outputSpecs(outputSpecs)
-    {}
-    inline Task(StableMap<StringId, PropertySpec> &&inputSpecs,
-                StableMap<StringId, PropertySpec> &&outputSpecs)
-        : m_inputSpecs(std::move(inputSpecs)), m_outputSpecs(std::move(outputSpecs))
-    {}
     virtual ~Task() = default;
-
-    Task &operator=(Task const &) = default;
-    Task &operator=(Task &&) = default;
 
     virtual std::size_t memory_cost() const = 0;
 
+    /**
+     * @returns A specification of input properties of this task. Those properties are never
+     * modified by the task and can be inputs for following tasks
+     */
+    virtual const PropertyList &getInputSpecs(const PropertySelection &propMapping) const = 0;
+
+    /**
+     * @returns A specification of consuming properties of this task. These properties might be
+     * modified by the task and don't exist after the task execution
+     */
+    virtual const PropertyList &getConsumingSpecs(const PropertySelection &propMapping) const = 0;
+
+    /**
+     * @returns A specification of output properties of this task. Those usually don't exist before
+     * running the task (although there can be collisions) and are set by the task
+     */
+    virtual const PropertyList &getOutputSpecs() const = 0;
+
+    /**
+     * @returns A specification of filter properties of this task. Those properties exist both
+     * before and after running the task and are usually modified by it.
+     */
+    virtual const PropertyList &getFilterSpecs() const = 0;
+
+    /**
+     * Adds all types used by this task (its properties and internal execution) to the typeSet
+     * @param typeSet The output set to add types to
+     */
     virtual void extractUsedTypes(std::set<const TypeInfo *> &typeSet) const = 0;
+
+    /**
+     * Adds all subtasks used by this task to the taskSet
+     */
     virtual void extractSubTasks(std::set<const Task *> &taskSet) const = 0;
 
+    /**
+     * @returns The user-friendly name of the task
+     */
     virtual StringView getFriendlyName() const = 0;
 };
 
 template <class T>
-concept TaskChild = std::is_base_of_v<Task, T> && requires {
-    typename T::InputSpecsDeducingContext;
-} && requires(const T task, typename T::InputSpecsDeducingContext ctx) {
-    { task.getInputSpecs(ctx) } -> std::convertible_to<StableMap<StringId, PropertySpec>>;
-    { task.getOutputSpecs() } -> std::convertible_to<StableMap<StringId, PropertySpec>>;
-};
+concept TaskChild = std::is_base_of_v<Task, T>;
 
 } // namespace Vitrae
