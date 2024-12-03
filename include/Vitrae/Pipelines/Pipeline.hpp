@@ -31,14 +31,19 @@ template <TaskChild BasicTask> class Pipeline
     Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method, const PropertyList &desiredOutputSpecs,
              const PropertySelection &selection)
     {
+        std::map<StringId, StringId> wipUsedSelection;
+
         // solve dependencies
         std::set<StringId> visitedOutputs;
         for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
-            tryAddDependency(outputSpec, *p_method, visitedOutputs, selection);
+            tryAddDependency(outputSpec, *p_method, visitedOutputs, selection, wipUsedSelection);
         }
 
         // Process tasks' properties and add them to the pipeline
         setupPropertiesFromTasks({{}}, desiredOutputSpecs, selection);
+
+        // Add used selections
+        usedSelection = PropertySelection(wipUsedSelection);
     }
 
     /**
@@ -56,6 +61,8 @@ template <TaskChild BasicTask> class Pipeline
              std::span<const PropertySpec> parametricInputSpecs,
              std::span<const PropertySpec> desiredOutputSpecs, const PropertySelection &selection)
     {
+        std::map<StringId, StringId> wipUsedSelection;
+
         // solve dependencies
         std::set<StringId> visitedOutputs;
         for (auto &paramSpec : parametricInputSpecs) {
@@ -68,12 +75,21 @@ template <TaskChild BasicTask> class Pipeline
 
         // Process tasks' properties and add them to the pipeline
         setupPropertiesFromTasks(parametricInputSpecs, desiredOutputSpecs, selection);
+
+        // Add used selections
+        usedSelection = PropertySelection(wipUsedSelection);
     }
 
     /**
      * The list of tasks in the pipeline
      */
     std::vector<dynasma::FirmPtr<BasicTask>> items;
+
+    /**
+     * Map of relevant property selections
+     * key=required property name (to choose), value=actual property name (choice)
+     */
+    PropertySelection usedSelection;
 
     /**
      * Properties that have to be set before running the pipeline and are not modified
@@ -120,11 +136,14 @@ template <TaskChild BasicTask> class Pipeline
      * @param selection The property mapping
      */
     void tryAddDependency(const PropertySpec &desiredOutputSpec, const Method<BasicTask> &method,
-                          std::set<StringId> &visitedOutputs, const PropertySelection &selection)
+                          std::set<StringId> &visitedOutputs, const PropertySelection &selection,
+                          std::map<StringId, StringId> &outUsedSelection)
     {
-        if (visitedOutputs.find(desiredOutputSpec.name) == visitedOutputs.end()) {
-            std::optional<dynasma::FirmPtr<BasicTask>> maybeTask =
-                method.getTask(desiredOutputSpec.name);
+        StringId actualOutputName =
+            selection.choiceFor(desiredOutputSpec.name).value_or(desiredOutputSpec.name);
+
+        if (visitedOutputs.find(actualOutputName) == visitedOutputs.end()) {
+            std::optional<dynasma::FirmPtr<BasicTask>> maybeTask = method.getTask(actualOutputName);
 
             if (maybeTask.has_value()) {
                 const Task &task = *maybeTask.value();
@@ -136,13 +155,13 @@ template <TaskChild BasicTask> class Pipeline
 
                 // task deps (input + filter + consuming)
                 for (auto [nameId, spec] : task.getInputSpecs(selection).getMappedSpecs()) {
-                    tryAddDependency(spec, method, visitedOutputs, selection);
+                    tryAddDependency(spec, method, visitedOutputs, selection, outUsedSelection);
                 }
                 for (auto [nameId, spec] : task.getFilterSpecs().getMappedSpecs()) {
-                    tryAddDependency(spec, method, visitedOutputs, selection);
+                    tryAddDependency(spec, method, visitedOutputs, selection, outUsedSelection);
                 }
                 for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
-                    tryAddDependency(spec, method, visitedOutputs, selection);
+                    tryAddDependency(spec, method, visitedOutputs, selection, outUsedSelection);
                 }
 
                 // consume specs by removing them from the visited list
@@ -152,7 +171,7 @@ template <TaskChild BasicTask> class Pipeline
 
                 items.push_back(maybeTask.value());
             } else {
-                visitedOutputs.insert(desiredOutputSpec.name);
+                visitedOutputs.insert(actualOutputName);
             }
         }
     };
@@ -170,14 +189,17 @@ template <TaskChild BasicTask> class Pipeline
     bool tryAddDependencyIfParametrized(const PropertySpec &desiredOutputSpec,
                                         const Method<BasicTask> &method,
                                         std::set<StringId> &visitedOutputs,
-                                        const PropertySelection &selection)
+                                        const PropertySelection &selection,
+                                        std::map<StringId, StringId> &outUsedSelection)
     {
-        if (visitedOutputs.find(desiredOutputSpec.name) != visitedOutputs.end()) {
+        StringId actualOutputName =
+            selection.choiceFor(desiredOutputSpec.name).value_or(desiredOutputSpec.name);
+
+        if (visitedOutputs.find(actualOutputName) != visitedOutputs.end()) {
             return true;
         }
 
-        std::optional<dynasma::FirmPtr<BasicTask>> maybeTask =
-            method.getTask(desiredOutputSpec.name);
+        std::optional<dynasma::FirmPtr<BasicTask>> maybeTask = method.getTask(actualOutputName);
 
         if (maybeTask.has_value()) {
             const Task &task = *maybeTask.value();
@@ -186,16 +208,16 @@ template <TaskChild BasicTask> class Pipeline
 
             // task deps (input + filter + consuming)
             for (auto [nameId, spec] : task.getInputSpecs(selection).getMappedSpecs()) {
-                satisfiedAnyDependencies |=
-                    tryAddDependencyIfParametrized(spec, method, visitedOutputs, selection);
+                satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
+                    spec, method, visitedOutputs, selection, outUsedSelection);
             }
             for (auto [nameId, spec] : task.getFilterSpecs().getMappedSpecs()) {
-                satisfiedAnyDependencies |=
-                    tryAddDependencyIfParametrized(spec, method, visitedOutputs, selection);
+                satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
+                    spec, method, visitedOutputs, selection, outUsedSelection);
             }
             for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
-                satisfiedAnyDependencies |=
-                    tryAddDependencyIfParametrized(spec, method, visitedOutputs, selection);
+                satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
+                    spec, method, visitedOutputs, selection, outUsedSelection);
             }
 
             if (satisfiedAnyDependencies) {
