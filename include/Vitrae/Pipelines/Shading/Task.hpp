@@ -13,33 +13,11 @@ class Renderer;
 class ShaderTask : public Task
 {
   public:
-    using InputSpecsDeducingContext = std::monostate;
-
     struct BuildContext
     {
         std::stringstream &output;
         Renderer &renderer;
     };
-
-    struct RunContext
-    {
-        const ScopedDict &properties;
-        Renderer &renderer;
-    };
-
-    struct SetupContext
-    {
-        std::vector<std::function<void(RunContext)>> setupFunctions;
-        Renderer &renderer;
-    };
-
-    using Task::Task;
-
-    inline const StableMap<StringId, PropertySpec> &getInputSpecs(InputSpecsDeducingContext) const
-    {
-        return m_inputSpecs;
-    }
-    inline const StableMap<StringId, PropertySpec> &getOutputSpecs() const { return m_outputSpecs; }
 
     virtual void outputDeclarationCode(BuildContext args) const = 0;
     virtual void outputDefinitionCode(BuildContext args) const = 0;
