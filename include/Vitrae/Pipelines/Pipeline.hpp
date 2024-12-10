@@ -36,8 +36,7 @@ template <TaskChild BasicTask> class Pipeline
         // solve dependencies
         std::set<StringId> visitedOutputs;
         for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
-            tryAddDependency(outputSpec, *p_method, visitedOutputs, selection, wipUsedSelection,
-                             wipUsedSelection);
+            tryAddDependency(outputSpec, *p_method, visitedOutputs, selection, wipUsedSelection);
         }
 
         // Process tasks' properties and add them to the pipeline
@@ -138,9 +137,8 @@ template <TaskChild BasicTask> class Pipeline
      * @param selection The property mapping
      * @param outUsedSelection The used property mapping
      */
-    void tryAddDependency(const PropertySpec &desiredOutputSpec,
-                          const Method<const BasicTask> &method, std::set<StringId> &visitedOutputs,
-                          const PropertyAliases &selection,
+    void tryAddDependency(const PropertySpec &desiredOutputSpec, const Method<BasicTask> &method,
+                          std::set<StringId> &visitedOutputs, const PropertyAliases &selection,
                           std::map<StringId, StringId> &outUsedSelection)
     {
         StringId actualOutputName = selection.choiceFor(desiredOutputSpec.name);
@@ -156,7 +154,7 @@ template <TaskChild BasicTask> class Pipeline
                 const Task &task = *maybeTask.value();
 
                 // task outputs (store the outputs as visited)
-                for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
+                for (auto [nameId, spec] : task.getOutputSpecs(selection).getMappedSpecs()) {
                     visitedOutputs.insert(nameId);
                 }
 
@@ -164,7 +162,7 @@ template <TaskChild BasicTask> class Pipeline
                 for (auto [nameId, spec] : task.getInputSpecs(selection).getMappedSpecs()) {
                     tryAddDependency(spec, method, visitedOutputs, selection, outUsedSelection);
                 }
-                for (auto [nameId, spec] : task.getFilterSpecs().getMappedSpecs()) {
+                for (auto [nameId, spec] : task.getFilterSpecs(selection).getMappedSpecs()) {
                     tryAddDependency(spec, method, visitedOutputs, selection, outUsedSelection);
                 }
                 for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
@@ -195,7 +193,7 @@ template <TaskChild BasicTask> class Pipeline
      * @returns Whether the dependency is satisfied
      */
     bool tryAddDependencyIfParametrized(const PropertySpec &desiredOutputSpec,
-                                        const Method<const BasicTask> &method,
+                                        const Method<BasicTask> &method,
                                         std::set<StringId> &visitedOutputs,
                                         const PropertyAliases &selection,
                                         std::map<StringId, StringId> &outUsedSelection)
@@ -222,7 +220,7 @@ template <TaskChild BasicTask> class Pipeline
                 satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
                     spec, method, visitedOutputs, selection, outUsedSelection);
             }
-            for (auto [nameId, spec] : task.getFilterSpecs().getMappedSpecs()) {
+            for (auto [nameId, spec] : task.getFilterSpecs(selection).getMappedSpecs()) {
                 satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
                     spec, method, visitedOutputs, selection, outUsedSelection);
             }
@@ -233,7 +231,7 @@ template <TaskChild BasicTask> class Pipeline
 
             if (satisfiedAnyDependencies) {
                 // task outputs (store the outputs as visited)
-                for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
+                for (auto [nameId, spec] : task.getOutputSpecs(selection).getMappedSpecs()) {
                     visitedOutputs.insert(nameId);
                 }
 
@@ -329,12 +327,12 @@ template <TaskChild BasicTask> class Pipeline
                 consumeProperty(spec);
             }
 
-            for (auto &spec : task.getOutputSpecs().getSpecList()) {
+            for (auto &spec : task.getOutputSpecs(selection).getSpecList()) {
                 usingProperty(spec, taskContextName);
                 setProperty(spec);
             }
 
-            for (auto &spec : task.getFilterSpecs().getSpecList()) {
+            for (auto &spec : task.getFilterSpecs(selection).getSpecList()) {
                 requireProperty(spec);
                 usingProperty(spec, taskContextName);
                 setProperty(spec);
