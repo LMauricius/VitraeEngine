@@ -41,6 +41,7 @@ class PropertyAliases
     /**
      * Constructor for alias mapping with inheritance
      * @param parent The parent PropertyAliases
+     * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
     PropertyAliases(std::span<const PropertyAliases *> parentPtrs);
 
@@ -49,6 +50,7 @@ class PropertyAliases
      * @param parent The parent PropertyAliases
      * @param aliases A map of aliases; key = target (to choose), value = source
      * (choice)
+     * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
     PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
                     const StableMap<StringId, StringId> &aliases);
