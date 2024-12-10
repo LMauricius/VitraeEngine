@@ -29,21 +29,22 @@ template <TaskChild BasicTask> class Pipeline
      * @param desiredOutputNameIds The desired outputs
      */
     Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method, const PropertyList &desiredOutputSpecs,
-             const PropertySelection &selection)
+             const PropertyAliases &selection)
     {
         std::map<StringId, StringId> wipUsedSelection;
 
         // solve dependencies
         std::set<StringId> visitedOutputs;
         for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
-            tryAddDependency(outputSpec, *p_method, visitedOutputs, selection, wipUsedSelection);
+            tryAddDependency(outputSpec, *p_method, visitedOutputs, selection, wipUsedSelection,
+                             wipUsedSelection);
         }
 
         // Process tasks' properties and add them to the pipeline
         setupPropertiesFromTasks({{}}, desiredOutputSpecs, selection);
 
         // Add used selections
-        usedSelection = PropertySelection(wipUsedSelection);
+        usedSelection = PropertyAliases(wipUsedSelection);
     }
 
     /**
@@ -59,7 +60,7 @@ template <TaskChild BasicTask> class Pipeline
      */
     Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method,
              std::span<const PropertySpec> parametricInputSpecs,
-             std::span<const PropertySpec> desiredOutputSpecs, const PropertySelection &selection)
+             std::span<const PropertySpec> desiredOutputSpecs, const PropertyAliases &selection)
     {
         std::map<StringId, StringId> wipUsedSelection;
 
@@ -70,14 +71,15 @@ template <TaskChild BasicTask> class Pipeline
         }
 
         for (auto &outputSpec : desiredOutputSpecs) {
-            tryAddDependencyIfParametrized(outputSpec, *p_method, visitedOutputs, selection);
+            tryAddDependencyIfParametrized(outputSpec, *p_method, visitedOutputs, selection,
+                                           wipUsedSelection);
         }
 
         // Process tasks' properties and add them to the pipeline
         setupPropertiesFromTasks(parametricInputSpecs, desiredOutputSpecs, selection);
 
         // Add used selections
-        usedSelection = PropertySelection(wipUsedSelection);
+        usedSelection = PropertyAliases(wipUsedSelection);
     }
 
     /**
@@ -89,7 +91,7 @@ template <TaskChild BasicTask> class Pipeline
      * Map of relevant property selections
      * key=required property name (to choose), value=actual property name (choice)
      */
-    PropertySelection usedSelection;
+    PropertyAliases usedSelection;
 
     /**
      * Properties that have to be set before running the pipeline and are not modified
@@ -134,13 +136,17 @@ template <TaskChild BasicTask> class Pipeline
      * @param method The method we use to get the task
      * @param visitedOutputs The set of visited outputs
      * @param selection The property mapping
+     * @param outUsedSelection The used property mapping
      */
     void tryAddDependency(const PropertySpec &desiredOutputSpec, const Method<BasicTask> &method,
-                          std::set<StringId> &visitedOutputs, const PropertySelection &selection,
+                          std::set<StringId> &visitedOutputs, const PropertyAliases &selection,
                           std::map<StringId, StringId> &outUsedSelection)
     {
-        StringId actualOutputName =
-            selection.choiceFor(desiredOutputSpec.name).value_or(desiredOutputSpec.name);
+        StringId actualOutputName = selection.choiceFor(desiredOutputSpec.name);
+
+        if (actualOutputName != desiredOutputSpec.name) {
+            outUsedSelection[desiredOutputSpec.name] = actualOutputName;
+        }
 
         if (visitedOutputs.find(actualOutputName) == visitedOutputs.end()) {
             std::optional<dynasma::FirmPtr<BasicTask>> maybeTask = method.getTask(actualOutputName);
@@ -184,16 +190,20 @@ template <TaskChild BasicTask> class Pipeline
      * @param method The method we use to get the task
      * @param visitedOutputs The set of visited outputs
      * @param selection The property mapping
+     * @param outUsedSelection The used property mapping
      * @returns Whether the dependency is satisfied
      */
     bool tryAddDependencyIfParametrized(const PropertySpec &desiredOutputSpec,
                                         const Method<BasicTask> &method,
                                         std::set<StringId> &visitedOutputs,
-                                        const PropertySelection &selection,
+                                        const PropertyAliases &selection,
                                         std::map<StringId, StringId> &outUsedSelection)
     {
-        StringId actualOutputName =
-            selection.choiceFor(desiredOutputSpec.name).value_or(desiredOutputSpec.name);
+        StringId actualOutputName = selection.choiceFor(desiredOutputSpec.name);
+
+        if (actualOutputName != desiredOutputSpec.name) {
+            outUsedSelection[desiredOutputSpec.name] = actualOutputName;
+        }
 
         if (visitedOutputs.find(actualOutputName) != visitedOutputs.end()) {
             return true;
@@ -250,7 +260,7 @@ template <TaskChild BasicTask> class Pipeline
      */
     void setupPropertiesFromTasks(const PropertyList &fixedInputSpecs,
                                   const PropertyList &desiredOutputSpecs,
-                                  const PropertySelection &selection)
+                                  const PropertyAliases &selection)
     {
         // 4 maps/sets needed to know how we use properties
         std::set<StringId> missingPropertyNames;
