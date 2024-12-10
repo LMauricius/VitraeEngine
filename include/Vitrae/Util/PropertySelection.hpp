@@ -41,7 +41,7 @@ class PropertySelection {
      * @param aliases A map of aliases; key = target (to choose), value = source
      * (choice)
      */
-    PropertySelection(const PropertySelection &parent,
+    PropertySelection(std::span<const PropertySelection *> parentPtrs,
                       StableMap<StringId, StringId> aliases);
 
     /**
@@ -55,9 +55,15 @@ class PropertySelection {
     PropertySelection &operator=(PropertySelection &&other) = default;
 
     /**
-     * @returns The choice for the specified target, or empty if not found
+     * @returns The choice for the specified target, or target if not found
+     * @note supports aliases to aliases
      */
-    std::optional<StringId> choiceFor(StringId target) const;
+    StringId choiceFor(StringId target) const;
+
+    /**
+     * @returns The directly specified choice for the specified target, or empty if not found
+     */
+    std::optional<StringId> directChoiceFor(StringId target) const;
 
     /**
      * @returns The has unique for this selection of choices. Order is
@@ -66,6 +72,7 @@ class PropertySelection {
     inline std::size_t hash() const { return m_hash; }
 
   private:
+    std::span<const PropertySelection *> m_parentPtrs;
     const PropertySelection *mp_parent;
     StableMap<StringId, StringId> m_localAliases;
     std::size_t m_hash;
