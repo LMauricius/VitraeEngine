@@ -1,12 +1,12 @@
-#include "Vitrae/Util/PropertySelection.hpp"
+#include "Vitrae/Util/PropertyAliases.hpp"
 
 #include "Vitrae/Util/Hashing.hpp"
 
 namespace Vitrae {
 
-PropertySelection::PropertySelection() : m_parentPtrs{}, m_hash(0) {}
+PropertyAliases::PropertyAliases() : m_parentPtrs{}, m_hash(0) {}
 
-PropertySelection::PropertySelection(StableMap<StringId, StringId> aliases)
+PropertyAliases::PropertyAliases(StableMap<StringId, StringId> aliases)
     : m_parentPtrs{}, m_localAliases(std::move(aliases)), m_hash(0)
 {
     for (const auto &[key, value] : m_localAliases) {
@@ -15,8 +15,8 @@ PropertySelection::PropertySelection(StableMap<StringId, StringId> aliases)
     }
 }
 
-PropertySelection::PropertySelection(std::span<const PropertySelection *> parentPtrs,
-                                     StableMap<StringId, StringId> aliases)
+PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+                                 StableMap<StringId, StringId> aliases)
     : m_parentPtrs(parentPtrs), m_localAliases(std::move(aliases)), m_hash(0)
 {
     for (const auto *p_parent : parentPtrs) {
@@ -29,7 +29,7 @@ PropertySelection::PropertySelection(std::span<const PropertySelection *> parent
     }
 }
 
-StringId PropertySelection::choiceFor(StringId target) const
+StringId PropertyAliases::choiceFor(StringId target) const
 {
     StringId choice = target;
 
@@ -41,7 +41,7 @@ StringId PropertySelection::choiceFor(StringId target) const
     return choice;
 }
 
-std::optional<StringId> PropertySelection::directChoiceFor(StringId key) const
+std::optional<StringId> PropertyAliases::directChoiceFor(StringId key) const
 {
     auto it = m_localAliases.find(key);
     if (it != m_localAliases.end()) {

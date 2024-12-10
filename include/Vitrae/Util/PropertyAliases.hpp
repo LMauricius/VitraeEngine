@@ -11,48 +11,49 @@ namespace Vitrae {
  * A class that encompasses mapping between needed properties and more specific
  * properties that we select as aliases
  */
-class PropertySelection {
+class PropertyAliases
+{
   public:
     /**
      * Default constructor
      */
-    PropertySelection();
+    PropertyAliases();
 
     /**
      * Copy constructor
      */
-    PropertySelection(const PropertySelection &other) = default;
+    PropertyAliases(const PropertyAliases &other) = default;
 
     /**
      * Move constructor
      */
-    PropertySelection(PropertySelection &&other) = default;
+    PropertyAliases(PropertyAliases &&other) = default;
 
     /**
      * Constructor for parentless alias mapping
      * @param aliases A map of aliases; key = target (to choose), value = source
      * (choice)
      */
-    PropertySelection(StableMap<StringId, StringId> aliases);
+    PropertyAliases(StableMap<StringId, StringId> aliases);
 
     /**
      * Constructor for alias mapping with inheritance
-     * @param parent The parent PropertySelection
+     * @param parent The parent PropertyAliases
      * @param aliases A map of aliases; key = target (to choose), value = source
      * (choice)
      */
-    PropertySelection(std::span<const PropertySelection *> parentPtrs,
-                      StableMap<StringId, StringId> aliases);
+    PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+                    StableMap<StringId, StringId> aliases);
 
     /**
      * Copy assignment
      */
-    PropertySelection &operator=(const PropertySelection &other) = default;
+    PropertyAliases &operator=(const PropertyAliases &other) = default;
 
     /**
      * Move assignment
      */
-    PropertySelection &operator=(PropertySelection &&other) = default;
+    PropertyAliases &operator=(PropertyAliases &&other) = default;
 
     /**
      * @returns The choice for the specified target, or target if not found
@@ -72,8 +73,8 @@ class PropertySelection {
     inline std::size_t hash() const { return m_hash; }
 
   private:
-    std::span<const PropertySelection *> m_parentPtrs;
-    const PropertySelection *mp_parent;
+    std::span<const PropertyAliases *> m_parentPtrs;
+    const PropertyAliases *mp_parent;
     StableMap<StringId, StringId> m_localAliases;
     std::size_t m_hash;
 };
@@ -82,8 +83,10 @@ class PropertySelection {
 
 namespace std {
 
-template <> struct hash<Vitrae::PropertySelection> {
-    std::size_t operator()(const Vitrae::PropertySelection &selection) const {
+template <> struct hash<Vitrae::PropertyAliases>
+{
+    std::size_t operator()(const Vitrae::PropertyAliases &selection) const
+    {
         return selection.hash();
     }
 };
