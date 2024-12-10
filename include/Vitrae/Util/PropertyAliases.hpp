@@ -34,7 +34,15 @@ class PropertyAliases
      * @param aliases A map of aliases; key = target (to choose), value = source
      * (choice)
      */
-    PropertyAliases(StableMap<StringId, StringId> aliases);
+    PropertyAliases(const StableMap<StringId, StringId> &aliases);
+
+    PropertyAliases(StableMap<StringId, StringId> &&aliases);
+
+    /**
+     * Constructor for alias mapping with inheritance
+     * @param parent The parent PropertyAliases
+     */
+    PropertyAliases(std::span<const PropertyAliases *> parentPtrs);
 
     /**
      * Constructor for alias mapping with inheritance
@@ -43,7 +51,10 @@ class PropertyAliases
      * (choice)
      */
     PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
-                    StableMap<StringId, StringId> aliases);
+                    const StableMap<StringId, StringId> &aliases);
+
+    PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+                    StableMap<StringId, StringId> &&aliases);
 
     /**
      * Copy assignment

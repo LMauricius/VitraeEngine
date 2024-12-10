@@ -6,7 +6,15 @@ namespace Vitrae {
 
 PropertyAliases::PropertyAliases() : m_parentPtrs{}, m_hash(0) {}
 
-PropertyAliases::PropertyAliases(StableMap<StringId, StringId> aliases)
+PropertyAliases::PropertyAliases(const StableMap<StringId, StringId> &aliases)
+    : m_parentPtrs{}, m_localAliases(aliases), m_hash(0)
+{
+    for (const auto &[key, value] : m_localAliases) {
+        m_hash ^= combinedHashes<2>({{std::hash<StringId>{}(key), std::hash<StringId>{}(value)}});
+    }
+}
+
+PropertyAliases::PropertyAliases(StableMap<StringId, StringId> &&aliases)
     : m_parentPtrs{}, m_localAliases(std::move(aliases)), m_hash(0)
 {
     for (const auto &[key, value] : m_localAliases) {
@@ -15,8 +23,29 @@ PropertyAliases::PropertyAliases(StableMap<StringId, StringId> aliases)
     }
 }
 
+PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs)
+    : m_parentPtrs(parentPtrs), m_hash(0)
+{
+    for (const auto *p_parent : parentPtrs) {
+        m_hash ^= p_parent->hash();
+    }
+}
+
 PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
-                                 StableMap<StringId, StringId> aliases)
+                                 const StableMap<StringId, StringId> &aliases)
+    : m_parentPtrs(parentPtrs), m_localAliases(aliases), m_hash(0)
+{
+    for (const auto *p_parent : parentPtrs) {
+        m_hash ^= p_parent->hash();
+    }
+
+    for (const auto &[key, value] : m_localAliases) {
+        m_hash ^= combinedHashes<2>({{std::hash<StringId>{}(key), std::hash<StringId>{}(value)}});
+    }
+}
+
+PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+                                 StableMap<StringId, StringId> &&aliases)
     : m_parentPtrs(parentPtrs), m_localAliases(std::move(aliases)), m_hash(0)
 {
     for (const auto *p_parent : parentPtrs) {
