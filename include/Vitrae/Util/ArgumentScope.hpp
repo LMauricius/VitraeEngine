@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Util/PropertySelection.hpp"
+#include "Vitrae/Util/PropertyAliases.hpp"
 #include "Vitrae/Util/ScopedDict.hpp"
 
 namespace Vitrae
@@ -8,12 +8,12 @@ namespace Vitrae
 
 /**
  * @brief ArgumentScope provides access to named variants from a ScopedDict,
- * but with support for PropertySelection for aliased properties
+ * but with support for PropertyAliases for aliased properties
  */
 class ArgumentScope
 {
     ScopedDict *mp_scope;
-    const PropertySelection *mp_propertySelection;
+    const PropertyAliases *mp_propertySelection;
 
   public:
     /**
@@ -30,7 +30,7 @@ class ArgumentScope
      *
      * @param scope Pointer to the ScopedDict.
      */
-    ArgumentScope(ScopedDict *p_scope, const PropertySelection *propertySelection = nullptr);
+    ArgumentScope(ScopedDict *p_scope, const PropertyAliases *propertySelection = nullptr);
 
     /// @brief Copy constructor.
     ArgumentScope(const ArgumentScope &) = default;
