@@ -28,8 +28,8 @@ template <TaskChild BasicTask> class Pipeline
      * @param method The preffered method
      * @param desiredOutputNameIds The desired outputs
      */
-    Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method, const PropertyList &desiredOutputSpecs,
-             const PropertyAliases &selection)
+    Pipeline(dynasma::FirmPtr<const Method<BasicTask>> p_method,
+             const PropertyList &desiredOutputSpecs, const PropertyAliases &selection)
     {
         std::map<StringId, StringId> wipUsedSelection;
 
@@ -58,7 +58,7 @@ template <TaskChild BasicTask> class Pipeline
      * depend on
      * @param desiredOutputNameIds The desired outputs
      */
-    Pipeline(dynasma::FirmPtr<Method<BasicTask>> p_method,
+    Pipeline(dynasma::FirmPtr<const Method<BasicTask>> p_method,
              std::span<const PropertySpec> parametricInputSpecs,
              std::span<const PropertySpec> desiredOutputSpecs, const PropertyAliases &selection)
     {
@@ -138,8 +138,9 @@ template <TaskChild BasicTask> class Pipeline
      * @param selection The property mapping
      * @param outUsedSelection The used property mapping
      */
-    void tryAddDependency(const PropertySpec &desiredOutputSpec, const Method<BasicTask> &method,
-                          std::set<StringId> &visitedOutputs, const PropertyAliases &selection,
+    void tryAddDependency(const PropertySpec &desiredOutputSpec,
+                          const Method<const BasicTask> &method, std::set<StringId> &visitedOutputs,
+                          const PropertyAliases &selection,
                           std::map<StringId, StringId> &outUsedSelection)
     {
         StringId actualOutputName = selection.choiceFor(desiredOutputSpec.name);
@@ -194,7 +195,7 @@ template <TaskChild BasicTask> class Pipeline
      * @returns Whether the dependency is satisfied
      */
     bool tryAddDependencyIfParametrized(const PropertySpec &desiredOutputSpec,
-                                        const Method<BasicTask> &method,
+                                        const Method<const BasicTask> &method,
                                         std::set<StringId> &visitedOutputs,
                                         const PropertyAliases &selection,
                                         std::map<StringId, StringId> &outUsedSelection)
