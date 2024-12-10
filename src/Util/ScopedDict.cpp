@@ -30,6 +30,20 @@ const Variant &ScopedDict::get(StringId key) const
     throw std::runtime_error{"Key not found"};
 }
 
+Variant &&ScopedDict::move(StringId key)
+{
+    auto it = m_dict.find(key);
+    if (it != m_dict.end())
+        return std::move((*it).second);
+
+    if (m_parent) {
+        it = m_dict.emplace(key, m_parent->get(key)).first;
+        return std::move((*it).second);
+    }
+
+    throw std::runtime_error{"Key not found"};
+}
+
 const Variant *ScopedDict::getPtr(StringId key) const
 {
     auto it = m_dict.find(key);

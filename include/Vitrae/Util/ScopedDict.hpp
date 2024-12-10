@@ -84,6 +84,20 @@ class ScopedDict
     const Variant &get(StringId key) const;
 
     /**
+     * @brief Get a move-reference to the value associated with a key.
+     *
+     * If the key is not found in the current dictionary, the search continues in the parent
+     * dictionary. The parent value will then be copied.
+     *
+     * @note The key is not removed from a dictionary, but the Variant can become void
+     *
+     * @param key The key.
+     * @return A move-reference to the value associated with the key.
+     * @throws std::runtime_error If the key is not found in any dictionary.
+     */
+    Variant &&move(StringId key);
+
+    /**
      * @brief Get the value associated with a key.
      *
      * If the key is not found in the current dictionary, the search continues in the parent
