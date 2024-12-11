@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Types/Typedefs.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
 
@@ -34,9 +35,9 @@ class PropertyAliases
      * @param aliases A map of aliases; key = target (to choose), value = source
      * (choice)
      */
-    PropertyAliases(const StableMap<StringId, StringId> &aliases);
+    PropertyAliases(const StableMap<StringId, String> &aliases);
 
-    PropertyAliases(StableMap<StringId, StringId> &&aliases);
+    PropertyAliases(StableMap<StringId, String> &&aliases);
 
     /**
      * Constructor for alias mapping with inheritance
@@ -53,10 +54,10 @@ class PropertyAliases
      * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
     PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
-                    const StableMap<StringId, StringId> &aliases);
+                    const StableMap<StringId, String> &aliases);
 
     PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
-                    StableMap<StringId, StringId> &&aliases);
+                    StableMap<StringId, String> &&aliases);
 
     /**
      * Copy assignment
@@ -75,9 +76,22 @@ class PropertyAliases
     StringId choiceFor(StringId target) const;
 
     /**
+     * @returns The choice for the specified target, or target if not found;
+     * in full string form
+     * @note supports aliases to aliases
+     */
+    String choiceStringFor(String target) const;
+
+    /**
      * @returns The directly specified choice for the specified target, or empty if not found
      */
     std::optional<StringId> directChoiceFor(StringId target) const;
+
+    /**
+     * @returns The directly specified choice for the specified target, or empty if not found;
+     * in full string form
+     */
+    std::optional<String> directChoiceStringFor(StringId target) const;
 
     /**
      * @returns The has unique for this selection of choices. Order is
@@ -88,7 +102,7 @@ class PropertyAliases
   private:
     std::span<const PropertyAliases *> m_parentPtrs;
     const PropertyAliases *mp_parent;
-    StableMap<StringId, StringId> m_localAliases;
+    StableMap<StringId, std::pair<StringId, String>> m_localAliases;
     std::size_t m_hash;
 };
 
