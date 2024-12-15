@@ -4,23 +4,44 @@
 
 namespace Vitrae
 {
+const PropertyList ComposeConstant::s_emptySpecs = {};
+
 ComposeConstant::ComposeConstant(const SetupParams &params)
-    : ComposeTask({}, {{params.outputSpec.name, params.outputSpec}}),
-      m_outputNameId(params.outputSpec.name), m_outputSpec(params.outputSpec),
-      m_value(params.value), m_friendlyName(String("Const ") + params.value.toString())
+    : m_outputSpecs{params.outputSpec}, m_value(params.value),
+      m_friendlyName(String("Const ") + params.value.toString())
 {}
 
-void ComposeConstant::run(RenderRunContext args) const
+const PropertyList &ComposeConstant::getInputSpecs(const PropertyAliases &) const
+{
+    return s_emptySpecs;
+}
+
+const PropertyList &ComposeConstant::getOutputSpecs(const PropertyAliases &) const
+{
+    return m_outputSpecs;
+}
+
+const PropertyList &ComposeConstant::getFilterSpecs(const PropertyAliases &) const
+{
+    return s_emptySpecs;
+}
+
+const PropertyList &ComposeConstant::getConsumingSpecs(const PropertyAliases &) const
+{
+    return s_emptySpecs;
+}
+
+void ComposeConstant::run(RenderComposeContext ctx) const
 {
     MMETER_SCOPE_PROFILER("ComposeConstant::run");
 
-    args.properties.set(m_outputNameId, m_value);
+    // we have only 1 output spec
+    StringId outputNameId = m_outputSpecs.getSpecNameIds().front();
+
+    ctx.properties.set(outputNameId, m_value);
 }
 
-void ComposeConstant::prepareRequiredLocalAssets(
-    StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-    const ScopedDict &properties, const RenderSetupContext &context) const {}
+void ComposeConstant::prepareRequiredLocalAssets(RenderComposeContext ctx) const {}
 
 StringView ComposeConstant::getFriendlyName() const
 {

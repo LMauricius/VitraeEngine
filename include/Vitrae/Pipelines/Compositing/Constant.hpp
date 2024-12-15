@@ -21,18 +21,20 @@ class ComposeConstant : public ComposeTask
     ComposeConstant(const SetupParams &params);
     ~ComposeConstant() = default;
 
-    void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-        const ScopedDict &properties,
-        const RenderSetupContext &context) const override;
+    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
+    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+
+    void run(RenderComposeContext ctx) const override;
+    void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
 
     StringView getFriendlyName() const override;
 
   protected:
-    StringId m_outputNameId;
-    PropertySpec m_outputSpec;
+    static const PropertyList s_emptySpecs;
+
+    PropertyList m_outputSpecs;
     Variant m_value;
     String m_friendlyName;
 };
