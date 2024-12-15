@@ -31,7 +31,7 @@ template <TaskChild BasicTask> class Pipeline
     Pipeline(dynasma::FirmPtr<const Method<BasicTask>> p_method,
              const PropertyList &desiredOutputSpecs, const PropertyAliases &selection)
     {
-        std::map<StringId, StringId> wipUsedSelection;
+        std::map<StringId, String> wipUsedSelection;
 
         // solve dependencies
         std::set<StringId> visitedOutputs;
@@ -43,7 +43,7 @@ template <TaskChild BasicTask> class Pipeline
         setupPropertiesFromTasks({{}}, desiredOutputSpecs, selection);
 
         // Add used selections
-        usedSelection = PropertyAliases(wipUsedSelection);
+        usedSelection = PropertyAliases(StableMap<StringId, String>(std::move(wipUsedSelection)));
     }
 
     /**
@@ -139,9 +139,9 @@ template <TaskChild BasicTask> class Pipeline
      */
     void tryAddDependency(const PropertySpec &desiredOutputSpec, const Method<BasicTask> &method,
                           std::set<StringId> &visitedOutputs, const PropertyAliases &selection,
-                          std::map<StringId, StringId> &outUsedSelection)
+                          std::map<StringId, String> &outUsedSelection)
     {
-        StringId actualOutputName = selection.choiceFor(desiredOutputSpec.name);
+        String actualOutputName = selection.choiceStringFor(desiredOutputSpec.name);
 
         if (actualOutputName != desiredOutputSpec.name) {
             outUsedSelection[desiredOutputSpec.name] = actualOutputName;
@@ -196,9 +196,9 @@ template <TaskChild BasicTask> class Pipeline
                                         const Method<BasicTask> &method,
                                         std::set<StringId> &visitedOutputs,
                                         const PropertyAliases &selection,
-                                        std::map<StringId, StringId> &outUsedSelection)
+                                        std::map<StringId, String> &outUsedSelection)
     {
-        StringId actualOutputName = selection.choiceFor(desiredOutputSpec.name);
+        String actualOutputName = selection.choiceStringFor(desiredOutputSpec.name);
 
         if (actualOutputName != desiredOutputSpec.name) {
             outUsedSelection[desiredOutputSpec.name] = actualOutputName;
