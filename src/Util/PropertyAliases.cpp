@@ -13,7 +13,7 @@ StableMap<StringId, std::pair<StringId, String>> convertAliases(
 {
     StableMap<StringId, std::pair<StringId, String>> result;
     for (const auto &[key, value] : aliases) {
-        result[key] = {value, value};
+        result.emplace(key, std::make_pair<StringId, String>(StringId(value), String(value)));
     }
     return result;
 }
