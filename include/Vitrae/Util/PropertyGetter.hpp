@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Util/ArgumentScope.hpp"
 #include "Vitrae/Util/Hashing.hpp"
 #include "Vitrae/Util/ScopedDict.hpp"
 
@@ -50,6 +51,32 @@ template <class T> class PropertyGetter
     }
 
     T *getPtr(const ScopedDict &scope) const
+    {
+        switch (m_nameOrValue.index()) {
+        case 0:
+            const Variant *p = scope.getPtr(std::get<0>(m_nameOrValue).nameId);
+            if (p)
+                return &(p->get<T>());
+            else
+                return nullptr;
+        case 1:
+        default:
+            return &(std::get<1>(m_nameOrValue));
+        }
+    }
+
+    T get(const ArgumentScope &scope) const
+    {
+        switch (m_nameOrValue.index()) {
+        case 0:
+            return scope.get(std::get<0>(m_nameOrValue).nameId).template get<T>();
+        case 1:
+        default:
+            return std::get<1>(m_nameOrValue);
+        }
+    }
+
+    T *getPtr(const ArgumentScope &scope) const
     {
         switch (m_nameOrValue.index()) {
         case 0:
