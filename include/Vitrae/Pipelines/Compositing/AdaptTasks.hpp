@@ -12,41 +12,78 @@
 
 namespace Vitrae {
 
-class ComposeAdaptTasks : public ComposeTask {
-    String m_friendlyName;
+class MethodCollection;
 
-    mutable StableMap<std::tuple<dynasma::LazyPtr<Method<ShaderTask>>,
-                                 dynasma::LazyPtr<Method<ShaderTask>>,
-                                 dynasma::LazyPtr<Method<ShaderTask>>>,
-                      Pipeline<ComposeTask>>
-        m_compiledSubPipelines;
-
-    StableMap<StringId, StringId> m_ext2InternalInputs;
-    StableMap<StringId, StringId> m_internal2ExtOutputs;
-    std::vector<PropertySpec> m_internalInputSpecs;
-    std::vector<PropertySpec> m_internalOutputSpecs;
-
+/**
+ * A task that supports aliasing for adapting external properties with various names to
+ * tasks that require specific property names.
+ * Also supports encapsulation of non-filtered properties.
+ */
+class ComposeAdaptTasks : public ComposeTask
+{
   public:
     struct SetupParams {
-        StableMap<StringId, PropertySpec> extProperty2InternalInputSpecs;
-        StableMap<PropertySpec, PropertySpec> internalProperty2ExtOutputSpecs;
+        ComponentRoot &root;
+
+        /**
+         * Aliases specific for this adaptor
+         */
+        PropertyAliases adaptorAliases;
+
+        /**
+         * Outputs we desire. Some outputs could become filter properties with a different name
+         */
+        PropertyList desiredOutputs;
+
+        /**
+         * Human readable name
+         */
         String friendlyName;
     };
 
     ComposeAdaptTasks(const SetupParams &params);
     ~ComposeAdaptTasks() = default;
 
-    const StableMap<StringId, PropertySpec> &
-    getInputSpecs(const RenderSetupContext &args) const override;
+    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
+    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
 
-    void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-        const ScopedDict &properties,
-        const RenderSetupContext &context) const override;
+    void run(RenderComposeContext ctx) const override;
+    void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
 
     StringView getFriendlyName() const override;
+
+  private:
+    SetupParams m_params;
+
+    struct AdaptorPerAliases
+    {
+        /**
+         * Mapping of internal property names to external ones, performed after running the pipeline
+         */
+        StableMap<StringId, StringId> finishingMapping;
+
+        Pipeline<ComposeTask> pipeline;
+
+        PropertyList inputSpecs, outputSpecs, filterSpecs, consumeSpecs;
+
+        AdaptorPerAliases() = delete;
+        AdaptorPerAliases(AdaptorPerAliases &&) = default;
+        AdaptorPerAliases(const AdaptorPerAliases &) = default;
+        AdaptorPerAliases &operator=(AdaptorPerAliases &&) = default;
+        AdaptorPerAliases &operator=(const AdaptorPerAliases &) = default;
+
+        AdaptorPerAliases(const PropertyAliases &adaptorAliases, const PropertyList &desiredOutputs,
+                          const PropertyAliases &externalAliases,
+                          const MethodCollection &methodCollection);
+    };
+
+    mutable StableMap<std::size_t, AdaptorPerAliases> m_adaptorPerSelectionHash;
+
+    const AdaptorPerAliases &getAdaptorPerAliases(const PropertyAliases &externalAliases,
+                                                  const MethodCollection &methodCollection) const;
+    void forgetAdaptorPerAliases(const PropertyAliases &externalAliases) const;
 };
 
 struct ComposeAdaptTasksKeeperSeed {
