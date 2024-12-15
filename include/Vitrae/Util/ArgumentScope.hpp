@@ -89,5 +89,11 @@ class ArgumentScope
      * @throws std::runtime_error If the key is not found in any dictionary.
      */
     Variant &&move(StringId key);
+
+    /**
+     * @return The underlying ScopedDict
+     */
+    inline ScopedDict &getUnaliasedScope() { return *mp_scope; }
+    inline const ScopedDict &getUnaliasedScope() const { return *mp_scope; }
 };
 } // namespace Vitrae
