@@ -175,7 +175,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
     std::unordered_map<StringId, StringId> choosen2desired;
     for (auto desiredId : desiredOutputs.getSpecNameIds()) {
         auto choice = adaptorAliases.choiceFor(desiredId);
-        choosen2desired[choice] = desiredId;
+        choosen2desired.emplace(choice, desiredId);
     }
 
     for (const auto &specs : {pipeline.outputSpecs, pipeline.filterSpecs}) {
@@ -187,7 +187,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
 
                 if (outerChoice == innerChoice) {
                     if (innerChoice != desiredId) {
-                        finishingMapping[innerChoice] = desiredId;
+                        finishingMapping.emplace(innerChoice, desiredId);
                     }
                     break;
                 }
