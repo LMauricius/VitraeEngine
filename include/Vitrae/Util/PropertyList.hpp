@@ -132,7 +132,17 @@ class PropertyList : public dynasma::PolymorphicBase
             std::size_t ind = std::find(m_specNameIds.begin(), m_specNameIds.end(), nameId) -
                               m_specNameIds.begin();
             m_specNameIds.erase(m_specNameIds.begin() + ind);
-            m_specList.erase(m_specList.begin() + ind);
+
+            // we need a new vector to avoid calling std::vector::erase (PropertySpec is not
+            // move-assignable)
+            std::vector<PropertySpec> newSpecList;
+            newSpecList.reserve(m_specList.size() - 1);
+            for (int i = 0; i < m_specList.size(); i++) {
+                if (i != ind) {
+                    newSpecList.push_back(m_specList[i]);
+                }
+            }
+            m_specList = std::move(newSpecList);
 
             recalculateHash();
         }
