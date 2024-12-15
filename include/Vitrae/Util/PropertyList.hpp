@@ -84,7 +84,14 @@ class PropertyList : public dynasma::PolymorphicBase
 
     virtual ~PropertyList() = default;
 
-    PropertyList &operator=(const PropertyList &other) = default;
+    PropertyList &operator=(const PropertyList &other)
+    {
+        m_mappedSpecs = other.m_mappedSpecs;
+        m_specNameIds = other.m_specNameIds;
+        m_specList = std::vector<PropertySpec>(other.m_specList.begin(), other.m_specList.end());
+        m_hash = other.m_hash;
+        return *this;
+    }
     PropertyList &operator=(PropertyList &&other) = default;
 
     /**
