@@ -4,8 +4,6 @@
 
 namespace Vitrae
 {
-const PropertyList ComposeConstant::s_emptySpecs = {};
-
 ComposeConstant::ComposeConstant(const SetupParams &params)
     : m_outputSpecs{params.outputSpec}, m_value(params.value),
       m_friendlyName(String("Const ") + params.value.toString())
@@ -13,7 +11,7 @@ ComposeConstant::ComposeConstant(const SetupParams &params)
 
 const PropertyList &ComposeConstant::getInputSpecs(const PropertyAliases &) const
 {
-    return s_emptySpecs;
+    return EMPTY_PROPERTY_LIST;
 }
 
 const PropertyList &ComposeConstant::getOutputSpecs(const PropertyAliases &) const
@@ -23,12 +21,12 @@ const PropertyList &ComposeConstant::getOutputSpecs(const PropertyAliases &) con
 
 const PropertyList &ComposeConstant::getFilterSpecs(const PropertyAliases &) const
 {
-    return s_emptySpecs;
+    return EMPTY_PROPERTY_LIST;
 }
 
 const PropertyList &ComposeConstant::getConsumingSpecs(const PropertyAliases &) const
 {
-    return s_emptySpecs;
+    return EMPTY_PROPERTY_LIST;
 }
 
 void ComposeConstant::run(RenderComposeContext ctx) const

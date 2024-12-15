@@ -175,6 +175,8 @@ class PropertyList : public dynasma::PolymorphicBase
     }
 };
 
+inline const PropertyList EMPTY_PROPERTY_LIST{};
+
 } // namespace Vitrae
 
 namespace std

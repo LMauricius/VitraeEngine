@@ -32,8 +32,6 @@ class ComposeConstant : public ComposeTask
     StringView getFriendlyName() const override;
 
   protected:
-    static const PropertyList s_emptySpecs;
-
     PropertyList m_outputSpecs;
     Variant m_value;
     String m_friendlyName;
