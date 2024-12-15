@@ -34,8 +34,7 @@ struct RenderComposeContext
 {
     ArgumentScope &properties;
     ComponentRoot &root;
-    Renderer &renderer;
-    const PropertySelection &mainPropertySelection;
+    const PropertyAliases &aliases;
 };
 
 class ComposeTask : public Task

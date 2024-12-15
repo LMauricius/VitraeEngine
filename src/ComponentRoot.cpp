@@ -1,6 +1,7 @@
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Collections/MethodCollection.hpp"
 
 #include <iostream>
 
@@ -88,6 +89,11 @@ ComponentRoot::ComponentRoot()
                                        return Variant(1.0);
                                    }
                                }});
+
+    /*
+    Standard components
+    */
+    setComponent<MethodCollection>(new MethodCollection);
 }
 
 ComponentRoot::~ComponentRoot()
