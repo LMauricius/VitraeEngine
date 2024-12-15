@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Vitrae/Util/PropertyAliases.hpp"
 #include "Vitrae/Util/PropertyList.hpp"
-#include "Vitrae/Util/PropertySelection.hpp"
 #include "Vitrae/Util/PropertySpec.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
@@ -28,25 +28,25 @@ class Task : public dynasma::PolymorphicBase
      * @returns A specification of input properties of this task. Those properties are never
      * modified by the task and can be inputs for following tasks
      */
-    virtual const PropertyList &getInputSpecs(const PropertySelection &propMapping) const = 0;
+    virtual const PropertyList &getInputSpecs(const PropertyAliases &propMapping) const = 0;
 
     /**
      * @returns A specification of consuming properties of this task. These properties might be
      * modified by the task and don't exist after the task execution
      */
-    virtual const PropertyList &getConsumingSpecs(const PropertySelection &propMapping) const = 0;
+    virtual const PropertyList &getConsumingSpecs(const PropertyAliases &propMapping) const = 0;
 
     /**
      * @returns A specification of output properties of this task. Those usually don't exist before
      * running the task (although there can be collisions) and are set by the task
      */
-    virtual const PropertyList &getOutputSpecs() const = 0;
+    virtual const PropertyList &getOutputSpecs(const PropertyAliases &propMapping) const = 0;
 
     /**
      * @returns A specification of filter properties of this task. Those properties exist both
      * before and after running the task and are usually modified by it.
      */
-    virtual const PropertyList &getFilterSpecs() const = 0;
+    virtual const PropertyList &getFilterSpecs(const PropertyAliases &propMapping) const = 0;
 
     /**
      * Adds all types used by this task (its properties and internal execution) to the typeSet
