@@ -19,17 +19,18 @@ class ComposeFrameToTexture : public ComposeTask
   public:
     struct OutputTexturePropertySpec
     {
-        String texturePropertyName;
-        PropertySpec fragmentPropertySpec;
+        String textureName;
+        PropertySpec fragmentSpec;
     };
 
     struct SetupParams
     {
         ComponentRoot &root;
-        String frameInputPropertyName;
-        String colorTextureOutputPropertyName;
-        String depthTextureOutputPropertyName;
-        std::vector<OutputTexturePropertySpec> outputTexturePropertySpecs;
+        String inputFrameName;
+        std::vector<String> inputTokenNames;
+        String outputColorTextureName;
+        String outputDepthTextureName;
+        std::vector<OutputTexturePropertySpec> outputs;
         PropertyGetter<glm::vec2> size;
         Texture::ChannelType channelType = Texture::ChannelType::RGB;
         Texture::WrappingType horWrap = Texture::WrappingType::REPEAT;
@@ -43,19 +44,23 @@ class ComposeFrameToTexture : public ComposeTask
     ComposeFrameToTexture(const SetupParams &params);
     ~ComposeFrameToTexture() = default;
 
-    void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-        const ScopedDict &properties,
-        const RenderSetupContext &context) const override;
+    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
+    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+
+    void run(RenderComposeContext args) const override;
+    void prepareRequiredLocalAssets(RenderComposeContext args) const override;
 
     StringView getFriendlyName() const override;
 
   protected:
     ComponentRoot &m_root;
-    String m_frameInputName, m_colorTextureOutputName, m_depthTextureOutputName;
-    StringId m_frameInputNameId, m_colorTextureOutputNameId, m_depthTextureOutputNameId;
+    PropertyList m_inputSpecs;
+    PropertyList m_outputSpecs;
+
+    String m_inputFrameName, m_outputColorTextureName, m_outputDepthTextureName;
+    StringId m_inputFrameNameId, m_outputColorTextureNameId, m_outputDepthTextureNameId;
     std::vector<OutputTexturePropertySpec> m_outputTexturePropertySpecs;
     PropertyGetter<glm::vec2> m_size;
     Texture::ChannelType m_channelType;
