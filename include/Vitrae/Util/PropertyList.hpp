@@ -97,17 +97,21 @@ class PropertyList : public dynasma::PolymorphicBase
     /**
      * Inserts specs from other at the end of this list, if they are not already in the list
      */
-    void merge(const PropertyList &other)
+    std::size_t merge(const PropertyList &other)
     {
+        std::size_t count = 0;
         for (const auto &spec : other.m_specList) {
             if (m_mappedSpecs.find(spec.name) == m_mappedSpecs.end()) {
                 m_mappedSpecs.emplace(spec.name, spec);
                 m_specNameIds.push_back(spec.name);
                 m_specList.push_back(spec);
+                ++count;
             }
         }
 
         recalculateHash();
+
+        return count;
     }
 
     /**
