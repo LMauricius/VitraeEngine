@@ -13,6 +13,32 @@ namespace Vitrae
 {
 
 /**
+ * @returns The unique identifier for the pipeline dependant for relevant aliases
+ */
+template <TaskChild BasicTask> inline String getPipelineId(const Pipeline<BasicTask> &pipeline)
+{
+    String ret;
+
+    // List of outputs
+    for (const PropertyList &specs : {pipeline.outputSpecs, pipeline.filterSpecs}) {
+        for (auto &spec : specs.getSpecList()) {
+            String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
+            ret += "_";
+            if (spec.name == chosenName) {
+                ret += spec.name;
+            } else {
+                ret += spec.name + "-" + chosenName;
+            }
+        }
+    }
+
+    // Some short hash for making it clear
+    ret = std::to_string(std::hash<String>{}(ret) & 0xffffff) + ret;
+
+    return ret;
+}
+
+/**
  * @brief Exports a graph depicting the pipeline in the dot language
  * @param pipeline The pipeline to export
  * @param out The output stream to which to write
