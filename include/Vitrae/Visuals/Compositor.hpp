@@ -22,11 +22,6 @@ class Compositor : public dynasma::PolymorphicBase
 
     std::size_t memory_cost() const;
 
-    void setComposeMethod(dynasma::FirmPtr<Method<ComposeTask>> p_method);
-    void setDefaultShadingMethod(dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
-                                 dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod);
-    void setDefaultComputeMethod(dynasma::FirmPtr<Method<ShaderTask>> p_method);
-
     void setPropertyAliases(const PropertyAliases &aliases);
     void setDesiredProperties(const PropertyList &properties);
 
