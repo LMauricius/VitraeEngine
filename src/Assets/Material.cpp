@@ -17,11 +17,8 @@ Material::Material(const AssimpLoadParams &params)
     if (params.p_extMaterial->Get(AI_MATKEY_SHADING_MODEL, aiMode) != aiReturn_SUCCESS) {
         aiMode = aiShadingMode_Phong;
     }
-    const ComponentRoot::AiMaterialShadingInfo &shadingInfo =
-        params.root.getAiMaterialShadingInfo(aiMode);
 
-    m_vertexMethod = shadingInfo.vertexMethod;
-    m_fragmentMethod = shadingInfo.fragmentMethod;
+    m_aliases = params.root.getAiMaterialPropertyAliases(aiMode);
 
     // Get all textures
     for (auto &textureInfo : params.root.getAiMaterialTextureInfos()) {
@@ -33,13 +30,16 @@ Material::Material(const AssimpLoadParams &params)
                 String relconvPath =
                     searchAndReplace(searchAndReplace(path.C_Str(), "\\", "/"), "//", "/");
 
-                m_textures[textureInfo.textureNameId] = textureManager.register_asset(
-                    {Texture::FileLoadParams{.root = params.root,
+                m_properties.emplace(textureInfo.textureNameId,
+                                     textureManager
+                                         .register_asset({Texture::FileLoadParams{
+                                             .root = params.root,
                                              .filepath = parentDirPath / relconvPath,
-                                             .useMipMaps = true}});
+                                             .useMipMaps = true}})
+                                         .getLoaded());
             }
         } else {
-            m_textures[textureInfo.textureNameId] = textureInfo.defaultTexture.getLoaded();
+            m_properties.emplace(textureInfo.textureNameId, textureInfo.defaultTexture.getLoaded());
         }
     }
 
@@ -60,11 +60,9 @@ std::size_t Material::memory_cost() const
     return sizeof(Material);
 }
 
-void Material::setMethods(dynasma::FirmPtr<Method<ShaderTask>> vertexMethod,
-                          dynasma::FirmPtr<Method<ShaderTask>> fragmentMethod)
+void Material::setPropertyAliases(const PropertyAliases &aliases)
 {
-    m_vertexMethod = vertexMethod;
-    m_fragmentMethod = fragmentMethod;
+    m_aliases = aliases;
 }
 
 void Material::setProperty(StringId key, const Variant &value)
@@ -76,20 +74,9 @@ void Material::setProperty(StringId key, Variant &&value)
 {
     m_properties[key] = std::move(value);
 }
-
-dynasma::FirmPtr<Method<ShaderTask>> Material::getVertexMethod() const
+const PropertyAliases &Material::getPropertyAliases() const
 {
-    return m_vertexMethod;
-}
-
-dynasma::FirmPtr<Method<ShaderTask>> Material::getFragmentMethod() const
-{
-    return m_fragmentMethod;
-}
-
-const StableMap<StringId, dynasma::FirmPtr<Texture>> &Material::getTextures() const
-{
-    return m_textures;
+    return m_aliases;
 }
 
 const StableMap<StringId, Variant> &Material::getProperties() const

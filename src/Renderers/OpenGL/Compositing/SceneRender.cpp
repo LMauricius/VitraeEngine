@@ -16,37 +16,8 @@ namespace Vitrae
 {
 
 OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
-    : ComposeSceneRender(
-          std::span<const PropertySpec>{{
-              PropertySpec{.name = params.sceneInputPropertyName,
-                           .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<Scene>>()},
-          }},
-          std::span<const PropertySpec>{
-              {PropertySpec{.name = params.displayOutputPropertyName,
-                            .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()}}}),
-      m_root(params.root),
-      m_viewPositionOutputPropertyName(params.vertexPositionOutputPropertyName),
-      m_sceneInputNameId(params.sceneInputPropertyName),
-      m_displayInputNameId(params.displayInputPropertyName.empty()
-                               ? std::optional<StringId>()
-                               : params.displayInputPropertyName),
-      m_displayOutputNameId(params.displayOutputPropertyName), m_cullingMode(params.cullingMode),
-      m_rasterizingMode(params.rasterizingMode), m_smoothFilling(params.smoothFilling),
-      m_smoothTracing(params.smoothTracing), m_smoothDotting(params.smoothDotting)
+    : m_root(params.root), m_params(params)
 {
-
-    /*
-    We reuse m_inputSpecs as container of the scene and display input specs,
-    but we will actually return the renderer's cached input specs for this task
-    */
-
-    if (!params.displayInputPropertyName.empty()) {
-        m_inputSpecs.emplace(
-            params.displayInputPropertyName,
-            PropertySpec{.name = params.displayInputPropertyName,
-                         .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()});
-    }
-
     m_friendlyName = "Render scene:\n";
     m_friendlyName += params.vertexPositionOutputPropertyName;
     switch (params.cullingMode) {
@@ -88,60 +59,110 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     }
 }
 
-const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getInputSpecs(
-    const RenderSetupContext &args) const
+std::size_t OpenGLComposeSceneRender::memory_cost() const
 {
-    OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(args.renderer);
-    return rend.getInputDependencyCache(rend.getInputDependencyCacheID(
-        this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
+    return sizeof(*this);
 }
 
-const StableMap<StringId, PropertySpec> &OpenGLComposeSceneRender::getOutputSpecs() const
+const PropertyList &OpenGLComposeSceneRender::getInputSpecs(const PropertyAliases &aliases) const
 {
-    return m_outputSpecs;
+    if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
+        return (*it).second.inputSpecs;
+    } else {
+        return EMPTY_PROPERTY_LIST;
+    }
 }
 
-void OpenGLComposeSceneRender::run(RenderRunContext args) const
+const PropertyList &OpenGLComposeSceneRender::getOutputSpecs(const PropertyAliases &aliases) const
+{
+    if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
+        return (*it).second.outputSpecs;
+    } else {
+        return EMPTY_PROPERTY_LIST;
+    }
+}
+
+const PropertyList &OpenGLComposeSceneRender::getFilterSpecs(const PropertyAliases &aliases) const
+{
+    if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
+        return (*it).second.filterSpecs;
+    } else {
+        return EMPTY_PROPERTY_LIST;
+    }
+}
+
+const PropertyList &OpenGLComposeSceneRender::getConsumingSpecs(
+    const PropertyAliases &aliases) const
+{
+    if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
+        return (*it).second.consumingSpecs;
+    } else {
+        return EMPTY_PROPERTY_LIST;
+    }
+}
+
+void OpenGLComposeSceneRender::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                                const PropertyAliases &aliases) const
+{
+    if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
+        for (const PropertyList *p_specs :
+             {&(*it).second.inputSpecs, &(*it).second.outputSpecs, &(*it).second.filterSpecs,
+              &(*it).second.consumingSpecs}) {
+            for (const PropertySpec &spec : p_specs->getSpecList()) {
+                typeSet.insert(&spec.typeInfo);
+            }
+        }
+    }
+}
+
+void OpenGLComposeSceneRender::extractSubTasks(std::set<const Task *> &taskSet,
+                                               const PropertyAliases &aliases) const
+{
+    taskSet.insert(this);
+}
+
+void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 {
     MMETER_SCOPE_PROFILER("OpenGLComposeSceneRender::run");
 
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
-    auto &inputDependencies = rend.getEditableInputDependencyCache(rend.getInputDependencyCacheID(
-        this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
 
-    bool needsRebuild = false;
-    auto specifyInputDependency = [&](const PropertySpec &spec) {
-        needsRebuild = needsRebuild || inputDependencies.emplace(spec.name, spec).second;
-    };
+    // Get specs cache and init it if needed
+    std::size_t specsKey = getSpecsKey(args.aliases);
+    auto specsIt = m_specsPerKey.find(specsKey);
+    if (specsIt == m_specsPerKey.end()) {
+        specsIt = m_specsPerKey.emplace(specsKey, SpecsPerAliases()).first;
+        SpecsPerAliases &specsContainer = (*specsIt).second;
 
-    // add common inputs to renderer's cached input specs for this task
-    for (auto [nameId, spec] : m_inputSpecs) {
-        specifyInputDependency(spec);
+        for (auto &tokenName : m_params.inputTokenNames) {
+            specsContainer.inputSpecs.insert_back(
+                {.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
+        }
+
+        specsContainer.inputSpecs.insert_back(SCENE_SPEC);
+
+        for (auto &tokenName : m_params.outputTokenNames) {
+            specsContainer.outputSpecs.insert_back(
+                {.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
+        }
     }
 
-    // fail early if we already need to rebuild
-    // DO save the output, the pipeline expects this property to be set
-    if (needsRebuild) {
-        args.properties.set(m_displayOutputNameId,
-                            args.preparedCompositorFrameStores.at(m_displayOutputNameId));
-
-        throw ComposeTaskRequirementsChangedException();
-    }
+    SpecsPerAliases &specsContainer = (*specsIt).second;
 
     // extract common inputs
-    Scene &scene = *args.properties.get(m_sceneInputNameId).get<dynasma::FirmPtr<Scene>>();
+    Scene &scene = *args.properties.get(SCENE_SPEC.name).get<dynasma::FirmPtr<Scene>>();
 
     dynasma::FirmPtr<FrameStore> p_frame =
-        m_displayInputNameId.has_value()
-            ? args.properties.get(m_displayInputNameId.value()).get<dynasma::FirmPtr<FrameStore>>()
-            : args.preparedCompositorFrameStores.at(m_displayOutputNameId);
+        args.properties.get(FRAME_STORE_TARGET_SPEC.name).get<dynasma::FirmPtr<FrameStore>>();
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
 
     // build map of shaders to materials to mesh props
-    std::map<std::pair<dynasma::FirmPtr<Method<ShaderTask>>, dynasma::FirmPtr<Method<ShaderTask>>>,
-             std::map<dynasma::FirmPtr<const Material>, std::vector<const MeshProp *>>>
-        methods2materials2props;
+    std::map<PropertyAliases,
+             std::map<dynasma::FirmPtr<const Material>, std::vector<const MeshProp *>>,
+             bool (*)(const PropertyAliases &, const PropertyAliases &)>
+        aliases2materials2props(
+            [](const PropertyAliases &l, const PropertyAliases &r) { return l.hash() < r.hash(); });
 
     {
 
@@ -152,16 +173,19 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
             OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
             mesh.loadToGPU(rend);
 
-            methods2materials2props[{mat->getVertexMethod(), mat->getFragmentMethod()}]
-                                   [meshProp.p_mesh->getMaterial()]
-                                       .push_back(&meshProp);
+            const PropertyAliases *p_aliaseses[] = {&mat->getPropertyAliases(), &args.aliases};
+
+            aliases2materials2props[PropertyAliases(p_aliaseses)][mat].push_back(&meshProp);
         }
     }
+
+    // check for whether we have all input deps or whether we need to update the pipeline
+    bool needsRebuild = false;
 
     {
         MMETER_SCOPE_PROFILER("Rendering (multipass)");
 
-        switch (m_rasterizingMode) {
+        switch (m_params.rasterizingMode) {
         // derivational methods (all methods for now)
         case RasterizingMode::DerivationalFillCenters:
         case RasterizingMode::DerivationalFillEdges:
@@ -177,7 +201,7 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                 glEnable(GL_DEPTH_TEST);
                 glDepthFunc(GL_LESS);
 
-                switch (m_cullingMode) {
+                switch (m_params.cullingMode) {
                 case CullingMode::None:
                     glDisable(GL_CULL_FACE);
                     break;
@@ -192,13 +216,13 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                 }
 
                 // smoothing
-                if (m_smoothFilling) {
+                if (m_params.smoothFilling) {
                     glEnable(GL_POLYGON_SMOOTH);
                     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
                 } else {
                     glDisable(GL_POLYGON_SMOOTH);
                 }
-                if (m_smoothTracing) {
+                if (m_params.smoothTracing) {
                     glEnable(GL_LINE_SMOOTH);
                     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
                 } else {
@@ -212,104 +236,54 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
 
                 // render the scene
                 // iterate over shaders
-                for (auto &[methods, materials2props] : methods2materials2props) {
+                for (auto &[aliases, materials2props] : aliases2materials2props) {
                     MMETER_SCOPE_PROFILER("Shader iteration");
 
-                    auto [vertexMethod, fragmentMethod] = methods;
-
                     // compile shader for this material
-                    dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader =
-                        shaderCacher.retrieve_asset({CompiledGLSLShader::SurfaceShaderParams(
-                            args.methodCombinator.getCombinedMethod(args.p_defaultVertexMethod,
-                                                                    vertexMethod),
-                            args.methodCombinator.getCombinedMethod(args.p_defaultFragmentMethod,
-                                                                    fragmentMethod),
-                            m_viewPositionOutputPropertyName, frame.getRenderComponents(),
-                            m_root)});
-
-                    glUseProgram(p_compiledShader->programGLName);
-
-                    // set the 'environmental' uniforms
-                    // skip those that will be set by the material
-                    auto p_firstMat = materials2props.begin()->first;
-                    auto &firstMatProperties = p_firstMat->getProperties();
-                    auto &firstMatTextures = p_firstMat->getTextures();
-                    GLint glModelMatrixUniformLocation;
+                    dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader;
 
                     {
-                        MMETER_SCOPE_PROFILER("Uniform setup");
+                        MMETER_SCOPE_PROFILER("Shader loading");
 
-                        for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
-                            if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
-                                // this is set per model
-                                glModelMatrixUniformLocation = uniSpec.location;
+                        p_compiledShader =
+                            shaderCacher.retrieve_asset({CompiledGLSLShader::SurfaceShaderParams(
+                                aliases, m_params.vertexPositionOutputPropertyName,
+                                *frame.getRenderComponents(), m_root)});
 
-                            } else {
-                                if (firstMatProperties.find(propertyNameId) ==
-                                    firstMatProperties.end()) {
-                                    auto p = args.properties.getPtr(propertyNameId);
-                                    if (p) {
-                                        rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-                                            .setUniform(uniSpec.location, *p);
-                                    }
-
-                                    specifyInputDependency(uniSpec.srcSpec);
-                                }
-                            }
-                        }
-
-                        for (auto [propertyNameId, bindingSpec] : p_compiledShader->bindingSpecs) {
-                            if (firstMatProperties.find(propertyNameId) ==
-                                    firstMatProperties.end() &&
-                                firstMatTextures.find(propertyNameId) == firstMatTextures.end()) {
-                                auto p = args.properties.getPtr(propertyNameId);
-                                if (p) {
-                                    rend.getTypeConversion(bindingSpec.srcSpec.typeInfo)
-                                        .setBinding(bindingSpec.bindingIndex, *p);
-                                }
-
-                                specifyInputDependency(bindingSpec.srcSpec);
-                            }
-                        }
-
-                        for (auto tokenPropName : p_compiledShader->tokenPropertyNames) {
-                            specifyInputDependency(PropertySpec{
-                                .name = tokenPropName,
-                                .typeInfo = Variant::getTypeInfo<void>(),
-                            });
-                        }
+                        // Store pipeline property specs
+                        needsRebuild |=
+                            (specsContainer.inputSpecs.merge(p_compiledShader->inputSpecs) > 0);
+                        needsRebuild |=
+                            (specsContainer.outputSpecs.merge(p_compiledShader->outputSpecs) > 0);
+                        needsRebuild |=
+                            (specsContainer.filterSpecs.merge(p_compiledShader->filterSpecs) > 0);
+                        needsRebuild |= (specsContainer.consumingSpecs.merge(
+                                             p_compiledShader->consumingSpecs) > 0);
                     }
 
-                    // helper for material properties
-                    auto setPropertyToShader = [&](StringId nameId, const Variant &value) {
-                        if (auto it = p_compiledShader->uniformSpecs.find(nameId);
-                            it != p_compiledShader->uniformSpecs.end()) {
-                            rend.getTypeConversion((*it).second.srcSpec.typeInfo)
-                                .setUniform((*it).second.location, value);
-                        } else if (auto it = p_compiledShader->bindingSpecs.find(nameId);
-                                   it != p_compiledShader->bindingSpecs.end()) {
-                            rend.getTypeConversion((*it).second.srcSpec.typeInfo)
-                                .setBinding((*it).second.bindingIndex, value);
-                        }
-                    };
+                    // Aliases should've already been taken into account, so use properties directly
+                    ScopedDict &directProperties = args.properties.getUnaliasedScope();
 
                     if (!needsRebuild) {
+                        // OpenGL - use the program
+                        glUseProgram(p_compiledShader->programGLName);
+
+                        // set the 'environmental' uniforms
+                        // skip those that will be set by the material
+                        auto p_firstMat = materials2props.begin()->first;
+                        GLint glModelMatrixUniformLocation =
+                            p_compiledShader->uniformSpecs
+                                .at(StandardShaderPropertyNames::INPUT_MODEL)
+                                .location;
+
+                        p_compiledShader->setupNonMaterialProperties(rend, directProperties,
+                                                                     *p_firstMat);
 
                         // iterate over materials
                         for (auto [material, props] : materials2props) {
                             MMETER_SCOPE_PROFILER("Material iteration");
 
-                            // get the textures and properties
-                            {
-                                MMETER_SCOPE_PROFILER("Material setup");
-
-                                for (auto [nameId, p_texture] : material->getTextures()) {
-                                    setPropertyToShader(nameId, p_texture);
-                                }
-                                for (auto [nameId, value] : material->getProperties()) {
-                                    setPropertyToShader(nameId, value);
-                                }
-                            }
+                            p_compiledShader->setupMaterialProperties(rend, *material);
 
                             // iterate over meshes
                             {
@@ -329,13 +303,13 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
                             }
                         }
                     }
-
-                    glUseProgram(0);
                 }
+
+                glUseProgram(0);
             };
 
             // render filled polygons
-            switch (m_rasterizingMode) {
+            switch (m_params.rasterizingMode) {
             case RasterizingMode::DerivationalFillCenters:
             case RasterizingMode::DerivationalFillEdges:
             case RasterizingMode::DerivationalFillVertices:
@@ -347,11 +321,11 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
             }
 
             // render edges
-            switch (m_rasterizingMode) {
+            switch (m_params.rasterizingMode) {
             case RasterizingMode::DerivationalFillEdges:
             case RasterizingMode::DerivationalTraceEdges:
             case RasterizingMode::DerivationalTraceVertices:
-                if (m_smoothTracing) {
+                if (m_params.smoothTracing) {
                     glDepthMask(GL_FALSE);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glEnable(GL_BLEND);
@@ -367,7 +341,7 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
             }
 
             // render vertices
-            switch (m_rasterizingMode) {
+            switch (m_params.rasterizingMode) {
             case RasterizingMode::DerivationalFillVertices:
             case RasterizingMode::DerivationalTraceVertices:
             case RasterizingMode::DerivationalDotVertices:
@@ -386,36 +360,31 @@ void OpenGLComposeSceneRender::run(RenderRunContext args) const
         }
     }
 
-    args.properties.set(m_displayOutputNameId, p_frame);
-
     if (needsRebuild) {
         throw ComposeTaskRequirementsChangedException();
     }
 
     // wait (for profiling)
 #ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
-    glFinish();
+    {
+        MMETER_SCOPE_PROFILER("Waiting for GL operations");
+
+        glFinish();
+    }
 #endif
 }
 
-void OpenGLComposeSceneRender::prepareRequiredLocalAssets(
-    StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-    const ScopedDict &properties, const RenderSetupContext &context) const {
-    // We just need to check whether the frame store is already prepared and make it input also
-    if (auto it = frameStores.find(m_displayOutputNameId); it != frameStores.end()) {
-        if (m_displayInputNameId.has_value()) {
-            auto frame = (*it).second;
-            frameStores.emplace(m_displayInputNameId.value(), std::move(frame));
-        }
-    } else {
-        throw std::runtime_error("Frame store not found");
-    }
-}
+void OpenGLComposeSceneRender::prepareRequiredLocalAssets(RenderComposeContext args) const {}
 
 StringView OpenGLComposeSceneRender::getFriendlyName() const
 {
     return m_friendlyName;
+}
+
+std::size_t OpenGLComposeSceneRender::getSpecsKey(const PropertyAliases &aliases) const
+{
+    return combinedHashes<2>(
+        {{std::hash<StringId>{}(m_params.vertexPositionOutputPropertyName), aliases.hash()}});
 }
 
 } // namespace Vitrae

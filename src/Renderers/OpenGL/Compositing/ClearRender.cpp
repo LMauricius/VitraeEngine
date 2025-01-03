@@ -15,25 +15,59 @@ namespace Vitrae
 {
 
 OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
-    : ComposeClearRender(
-          params.displayInputPropertyName.empty()
-              ? std::span<const PropertySpec>{}
-              : std::span<const PropertySpec>{{PropertySpec{
-                    .name = params.displayInputPropertyName,
-                    .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()}}},
-          std::span<const PropertySpec>{
-              {PropertySpec{.name = params.displayOutputPropertyName,
-                            .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>()}}}),
-      m_root(params.root), m_displayInputNameId(params.displayInputPropertyName.empty()
-                                                    ? std::optional<StringId>()
-                                                    : params.displayInputPropertyName),
-      m_displayOutputNameId(params.displayOutputPropertyName), m_color(params.backgroundColor),
+    : m_root(params.root),
       m_friendlyName(String("Clear to\n") + toHexString(255 * m_color.r, 2) +
                      toHexString(255 * m_color.g, 2) + toHexString(255 * m_color.b, 2) + "*" +
                      std::to_string(m_color.a))
-{}
+{
+    for (auto &tokenName : params.outputTokenNames) {
+        m_outputSpecs.insert_back({.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
+    }
+}
 
-void OpenGLComposeClearRender::run(RenderRunContext args) const
+std::size_t OpenGLComposeClearRender::memory_cost() const
+{
+    /// TODO: calculate the real memory cost
+    return sizeof(*this);
+}
+
+const PropertyList &OpenGLComposeClearRender::getInputSpecs(const PropertyAliases &) const
+{
+    return EMPTY_PROPERTY_LIST;
+}
+
+const PropertyList &OpenGLComposeClearRender::getOutputSpecs(const PropertyAliases &) const
+{
+    return m_outputSpecs;
+}
+
+const PropertyList &OpenGLComposeClearRender::getFilterSpecs(const PropertyAliases &) const
+{
+    return FILTER_SPECS;
+}
+
+const PropertyList &OpenGLComposeClearRender::getConsumingSpecs(const PropertyAliases &) const
+{
+    return EMPTY_PROPERTY_LIST;
+}
+
+void OpenGLComposeClearRender::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                                const PropertyAliases &aliases) const
+{
+    for (const PropertyList *p_specs : {&m_outputSpecs, &FILTER_SPECS}) {
+        for (const PropertySpec &spec : p_specs->getSpecList()) {
+            typeSet.insert(&spec.typeInfo);
+        }
+    }
+}
+
+void OpenGLComposeClearRender::extractSubTasks(std::set<const Task *> &taskSet,
+                                               const PropertyAliases &aliases) const
+{
+    taskSet.insert(this);
+}
+
+void OpenGLComposeClearRender::run(RenderComposeContext args) const
 {
     MMETER_SCOPE_PROFILER("OpenGLComposeClearRender::run");
 
@@ -41,9 +75,7 @@ void OpenGLComposeClearRender::run(RenderRunContext args) const
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
 
     dynasma::FirmPtr<FrameStore> p_frame =
-        m_displayInputNameId.has_value()
-            ? args.properties.get(m_displayInputNameId.value()).get<dynasma::FirmPtr<FrameStore>>()
-            : args.preparedCompositorFrameStores.at(m_displayOutputNameId);
+        args.properties.get(FRAME_STORE_SPEC.name).get<dynasma::FirmPtr<FrameStore>>();
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
 
     frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});
@@ -53,27 +85,17 @@ void OpenGLComposeClearRender::run(RenderRunContext args) const
 
     frame.exitRender();
 
-    args.properties.set(m_displayOutputNameId, p_frame);
-
     // wait (for profiling)
 #ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
-    glFinish();
+    {
+        MMETER_SCOPE_PROFILER("Waiting for GL operations");
+
+        glFinish();
+    }
 #endif
 }
 
-void OpenGLComposeClearRender::prepareRequiredLocalAssets(
-    StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-    const ScopedDict &properties, const RenderSetupContext &context) const {
-    // We just need to check whether the frame store is already prepared and make it input also
-    if (auto it = frameStores.find(m_displayOutputNameId); it != frameStores.end()) {
-        if (m_displayInputNameId.has_value()) {
-            frameStores.emplace(m_displayInputNameId.value(), (*it).second);
-        }
-    } else {
-        throw std::runtime_error("Frame store not found");
-    }
-}
+void OpenGLComposeClearRender::prepareRequiredLocalAssets(RenderComposeContext ctx) const {}
 
 StringView OpenGLComposeClearRender::getFriendlyName() const
 {

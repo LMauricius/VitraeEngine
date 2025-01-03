@@ -10,49 +10,18 @@
 #include "Vitrae/Util/Variant.hpp"
 #include "Vitrae/Visuals/Scene.hpp"
 
+#include "dynasma/standalone.hpp"
+
 #include "MMeter.h"
 
 namespace Vitrae
 {
 
-OpenGLComposeCompute::OpenGLComposeCompute(const SetupParams &params)
-    : ComposeCompute(std::span<const PropertySpec>{},
-                     std::span<const PropertySpec>(params.outputSpecs)),
-      m_root(params.root), m_computeSetup(params.computeSetup),
-      m_executeCondition(params.executeCondition)
+OpenGLComposeCompute::OpenGLComposeCompute(const SetupParams &params) : m_params(params)
 {
-    // base inputs
-    if (!m_computeSetup.invocationCountX.isFixed()) {
-        m_inputSpecs.emplace(m_computeSetup.invocationCountX.getSpec().name,
-                             m_computeSetup.invocationCountX.getSpec());
-    }
-    if (!m_computeSetup.invocationCountY.isFixed()) {
-        m_inputSpecs.emplace(m_computeSetup.invocationCountY.getSpec().name,
-                             m_computeSetup.invocationCountY.getSpec());
-    }
-    if (!m_computeSetup.invocationCountZ.isFixed()) {
-        m_inputSpecs.emplace(m_computeSetup.invocationCountZ.getSpec().name,
-                             m_computeSetup.invocationCountZ.getSpec());
-    }
-    if (!m_computeSetup.groupSizeX.isFixed()) {
-        m_inputSpecs.emplace(m_computeSetup.groupSizeX.getSpec().name,
-                             m_computeSetup.groupSizeX.getSpec());
-    }
-    if (!m_computeSetup.groupSizeY.isFixed()) {
-        m_inputSpecs.emplace(m_computeSetup.groupSizeY.getSpec().name,
-                             m_computeSetup.groupSizeY.getSpec());
-    }
-    if (!m_computeSetup.groupSizeZ.isFixed()) {
-        m_inputSpecs.emplace(m_computeSetup.groupSizeZ.getSpec().name,
-                             m_computeSetup.groupSizeZ.getSpec());
-    }
-
-    // setup members
-    mp_outputComponents = dynasma::makeStandalone<PropertyList>(m_outputSpecs.values());
-
     // friendly name gen
     m_friendlyName = "Compute\n";
-    for (const auto &spec : params.outputSpecs) {
+    for (const auto &spec : params.outputSpecs.getSpecList()) {
         m_friendlyName += "- " + spec.name + "\n";
     }
     m_friendlyName += "[";
@@ -78,48 +47,100 @@ OpenGLComposeCompute::OpenGLComposeCompute(const SetupParams &params)
     m_friendlyName += "]";
 }
 
-const StableMap<StringId, PropertySpec> &OpenGLComposeCompute::getInputSpecs(
-    const RenderSetupContext &args) const
+std::size_t OpenGLComposeCompute::memory_cost() const
 {
-    OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(args.renderer);
-    return rend.getInputDependencyCache(rend.getInputDependencyCacheID(
-        this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
+    /// TODO: calculate the real memory cost
+    return sizeof(*this);
 }
 
-const StableMap<StringId, PropertySpec> &OpenGLComposeCompute::getOutputSpecs() const
+const PropertyList &OpenGLComposeCompute::getInputSpecs(const PropertyAliases &aliases) const
 {
-    return m_outputSpecs;
+    return getProgramPerAliases(aliases).inputSpecs;
 }
 
-void OpenGLComposeCompute::run(RenderRunContext args) const
+const PropertyList &OpenGLComposeCompute::getOutputSpecs(const PropertyAliases &aliases) const
+{
+    return getProgramPerAliases(aliases).outputSpecs;
+}
+
+const PropertyList &OpenGLComposeCompute::getFilterSpecs(const PropertyAliases &aliases) const
+{
+    return getProgramPerAliases(aliases).filterSpecs;
+}
+
+const PropertyList &OpenGLComposeCompute::getConsumingSpecs(const PropertyAliases &aliases) const
+{
+    return getProgramPerAliases(aliases).consumeSpecs;
+}
+
+void OpenGLComposeCompute::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                            const PropertyAliases &aliases) const
+{
+    auto &specs = getProgramPerAliases(aliases);
+
+    for (const PropertyList *p_specs :
+         {&specs.inputSpecs, &specs.outputSpecs, &specs.filterSpecs, &specs.consumeSpecs}) {
+        for (const PropertySpec &spec : p_specs->getSpecList()) {
+            typeSet.insert(&spec.typeInfo);
+        }
+    }
+}
+
+void OpenGLComposeCompute::extractSubTasks(std::set<const Task *> &taskSet,
+                                           const PropertyAliases &aliases) const
+{
+    taskSet.insert(this);
+}
+
+void OpenGLComposeCompute::run(RenderComposeContext args) const
 {
     MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
-    if (m_executeCondition && !m_executeCondition(args)) {
+    ProgramPerAliases &programPerAliases = getProgramPerAliases(args.aliases);
+
+    // determine whether we need to run in the first place
+    bool needsToRun;
+    if (!m_params.cacheResults) {
+        needsToRun = true;
+    } else {
+        needsToRun = false;
+
+        for (auto p_specs : {&programPerAliases.inputSpecs, &programPerAliases.consumeSpecs,
+                             &programPerAliases.filterSpecs}) {
+            for (auto nameId : p_specs->getSpecNameIds()) {
+                if (programPerAliases.cachedDependencies.find(nameId) ==
+                        programPerAliases.cachedDependencies.end() ||
+                    args.properties.get(nameId) !=
+                        programPerAliases.cachedDependencies.at(nameId)) {
+                    needsToRun = true;
+                    programPerAliases.cachedDependencies.at(nameId) = args.properties.get(nameId);
+                }
+            }
+        }
+
+        for (auto p_specs : {&programPerAliases.outputSpecs, &programPerAliases.filterSpecs}) {
+            for (auto nameId : p_specs->getSpecNameIds()) {
+                if (!args.properties.has(nameId)) {
+                    needsToRun = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!needsToRun) {
         return;
     }
 
-    OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_root.getComponent<Renderer>());
-    CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
-    auto &inputDependencies = rend.getEditableInputDependencyCache(rend.getInputDependencyCacheID(
-        this, args.p_defaultVertexMethod, args.p_defaultFragmentMethod));
-
-    bool needsRebuild = false;
-    auto specifyInputDependency = [&](const PropertySpec &spec) {
-        needsRebuild = needsRebuild || inputDependencies.emplace(spec.name, spec).second;
-    };
+    OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(m_params.root.getComponent<Renderer>());
+    CompiledGLSLShaderCacher &shaderCacher = m_params.root.getComponent<CompiledGLSLShaderCacher>();
 
     // get invocation count
-    glm::ivec3 invocationCount = {
-        m_computeSetup.invocationCountX.get(args.properties),
-        m_computeSetup.invocationCountY.get(args.properties),
-        m_computeSetup.invocationCountZ.get(args.properties),
-    };
 
     glm::ivec3 specifiedGroupSize = {
-        m_computeSetup.groupSizeX.get(args.properties),
-        m_computeSetup.groupSizeY.get(args.properties),
-        m_computeSetup.groupSizeZ.get(args.properties),
+        m_params.computeSetup.groupSizeX.get(args.properties),
+        m_params.computeSetup.groupSizeY.get(args.properties),
+        m_params.computeSetup.groupSizeZ.get(args.properties),
     };
 
     glm::ivec3 decidedGroupSize = {
@@ -131,45 +152,22 @@ void OpenGLComposeCompute::run(RenderRunContext args) const
     // compile shader for this compute execution
     dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader =
         shaderCacher.retrieve_asset({CompiledGLSLShader::ComputeShaderParams(
-            m_root, args.p_defaultComputeMethod, mp_outputComponents,
-            m_computeSetup.invocationCountX, m_computeSetup.invocationCountY,
-            m_computeSetup.invocationCountZ, decidedGroupSize,
-            m_computeSetup.allowOutOfBoundsCompute)});
+            m_params.root, args.aliases, m_params.outputSpecs,
+            m_params.computeSetup.invocationCountX, m_params.computeSetup.invocationCountY,
+            m_params.computeSetup.invocationCountZ, decidedGroupSize,
+            m_params.computeSetup.allowOutOfBoundsCompute)});
 
     glUseProgram(p_compiledShader->programGLName);
 
     // set uniforms
-    for (auto tokenPropName : p_compiledShader->tokenPropertyNames) {
-        specifyInputDependency(PropertySpec{
-            .name = tokenPropName,
-            .typeInfo = Variant::getTypeInfo<void>(),
-        });
-    }
-
-    for (auto [propertyNameId, uniSpec] : p_compiledShader->uniformSpecs) {
-        auto p = args.properties.getPtr(propertyNameId);
-        if (p) {
-            rend.getTypeConversion(uniSpec.srcSpec.typeInfo).setUniform(uniSpec.location, *p);
-        }
-
-        specifyInputDependency(uniSpec.srcSpec);
-    }
-
-    for (auto [propertyNameId, bindingSpec] : p_compiledShader->bindingSpecs) {
-        auto p = args.properties.getPtr(propertyNameId);
-        if (p) {
-            rend.getTypeConversion(bindingSpec.srcSpec.typeInfo)
-                .setBinding(bindingSpec.bindingIndex, *p);
-        }
-
-        specifyInputDependency(bindingSpec.srcSpec);
-    }
-
-    if (needsRebuild) {
-        throw ComposeTaskRequirementsChangedException();
-    }
+    p_compiledShader->setupProperties(rend, args.properties.getUnaliasedScope());
 
     // compute
+    glm::ivec3 invocationCount = {
+        m_params.computeSetup.invocationCountX.get(args.properties),
+        m_params.computeSetup.invocationCountY.get(args.properties),
+        m_params.computeSetup.invocationCountZ.get(args.properties),
+    };
     glDispatchCompute((invocationCount.x + decidedGroupSize.x - 1) / decidedGroupSize.x,
                       (invocationCount.y + decidedGroupSize.y - 1) / decidedGroupSize.y,
                       (invocationCount.z + decidedGroupSize.z - 1) / decidedGroupSize.z);
@@ -179,18 +177,54 @@ void OpenGLComposeCompute::run(RenderRunContext args) const
 
     // wait (for profiling)
 #ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
-    glFinish();
+    {
+        MMETER_SCOPE_PROFILER("Waiting for GL operations");
+
+        glFinish();
+    }
 #endif
 }
 
-void OpenGLComposeCompute::prepareRequiredLocalAssets(
-    StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-    StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-    const ScopedDict &properties, const RenderSetupContext &context) const {}
+void OpenGLComposeCompute::prepareRequiredLocalAssets(RenderComposeContext args) const {}
 
 StringView OpenGLComposeCompute::getFriendlyName() const
 {
     return m_friendlyName;
+}
+
+OpenGLComposeCompute::ProgramPerAliases &OpenGLComposeCompute::getProgramPerAliases(
+    const PropertyAliases &aliases) const
+{
+    if (auto it = m_programPerAliasHash.find(aliases.hash()); it != m_programPerAliasHash.end()) {
+        return (*it).second;
+    } else {
+        OpenGLRenderer &rend =
+            static_cast<OpenGLRenderer &>(m_params.root.getComponent<Renderer>());
+        CompiledGLSLShaderCacher &shaderCacher =
+            m_params.root.getComponent<CompiledGLSLShaderCacher>();
+
+        // dummy group size
+        glm::ivec3 decidedGroupSize = {1, 1, 1};
+
+        // compile shader for this compute execution
+        dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader =
+            shaderCacher.retrieve_asset({CompiledGLSLShader::ComputeShaderParams(
+                m_params.root, aliases, m_params.outputSpecs,
+                m_params.computeSetup.invocationCountX, m_params.computeSetup.invocationCountY,
+                m_params.computeSetup.invocationCountZ, decidedGroupSize,
+                m_params.computeSetup.allowOutOfBoundsCompute)});
+
+        return (*m_programPerAliasHash
+                     .emplace(aliases.hash(),
+                              ProgramPerAliases{
+                                  .inputSpecs = p_compiledShader->inputSpecs,
+                                  .outputSpecs = p_compiledShader->outputSpecs,
+                                  .filterSpecs = p_compiledShader->filterSpecs,
+                                  .consumeSpecs = p_compiledShader->consumingSpecs,
+                              })
+                     .first)
+            .second;
+    }
 }
 
 } // namespace Vitrae

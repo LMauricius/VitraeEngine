@@ -19,6 +19,7 @@ namespace Vitrae
 class OpenGLRenderer;
 class ComponentRoot;
 class PropertyList;
+class Material;
 
 class CompiledGLSLShader : public dynasma::PolymorphicBase
 {
@@ -34,12 +35,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     struct CompilationSpec
     {
-        // the specified shading method
-        dynasma::FirmPtr<Method<ShaderTask>> p_method;
-
-        // property mapping (for built-in variables),
-        std::map<StringId, String> inputsToPredefinedVars;
-        std::map<String, String> predefinedVarsToOutputs;
+        PropertyAliases aliases;
 
         // prefix for output variables
         String outVarPrefix;
@@ -53,27 +49,22 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     class SurfaceShaderParams
     {
-        dynasma::FirmPtr<Method<ShaderTask>> mp_vertexMethod;
-        dynasma::FirmPtr<Method<ShaderTask>> mp_fragmentMethod;
+        const PropertyAliases &m_aliases;
         String m_vertexPositionOutputName;
-        dynasma::FirmPtr<const PropertyList> mp_fragmentOutputs;
+        const PropertyList &m_fragmentOutputs;
         ComponentRoot *mp_root;
         std::size_t m_hash;
 
       public:
-        SurfaceShaderParams(dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
-                            dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod,
-                            String vertexPositionOutputName,
-                            dynasma::FirmPtr<const PropertyList> p_fragmentOutputs,
-                            ComponentRoot &root);
+        SurfaceShaderParams(const PropertyAliases &aliases, String vertexPositionOutputName,
+                            const PropertyList &fragmentOutputs, ComponentRoot &root);
 
-        inline auto getVertexMethodPtr() const { return mp_vertexMethod; }
-        inline auto getFragmentMethodPtr() const { return mp_fragmentMethod; }
+        inline const PropertyAliases &getAliases() const { return m_aliases; }
         inline const String &getVertexPositionOutputName() const
         {
             return m_vertexPositionOutputName;
         }
-        inline auto getFragmentOutputsPtr() const { return mp_fragmentOutputs; }
+        inline const PropertyList &getFragmentOutputs() const { return m_fragmentOutputs; }
         inline ComponentRoot &getRoot() const { return *mp_root; }
 
         inline std::size_t getHash() const { return m_hash; }
@@ -84,8 +75,8 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     class ComputeShaderParams
     {
-        dynasma::FirmPtr<Method<ShaderTask>> mp_computeMethod;
-        dynasma::FirmPtr<const PropertyList> mp_desiredResults;
+        const PropertyAliases &m_aliases;
+        const PropertyList &m_desiredResults;
         ComponentRoot *mp_root;
         PropertyGetter<std::uint32_t> m_invocationCountX;
         PropertyGetter<std::uint32_t> m_invocationCountY;
@@ -95,20 +86,28 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         std::size_t m_hash;
 
       public:
-        ComputeShaderParams(ComponentRoot &root,
-                            dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
-                            dynasma::FirmPtr<const PropertyList> p_desiredResults,
+        ComputeShaderParams(ComponentRoot &root, const PropertyAliases &aliases,
+                            const PropertyList &desiredResults,
                             PropertyGetter<std::uint32_t> invocationCountX,
                             PropertyGetter<std::uint32_t> invocationCountY,
                             PropertyGetter<std::uint32_t> invocationCountZ, glm::uvec3 groupSize,
                             bool allowOutOfBoundsCompute);
 
-        inline auto getComputeMethodPtr() const { return mp_computeMethod; }
-        inline auto getDesiredResultsPtr() const { return mp_desiredResults; }
         inline ComponentRoot &getRoot() const { return *mp_root; }
-        inline PropertyGetter<std::uint32_t> getInvocationCountX() const { return m_invocationCountX; }
-        inline PropertyGetter<std::uint32_t> getInvocationCountY() const { return m_invocationCountY; }
-        inline PropertyGetter<std::uint32_t> getInvocationCountZ() const { return m_invocationCountZ; }
+        inline const PropertyAliases &getAliases() const { return m_aliases; }
+        inline const PropertyList &getDesiredResults() const { return m_desiredResults; }
+        inline PropertyGetter<std::uint32_t> getInvocationCountX() const
+        {
+            return m_invocationCountX;
+        }
+        inline PropertyGetter<std::uint32_t> getInvocationCountY() const
+        {
+            return m_invocationCountY;
+        }
+        inline PropertyGetter<std::uint32_t> getInvocationCountZ() const
+        {
+            return m_invocationCountZ;
+        }
         inline glm::uvec3 getGroupSize() const { return m_groupSize; }
         inline bool getAllowOutOfBoundsCompute() const { return m_allowOutOfBoundsCompute; }
 
@@ -118,7 +117,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
         inline auto operator<=>(const ComputeShaderParams &o) const { return m_hash <=> o.m_hash; }
     };
 
-    struct UniformSpec
+    struct LocationSpec
     {
         PropertySpec srcSpec;
         GLint location;
@@ -139,11 +138,19 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     inline std::size_t memory_cost() const { return 1; }
 
+    void setupProperties(OpenGLRenderer &rend, ScopedDict &env) const;
+
+    void setupProperties(OpenGLRenderer &rend, ScopedDict &env, const Material &material) const;
+    void setupNonMaterialProperties(OpenGLRenderer &rend, ScopedDict &env,
+                                    const Material &firstMaterial) const;
+    void setupMaterialProperties(OpenGLRenderer &rend, const Material &material) const;
+
+    PropertyList inputSpecs, outputSpecs, filterSpecs, consumingSpecs;
     GLuint programGLName;
-    std::set<String> tokenPropertyNames;
-    StableMap<StringId, UniformSpec> uniformSpecs;
-    StableMap<StringId, BindingSpec> bindingSpecs;
+    StableMap<StringId, LocationSpec> uniformSpecs;
+    StableMap<StringId, BindingSpec> opaqueBindingSpecs;
     StableMap<StringId, BindingSpec> uboSpecs;
+    StableMap<StringId, BindingSpec> ssboSpecs;
 };
 
 struct CompiledGLSLShaderCacherSeed

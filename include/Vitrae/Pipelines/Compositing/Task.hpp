@@ -51,6 +51,16 @@ class ComposeTask : public Task
      * @throws ComposeTaskRequirementsChangedException if the pipeline needs to be rebuilt
      */
     virtual void run(RenderComposeContext ctx) const = 0;
+
+    /**
+     * The spec for fs_target filter property
+     */
+    static const PropertySpec FRAME_STORE_TARGET_SPEC;
+
+    /**
+     * The spec for scene filter property
+     */
+    static const PropertySpec SCENE_SPEC;
 };
 
 namespace StandardCompositorOutputNames

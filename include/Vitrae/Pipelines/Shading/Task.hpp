@@ -8,6 +8,7 @@
 namespace Vitrae
 {
 
+class ComponentRoot;
 class Renderer;
 
 class ShaderTask : public Task
@@ -16,14 +17,14 @@ class ShaderTask : public Task
     struct BuildContext
     {
         std::stringstream &output;
+        ComponentRoot &root;
         Renderer &renderer;
+        PropertyAliases &aliases;
     };
 
     virtual void outputDeclarationCode(BuildContext args) const = 0;
     virtual void outputDefinitionCode(BuildContext args) const = 0;
-    virtual void outputUsageCode(
-        BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
-        const StableMap<StringId, String> &outputParamsToSharedVariables) const = 0;
+    virtual void outputUsageCode(BuildContext args) const = 0;
 };
 
 namespace StandardShaderPropertyNames

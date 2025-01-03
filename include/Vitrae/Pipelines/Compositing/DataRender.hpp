@@ -16,15 +16,14 @@ class ComposeDataRender : public ComposeTask
   public:
     using RenderCallback = std::function<void(const glm::mat4 &transform)>;
     using DataGeneratorFunction =
-        std::function<void(const RenderRunContext &context, RenderCallback callback)>;
+        std::function<void(const RenderComposeContext &context, RenderCallback callback)>;
 
     struct SetupParams
     {
         ComponentRoot &root;
-        std::vector<PropertySpec> inputSpecs;
-        String displayInputPropertyName;
-        String displayOutputPropertyName;
-        dynasma::LazyPtr<Mesh> p_dataPointVisual;
+        std::vector<String> inputTokenNames;
+        std::vector<String> outputTokenNames;
+        dynasma::LazyPtr<Mesh> p_dataPointMesh;
         DataGeneratorFunction dataGenerator;
         String vertexPositionOutputPropertyName;
         CullingMode cullingMode = CullingMode::Backface;

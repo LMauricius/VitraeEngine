@@ -44,7 +44,7 @@ class PropertyAliases
      * @param parent The parent PropertyAliases
      * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
-    PropertyAliases(std::span<const PropertyAliases *> parentPtrs);
+    PropertyAliases(std::span<const PropertyAliases *const> parentPtrs);
 
     /**
      * Constructor for alias mapping with inheritance
@@ -53,10 +53,10 @@ class PropertyAliases
      * (choice)
      * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
-    PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+    PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
                     const StableMap<StringId, String> &aliases);
 
-    PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+    PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
                     StableMap<StringId, String> &&aliases);
 
     /**
@@ -100,7 +100,7 @@ class PropertyAliases
     inline std::size_t hash() const { return m_hash; }
 
   private:
-    std::span<const PropertyAliases *> m_parentPtrs;
+    std::span<const PropertyAliases *const> m_parentPtrs;
     const PropertyAliases *mp_parent;
     StableMap<StringId, std::pair<StringId, String>> m_localAliases;
     std::size_t m_hash;

@@ -7,15 +7,13 @@
 namespace Vitrae
 {
 
-OpenGLShaderHeader::OpenGLShaderHeader(const FileLoadParams &params) : ShaderHeader({}, {})
+OpenGLShaderHeader::OpenGLShaderHeader(const FileLoadParams &params)
 {
     for (auto &name : params.inputTokenNames) {
-        m_inputSpecs.emplace(name,
-                             PropertySpec{.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_inputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
     }
     for (auto &name : params.outputTokenNames) {
-        m_outputSpecs.emplace(name,
-                              PropertySpec{.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_outputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
     }
 
     std::ifstream stream(params.filepath);
@@ -25,15 +23,13 @@ OpenGLShaderHeader::OpenGLShaderHeader(const FileLoadParams &params) : ShaderHea
     m_friendlyName = params.friendlyName;
 }
 
-OpenGLShaderHeader::OpenGLShaderHeader(const StringParams &params) : ShaderHeader({}, {})
+OpenGLShaderHeader::OpenGLShaderHeader(const StringParams &params)
 {
     for (auto &name : params.inputTokenNames) {
-        m_inputSpecs.emplace(name,
-                             PropertySpec{.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_inputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
     }
     for (auto &name : params.outputTokenNames) {
-        m_outputSpecs.emplace(name,
-                              PropertySpec{.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_outputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
     }
 
     m_fileSnippet = clearIndents(params.snippet);
@@ -46,12 +42,34 @@ std::size_t OpenGLShaderHeader::memory_cost() const
     return 1;
 }
 
-void OpenGLShaderHeader::extractUsedTypes(std::set<const TypeInfo *> &typeSet) const
+const PropertyList &OpenGLShaderHeader::getInputSpecs(const PropertyAliases &) const
+{
+    return m_inputSpecs;
+}
+
+const PropertyList &OpenGLShaderHeader::getOutputSpecs(const PropertyAliases &) const
+{
+    return m_outputSpecs;
+}
+
+const PropertyList &OpenGLShaderHeader::getFilterSpecs(const PropertyAliases &) const
+{
+    return EMPTY_PROPERTY_LIST;
+}
+
+const PropertyList &OpenGLShaderHeader::getConsumingSpecs(const PropertyAliases &) const
+{
+    return EMPTY_PROPERTY_LIST;
+}
+
+void OpenGLShaderHeader::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                          const PropertyAliases &aliases) const
 {
     typeSet.insert(&Variant::getTypeInfo<void>());
 }
 
-void OpenGLShaderHeader::extractSubTasks(std::set<const Task *> &taskSet) const
+void OpenGLShaderHeader::extractSubTasks(std::set<const Task *> &taskSet,
+                                         const PropertyAliases &aliases) const
 {
     taskSet.insert(this);
 }
@@ -63,10 +81,7 @@ void OpenGLShaderHeader::outputDeclarationCode(BuildContext args) const
 
 void OpenGLShaderHeader::outputDefinitionCode(BuildContext args) const {}
 
-void OpenGLShaderHeader::outputUsageCode(
-    BuildContext args, const StableMap<StringId, String> &inputParamsToSharedVariables,
-    const StableMap<StringId, String> &outputParamsToSharedVariables) const
-{}
+void OpenGLShaderHeader::outputUsageCode(BuildContext args) const {}
 
 StringView OpenGLShaderHeader::getFriendlyName() const
 {

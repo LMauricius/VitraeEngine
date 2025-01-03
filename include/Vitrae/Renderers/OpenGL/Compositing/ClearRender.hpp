@@ -10,24 +10,29 @@ class OpenGLRenderer;
 class OpenGLComposeClearRender : public ComposeClearRender
 {
   public:
-    using ComposeClearRender::ComposeClearRender;
-
     OpenGLComposeClearRender(const SetupParams &params);
 
-    void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-        const ScopedDict &properties,
-        const RenderSetupContext &context) const override;
+    std::size_t memory_cost() const override;
+
+    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
+    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+
+    void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                          const PropertyAliases &aliases) const override;
+    void extractSubTasks(std::set<const Task *> &taskSet,
+                         const PropertyAliases &aliases) const override;
+
+    void run(RenderComposeContext ctx) const override;
+    void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
 
     StringView getFriendlyName() const override;
 
   protected:
     ComponentRoot &m_root;
     glm::vec4 m_color;
-    StringId m_displayOutputNameId;
-    std::optional<StringId> m_displayInputNameId;
+    PropertyList m_outputSpecs;
     String m_friendlyName;
 };
 

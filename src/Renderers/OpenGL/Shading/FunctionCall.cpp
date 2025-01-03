@@ -7,37 +7,50 @@
 namespace Vitrae {
 
 OpenGLShaderFunctionCall::OpenGLShaderFunctionCall(const StringParams &params)
-    : ShaderFunctionCall(params) {
-    for (const auto &spec : params.inputSpecs) {
-        if (spec.typeInfo != Variant::getTypeInfo<void>()) {
-            m_inputOrder.emplace_back(spec.name);
-        }
-    }
-    for (const auto &spec : params.outputSpecs) {
-        if (spec.typeInfo != Variant::getTypeInfo<void>()) {
-            m_outputOrder.emplace_back(spec.name);
-        }
-    }
+    : m_inputSpecs(params.inputSpecs), m_filterSpecs(params.filterSpecs),
+      m_outputSpecs(params.outputSpecs), m_consumingSpecs(params.consumingSpecs),
+      m_functionName(params.functionName)
+{}
 
-    m_functionName = params.functionName;
-}
-
-std::size_t OpenGLShaderFunctionCall::memory_cost() const {
+std::size_t OpenGLShaderFunctionCall::memory_cost() const
+{
     /// TODO: Calculate the cost of the function
     return 1;
 }
 
-void OpenGLShaderFunctionCall::extractUsedTypes(
-    std::set<const TypeInfo *> &typeSet) const {
-    for (auto &specs : {m_inputSpecs, m_outputSpecs}) {
-        for (auto [nameId, spec] : specs) {
+const PropertyList &OpenGLShaderFunctionCall::getInputSpecs(const PropertyAliases &) const
+{
+    return m_inputSpecs;
+}
+
+const PropertyList &OpenGLShaderFunctionCall::getOutputSpecs(const PropertyAliases &) const
+{
+    return m_outputSpecs;
+}
+
+const PropertyList &OpenGLShaderFunctionCall::getFilterSpecs(const PropertyAliases &) const
+{
+    return m_filterSpecs;
+}
+
+const PropertyList &OpenGLShaderFunctionCall::getConsumingSpecs(const PropertyAliases &) const
+{
+    return m_consumingSpecs;
+}
+
+void OpenGLShaderFunctionCall::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                                const PropertyAliases &aliases) const
+{
+    for (auto p_specs : {&m_inputSpecs, &m_outputSpecs, &m_filterSpecs, &m_consumingSpecs}) {
+        for (auto &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
     }
 }
 
-void OpenGLShaderFunctionCall::extractSubTasks(
-    std::set<const Task *> &taskSet) const {
+void OpenGLShaderFunctionCall::extractSubTasks(std::set<const Task *> &taskSet,
+                                               const PropertyAliases &aliases) const
+{
     taskSet.insert(this);
 }
 
@@ -45,40 +58,27 @@ void OpenGLShaderFunctionCall::outputDeclarationCode(BuildContext args) const {}
 
 void OpenGLShaderFunctionCall::outputDefinitionCode(BuildContext args) const {}
 
-void OpenGLShaderFunctionCall::outputUsageCode(
-    BuildContext args,
-    const StableMap<StringId, String> &inputParamsToSharedVariables,
-    const StableMap<StringId, String> &outputParamsToSharedVariables) const {
+void OpenGLShaderFunctionCall::outputUsageCode(BuildContext args) const
+{
     OpenGLRenderer &renderer = static_cast<OpenGLRenderer &>(args.renderer);
 
     args.output << m_functionName << "(";
+
     bool hadFirstArg = false;
-    for (const auto &nameId : m_inputOrder) {
-        const PropertySpec &spec = m_inputSpecs.at(nameId);
-        const GLTypeSpec &glTypeSpec =
-            renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
-        if (renderer.getGpuStorageMethod(glTypeSpec) !=
-            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
-            if (hadFirstArg) {
-                args.output << ", ";
+    for (auto p_specs : {&m_consumingSpecs, &m_inputSpecs, &m_filterSpecs, &m_outputSpecs}) {
+        for (auto &spec : p_specs->getSpecList()) {
+            const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
+
+            if (glTypeSpec.valueTypeName.size() > 0 || glTypeSpec.opaqueTypeName.size() > 0) {
+                if (hadFirstArg) {
+                    args.output << ", ";
+                }
+                args.output << args.aliases.choiceStringFor(spec.name);
+                hadFirstArg = true;
             }
-            args.output << inputParamsToSharedVariables.at(nameId);
-            hadFirstArg = true;
         }
     }
-    for (const auto &nameId : m_outputOrder) {
-        const PropertySpec &spec = m_outputSpecs.at(nameId);
-        const GLTypeSpec &glTypeSpec =
-            renderer.getTypeConversion(spec.typeInfo).glTypeSpec;
-        if (renderer.getGpuStorageMethod(glTypeSpec) !=
-            OpenGLRenderer::GpuValueStorageMethod::SSBO) {
-            if (hadFirstArg) {
-                args.output << ", ";
-            }
-            args.output << outputParamsToSharedVariables.at(nameId);
-            hadFirstArg = true;
-        }
-    }
+
     args.output << ");";
 }
 

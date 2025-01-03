@@ -14,30 +14,39 @@ class PropertyList;
 
 class OpenGLComposeCompute : public ComposeCompute {
   public:
-    using ComposeCompute::ComposeCompute;
-
     OpenGLComposeCompute(const SetupParams &params);
 
-    const StableMap<StringId, PropertySpec> &getInputSpecs(
-        const RenderSetupContext &args) const override;
-    const StableMap<StringId, PropertySpec> &getOutputSpecs() const override;
+    std::size_t memory_cost() const override;
 
-    void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-        const ScopedDict &properties,
-        const RenderSetupContext &context) const override;
+    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
+    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+
+    void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                          const PropertyAliases &aliases) const override;
+    void extractSubTasks(std::set<const Task *> &taskSet,
+                         const PropertyAliases &aliases) const override;
+
+    void run(RenderComposeContext ctx) const override;
+    void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
 
     StringView getFriendlyName() const override;
 
   protected:
-    ComponentRoot &m_root;
-    GpuComputeSetupParams m_computeSetup;
+    SetupParams m_params;
     String m_friendlyName;
-    std::function<bool(RenderRunContext &)> m_executeCondition;
 
-    dynasma::FirmPtr<const PropertyList> mp_outputComponents;
+    struct ProgramPerAliases
+    {
+        PropertyList inputSpecs, outputSpecs, filterSpecs, consumeSpecs;
+
+        StableMap<StringId, Variant> cachedDependencies;
+    };
+
+    mutable StableMap<std::size_t, ProgramPerAliases> m_programPerAliasHash;
+
+    ProgramPerAliases &getProgramPerAliases(const PropertyAliases &aliases) const;
 };
 
 } // namespace Vitrae

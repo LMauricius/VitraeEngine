@@ -139,14 +139,8 @@ class ComponentRoot
         this->getMeshBufferInfoList<aiType>().push_back(newInfo);
     }
 
-    struct AiMaterialShadingInfo
-    {
-        dynasma::LazyPtr<Method<ShaderTask>> vertexMethod;
-        dynasma::LazyPtr<Method<ShaderTask>> fragmentMethod;
-    };
-
-    void addAiMaterialShadingInfo(aiShadingMode aiMode, AiMaterialShadingInfo newInfo);
-    const AiMaterialShadingInfo &getAiMaterialShadingInfo(aiShadingMode aiMode) const;
+    void addAiMaterialPropertyAliases(aiShadingMode aiMode, const PropertyAliases &newInfo);
+    const PropertyAliases &getAiMaterialPropertyAliases(aiShadingMode aiMode) const;
 
     struct AiMaterialTextureInfo
     {
@@ -234,7 +228,7 @@ class ComponentRoot
     StableMap<size_t, UniqueAnyPtr> mCustomComponents;
     std::vector<dynasma::AbstractPool *> m_memoryPools;
     mutable StableMap<size_t, UniqueAnyPtr> m_aiMeshInfoLists;
-    StableMap<aiShadingMode, AiMaterialShadingInfo> mAiMaterialShadingInfo;
+    StableMap<aiShadingMode, PropertyAliases> mAiMaterialAliases;
     std::vector<AiMaterialTextureInfo> mAiMaterialTextureInfos;
     std::vector<AiMaterialPropertyInfo> mMaterialPropertyInfos;
 

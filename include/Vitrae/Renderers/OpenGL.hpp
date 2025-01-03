@@ -13,6 +13,7 @@
 // must be after glad.h
 #include "GLFW/glfw3.h"
 
+#include <deque>
 #include <functional>
 #include <map>
 #include <optional>
@@ -27,46 +28,41 @@ class Texture;
 class RawSharedBuffer;
 class ComposeTask;
 
-struct GLTypeSpec
+struct GLLayoutSpec
 {
-    String glMutableTypeName;
-    String glConstTypeName;
-
-    String glslDefinitionSnippet;
-    std::vector<const GLTypeSpec *> memberTypeDependencies;
-
     std::size_t std140Size;
     std::size_t std140Alignment;
-    std::size_t layoutIndexSize;
+    std::size_t indexSize;
+};
+
+struct GLTypeSpec
+{
+    String valueTypeName;
+    String opaqueTypeName;
+    String structBodySnippet;
+
+    GLLayoutSpec layout;
 
     // used only if the type is a struct and has a flexible array member
     struct FlexibleMemberSpec
     {
         const GLTypeSpec &elementGlTypeSpec;
+        String memberName;
         std::size_t maxNumElements;
     };
     std::optional<FlexibleMemberSpec> flexibleMemberSpec;
+
+    std::vector<const GLTypeSpec *> memberTypeDependencies;
 };
 
 struct GLConversionSpec
 {
-    static void std140ToHostIdentity(const GLConversionSpec *spec, const void *src, void *dst);
-    static void hostToStd140Identity(const GLConversionSpec *spec, const void *src, void *dst);
-    static dynasma::FirmPtr<RawSharedBuffer> getSharedBufferRaw(const GLConversionSpec *spec,
-                                                                const void *src);
-
-    const TypeInfo &hostType;
     const GLTypeSpec &glTypeSpec;
 
     void (*setUniform)(GLint location, const Variant &hostValue) = nullptr;
-    void (*setBinding)(int bindingIndex, const Variant &hostValue) = nullptr;
-
-    // used only if the type has a flexible array member
-    struct FlexibleMemberConversion
-    {
-        std::size_t (*getNumElements)(const Variant &hostValue);
-    };
-    std::optional<FlexibleMemberConversion> flexibleMemberSpec;
+    void (*setOpaqueBinding)(int bindingIndex, const Variant &hostValue) = nullptr;
+    void (*setUBOBinding)(int bindingIndex, const Variant &hostValue) = nullptr;
+    void (*setSSBOBinding)(int bindingIndex, const Variant &hostValue) = nullptr;
 };
 
 /**
@@ -92,20 +88,30 @@ class OpenGLRenderer : public Renderer
 
     GLFWwindow *getWindow();
 
-    void specifyGlType(const GLTypeSpec &newSpec);
-    const GLTypeSpec &getGlTypeSpec(StringId glslName) const;
-    void specifyTypeConversion(const GLConversionSpec &newSpec);
+    /**
+     * @brief Specify a GL type
+     * @returns a reference to the permanent type specification struct
+     * @note The returned struct is valid until the end of the renderer's lifetime
+     */
+    const GLTypeSpec &specifyGlType(GLTypeSpec &&newSpec);
+
+    /**
+     * @brief Registers a native to GL type conversion
+     * @returns a reference to the permanent type conversion struct
+     * @param hostType the native type
+     * @param newSpec the conversion specification
+     * @note The returned struct is valid until the end of the renderer's lifetime
+     */
+    const GLConversionSpec &registerTypeConversion(const TypeInfo &hostType,
+                                                   GLConversionSpec &&newSpec);
     const GLConversionSpec &getTypeConversion(const TypeInfo &hostType) const;
-    const StableMap<StringId, std::unique_ptr<GLTypeSpec>> &getAllGlTypeSpecs() const;
 
     /**
      * @brief Automatically specified the gl type and conversion for a SharedBuffer type
      * @tparam SharedBufferT the type of the shared buffer
-     * @param glname the name of the glsl type
      * @throws GLSpecificationError if the type isn't trivially convertible
      */
-    template <SharedBufferPtrInst SharedBufferT>
-    void specifyBufferTypeAndConversionAuto(StringView glname);
+    template <SharedBufferPtrInst SharedBufferT> void specifyBufferTypeAndConversionAuto();
 
     void specifyVertexBuffer(const PropertySpec &newElSpec);
     template <class T> void specifyVertexBufferAuto()
@@ -116,27 +122,14 @@ class OpenGLRenderer : public Renderer
     std::size_t getVertexBufferLayoutIndex(StringId name) const;
     const StableMap<StringId, const GLTypeSpec *> &getAllVertexBufferSpecs() const;
 
-    enum class GpuValueStorageMethod {
-        Uniform,
-        UniformBinding,
-        UBO,
-        SSBO
-    };
-    GpuValueStorageMethod getGpuStorageMethod(const GLTypeSpec &spec) const;
-
-    const StableMap<StringId, PropertySpec> &getInputDependencyCache(std::size_t id) const;
-    StableMap<StringId, PropertySpec> &getEditableInputDependencyCache(std::size_t id);
-    std::size_t getInputDependencyCacheID(
-        const Task *p_task, dynasma::LazyPtr<Method<ShaderTask>> p_defaultVertexMethod,
-        dynasma::LazyPtr<Method<ShaderTask>> p_defaultFragmentMethod) const;
-
   protected:
     std::thread::id m_mainThreadId;
     std::mutex m_contextMutex;
     GLFWwindow *mp_mainWindow;
 
-    StableMap<StringId, std::unique_ptr<GLTypeSpec>> m_glTypes;
-    StableMap<std::type_index, std::unique_ptr<GLConversionSpec>> m_glConversions;
+    std::deque<GLTypeSpec> m_glTypes;
+    std::deque<GLConversionSpec> m_glConversions;
+    StableMap<std::type_index, GLConversionSpec *> m_glConversionsByHostType;
 
     StableMap<StringId, std::size_t> m_vertexBufferIndices;
     std::size_t m_vertexBufferFreeIndex;
@@ -150,30 +143,34 @@ class OpenGLRenderer : public Renderer
 };
 
 template <SharedBufferPtrInst SharedBufferT>
-void OpenGLRenderer::specifyBufferTypeAndConversionAuto(StringView glname)
+void OpenGLRenderer::specifyBufferTypeAndConversionAuto()
 {
     using ElementT = SharedBufferT::ElementT;
     using HeaderT = SharedBufferT::HeaderT;
 
     GLTypeSpec typeSpec = GLTypeSpec{
-        .glMutableTypeName = String(glname),
-        .glConstTypeName = String(glname),
-        .glslDefinitionSnippet = "struct " + String(glname) + " {\n",
-        .std140Size = 0,
-        .std140Alignment = 0,
-        .layoutIndexSize = 0,
+        .valueTypeName = "",
+        .opaqueTypeName = "",
+        .structBodySnippet = "",
+        .layout =
+            GLLayoutSpec{
+                .std140Size = 0,
+                .std140Alignment = 0,
+                .indexSize = 0,
+            },
     };
 
     if constexpr (SharedBufferT::HAS_HEADER) {
         auto &headerConv = getTypeConversion(Variant::getTypeInfo<HeaderT>());
         auto &headerGlTypeSpec = headerConv.glTypeSpec;
 
-        typeSpec.glslDefinitionSnippet +=
-            String("    ") + headerGlTypeSpec.glMutableTypeName + " header;\n";
-
-        typeSpec.std140Size = headerGlTypeSpec.std140Size;
-        typeSpec.std140Alignment = headerGlTypeSpec.std140Alignment;
-        typeSpec.layoutIndexSize = headerGlTypeSpec.layoutIndexSize;
+        if (!headerGlTypeSpec.structBodySnippet.empty()) {
+            typeSpec.structBodySnippet += headerGlTypeSpec.structBodySnippet;
+        } else if (!headerGlTypeSpec.valueTypeName.empty()) {
+            typeSpec.structBodySnippet += headerGlTypeSpec.valueTypeName + " header;\n";
+        } else {
+            throw GLSpecificationError("No struct body snippet or value type name for the header");
+        }
 
         if (headerGlTypeSpec.std140Size != sizeof(HeaderT)) {
             throw GLSpecificationError(
@@ -187,23 +184,30 @@ void OpenGLRenderer::specifyBufferTypeAndConversionAuto(StringView glname)
         auto &elementConv = getTypeConversion(Variant::getTypeInfo<ElementT>());
         auto &elementGlTypeSpec = elementConv.glTypeSpec;
 
-        typeSpec.glslDefinitionSnippet +=
-            String("    ") + elementGlTypeSpec.glMutableTypeName + " elements[];\n";
-
-        typeSpec.flexibleMemberSpec.emplace(GLTypeSpec::FlexibleMemberSpec{
-            .elementGlTypeSpec = elementGlTypeSpec,
-            .maxNumElements = std::numeric_limits<std::uint32_t>::max(),
-        });
-
-        if (typeSpec.std140Alignment < elementGlTypeSpec.std140Alignment) {
-            typeSpec.std140Alignment = elementGlTypeSpec.std140Alignment;
-        }
-        if (typeSpec.std140Size % elementGlTypeSpec.std140Alignment != 0) {
-            typeSpec.std140Size = (typeSpec.std140Size / elementGlTypeSpec.std140Alignment + 1) *
-                                  elementGlTypeSpec.std140Alignment;
+        if constexpr (SharedBufferT::HAS_HEADER) {
+            typeSpec.flexibleMemberSpec.emplace(GLTypeSpec::FlexibleMemberSpec{
+                .elementGlTypeSpec = elementGlTypeSpec,
+                .memberName = "elements",
+                .maxNumElements = std::numeric_limits<std::uint32_t>::max(),
+            });
+        } else {
+            typeSpec.flexibleMemberSpec.emplace(GLTypeSpec::FlexibleMemberSpec{
+                .elementGlTypeSpec = elementGlTypeSpec,
+                .memberName = "",
+                .maxNumElements = std::numeric_limits<std::uint32_t>::max(),
+            });
         }
 
-        if (typeSpec.std140Size != SharedBufferT::getFirstElementOffset()) {
+        if (typeSpec.layout.std140Alignment < elementGlTypeSpec.layout.std140Alignment) {
+            typeSpec.layout.std140Alignment = elementGlTypeSpec.layout.std140Alignment;
+        }
+        if (typeSpec.layout.std140Size % elementGlTypeSpec.layout.std140Alignment != 0) {
+            typeSpec.layout.std140Size =
+                (typeSpec.layout.std140Size / elementGlTypeSpec.layout.std140Alignment + 1) *
+                elementGlTypeSpec.layout.std140Alignment;
+        }
+
+        if (typeSpec.layout.std140Size != SharedBufferT::getFirstElementOffset()) {
             throw GLSpecificationError(
                 "Buffer elements do not start at the same offset between host and GLSL types");
         }
@@ -214,29 +218,19 @@ void OpenGLRenderer::specifyBufferTypeAndConversionAuto(StringView glname)
 
         typeSpec.memberTypeDependencies.push_back(&elementGlTypeSpec);
     }
-
-    typeSpec.glslDefinitionSnippet += "};\n";
-
-    specifyGlType(typeSpec);
+    GLTypeSpec &registeredTypeSpec = specifyGlType(std::move(typeSpec));
 
     GLConversionSpec convSpec = GLConversionSpec{
-        .hostType = Variant::getTypeInfo<SharedBufferT>(),
-        .glTypeSpec = getGlTypeSpec(glname),
+        .glTypeSpec = registeredTypeSpec,
         .setUniform = nullptr,
-        .setBinding = [](int bindingIndex, const Variant &hostValue) {
+        .setOpaqueConstBinding = nullptr,
+        .setOpaqueMutableBinding = nullptr,
+        .setUBOBinding = nullptr,
+        .setSSBOBinding = [](int bindingIndex, const Variant &hostValue) {
             setRawBufferBinding(*hostValue.get<SharedBufferT>().getRawBuffer(), bindingIndex);
         }};
 
-    if constexpr (SharedBufferT::HAS_FAM_ELEMENTS) {
-        convSpec.flexibleMemberSpec = GLConversionSpec::FlexibleMemberConversion{
-            .getNumElements =
-                [](const Variant &hostValue) {
-                    return hostValue.get<SharedBufferT>().numElements();
-                },
-        };
-    }
-
-    specifyTypeConversion(convSpec);
+    specifyTypeConversion(Variant::getTypeInfo<SharedBufferT>(), convSpec);
 }
 
 } // namespace Vitrae

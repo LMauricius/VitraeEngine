@@ -24,7 +24,7 @@ class FrameStore : public dynasma::PolymorphicBase
   public:
     struct OutputTextureSpec
     {
-        PropertySpec fragmentPropertySpec;
+        PropertySpec fragmentSpec;
         dynasma::FirmPtr<Texture> p_texture;
     };
 

@@ -14,33 +14,39 @@ class OpenGLRenderer;
 class OpenGLComposeSceneRender : public ComposeSceneRender
 {
   public:
-    using ComposeSceneRender::ComposeSceneRender;
-
     OpenGLComposeSceneRender(const SetupParams &params);
 
-    const StableMap<StringId, PropertySpec> &getInputSpecs(
-        const RenderSetupContext &args) const override;
-    const StableMap<StringId, PropertySpec> &getOutputSpecs() const override;
+    std::size_t memory_cost() const override;
 
-    void run(RenderRunContext args) const override;
-    void prepareRequiredLocalAssets(
-        StableMap<StringId, dynasma::FirmPtr<FrameStore>> &frameStores,
-        StableMap<StringId, dynasma::FirmPtr<Texture>> &textures,
-        const ScopedDict &properties,
-        const RenderSetupContext &context) const override;
+    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
+    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+
+    void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                          const PropertyAliases &aliases) const override;
+    void extractSubTasks(std::set<const Task *> &taskSet,
+                         const PropertyAliases &aliases) const override;
+
+    void run(RenderComposeContext ctx) const override;
+    void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
 
     StringView getFriendlyName() const override;
 
   protected:
     ComponentRoot &m_root;
-    String m_viewPositionOutputPropertyName;
-    StringId m_sceneInputNameId, m_displayOutputNameId;
-    std::optional<StringId> m_displayInputNameId;
 
-    CullingMode m_cullingMode;
-    RasterizingMode m_rasterizingMode;
-    bool m_smoothFilling, m_smoothTracing, m_smoothDotting;
+    SetupParams m_params;
     String m_friendlyName;
+
+    struct SpecsPerAliases
+    {
+        PropertyList inputSpecs, outputSpecs, filterSpecs, consumingSpecs;
+    };
+
+    mutable StableMap<std::size_t, SpecsPerAliases> m_specsPerKey;
+
+    std::size_t getSpecsKey(const PropertyAliases &aliases) const;
 };
 
 } // namespace Vitrae

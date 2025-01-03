@@ -26,28 +26,25 @@ class Compositor : public dynasma::PolymorphicBase
     void setDefaultShadingMethod(dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
                                  dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod);
     void setDefaultComputeMethod(dynasma::FirmPtr<Method<ShaderTask>> p_method);
-    void setOutput(dynasma::FirmPtr<FrameStore> p_store);
+
+    void setPropertyAliases(const PropertyAliases &aliases);
     void setDesiredProperties(const PropertyList &properties);
 
     void compose();
+
+    static const PropertySpec FRAME_STORE_TARGET_SPEC;
 
     ScopedDict parameters;
 
   protected:
     ComponentRoot &m_root;
+    PropertyList m_desiredProperties;
+    PropertyAliases m_aliases;
+
     bool m_needsRebuild;
     bool m_needsFrameStoreRegeneration;
     Pipeline<ComposeTask> m_pipeline;
     ScopedDict m_localProperties;
-    dynasma::FirmPtr<FrameStore> mp_frameStore;
-    MethodCombinator<ShaderTask> m_shadingMethodCombinator;
-    StableMap<StringId, dynasma::FirmPtr<FrameStore>> m_preparedFrameStores;
-    std::set<dynasma::FirmPtr<FrameStore>> m_uniqueFrameStores;
-    StableMap<StringId, dynasma::FirmPtr<Texture>> m_preparedTextures;
-    dynasma::FirmPtr<Method<ComposeTask>> mp_composeMethod;
-    dynasma::FirmPtr<Method<ShaderTask>> m_defaultVertexMethod, m_defaultFragmentMethod,
-        m_defaultComputeMethod;
-    PropertyList m_desiredProperties;
 
     void rebuildPipeline();
     void regenerateFrameStores();

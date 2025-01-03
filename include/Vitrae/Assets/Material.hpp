@@ -33,20 +33,15 @@ class Material : public dynasma::PolymorphicBase
 
     std::size_t memory_cost() const;
 
-    void setMethods(dynasma::FirmPtr<Method<ShaderTask>> vertexMethod,
-                    dynasma::FirmPtr<Method<ShaderTask>> fragmentMethod);
+    void setPropertyAliases(const PropertyAliases &aliases);
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
 
-    dynasma::FirmPtr<Method<ShaderTask>> getVertexMethod() const;
-    dynasma::FirmPtr<Method<ShaderTask>> getFragmentMethod() const;
-    const StableMap<StringId, dynasma::FirmPtr<Texture>> &getTextures() const;
+    const PropertyAliases &getPropertyAliases() const;
     const StableMap<StringId, Variant> &getProperties() const;
 
   protected:
-    dynasma::FirmPtr<Method<ShaderTask>> m_vertexMethod;
-    dynasma::FirmPtr<Method<ShaderTask>> m_fragmentMethod;
-    StableMap<StringId, dynasma::FirmPtr<Texture>> m_textures;
+    PropertyAliases m_aliases;
     StableMap<StringId, Variant> m_properties;
 };
 

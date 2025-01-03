@@ -91,6 +91,17 @@ class ArgumentScope
     Variant &&move(StringId key);
 
     /**
+     * @brief Check if a key exists in the dictionary.
+     *
+     * If the key is not found in the current dictionary, the search continues in the parent
+     * dictionary.
+     *
+     * @param key The key.
+     * @return True if the key exists, false otherwise.
+     */
+    bool has(StringId key) const;
+
+    /**
      * @return The underlying ScopedDict
      */
     inline ScopedDict &getUnaliasedScope() { return *mp_scope; }

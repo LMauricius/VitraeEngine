@@ -17,12 +17,10 @@ class ComposeCompute : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        std::vector<PropertySpec> outputSpecs;
+        PropertyList outputSpecs;
         GpuComputeSetupParams computeSetup;
-        std::function<bool(RenderRunContext &)> executeCondition;
+        bool cacheResults;
     };
-
-    using ComposeTask::ComposeTask;
 };
 
 struct ComposeComputeKeeperSeed

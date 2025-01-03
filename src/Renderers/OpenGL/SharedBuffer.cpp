@@ -32,7 +32,11 @@ void OpenGLRawSharedBuffer::synchronize()
 
         // wait (for profiling)
 #ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
-        glFinish();
+        {
+            MMETER_SCOPE_PROFILER("Waiting for GL operations");
+
+            glFinish();
+        }
 #endif
     }
 }

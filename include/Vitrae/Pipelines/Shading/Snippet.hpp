@@ -14,13 +14,12 @@ class ShaderSnippet : public ShaderTask {
   public:
     struct StringParams
     {
-        std::vector<PropertySpec> inputSpecs;
-        std::vector<PropertySpec> outputSpecs;
+        PropertyList inputSpecs;
+        PropertyList outputSpecs;
+        PropertyList filterSpecs;
+        PropertyList consumingSpecs;
         String snippet;
     };
-
-    inline ShaderSnippet(const StringParams &params)
-        : ShaderTask(params.inputSpecs, params.outputSpecs) {}
 };
 
 struct ShaderSnippetKeeperSeed {

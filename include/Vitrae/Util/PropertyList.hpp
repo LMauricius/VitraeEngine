@@ -172,15 +172,17 @@ class PropertyList : public dynasma::PolymorphicBase
     inline std::size_t getHash() const { return m_hash; }
 
     /*
+    Info
+    */
+
+    inline std::size_t count() const { return m_specList.size(); }
+
+    /*
     Comparisons
     */
 
     bool operator==(const PropertyList &other) const { return m_hash == other.m_hash; }
-    bool operator!=(const PropertyList &other) const { return m_hash != other.m_hash; }
-    bool operator<(const PropertyList &other) const { return m_hash < other.m_hash; }
-    bool operator<=(const PropertyList &other) const { return m_hash <= other.m_hash; }
-    bool operator>(const PropertyList &other) const { return m_hash > other.m_hash; }
-    bool operator>=(const PropertyList &other) const { return m_hash >= other.m_hash; }
+    auto operator<=>(const PropertyList &other) const { return m_hash <=> other.m_hash; }
 
   private:
     void recalculateHash()

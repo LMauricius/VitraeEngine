@@ -1,4 +1,6 @@
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
+#include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
@@ -11,31 +13,28 @@
 namespace Vitrae
 {
 
-CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(
-    dynasma::FirmPtr<Method<ShaderTask>> p_vertexMethod,
-    dynasma::FirmPtr<Method<ShaderTask>> p_fragmentMethod, String vertexPositionOutputName,
-    dynasma::FirmPtr<const PropertyList> p_fragmentOutputs, ComponentRoot &root)
-    : mp_vertexMethod(p_vertexMethod), mp_fragmentMethod(p_fragmentMethod),
-      m_vertexPositionOutputName(vertexPositionOutputName), mp_fragmentOutputs(p_fragmentOutputs),
-      mp_root(&root),
-      m_hash(combinedHashes<4>({{p_vertexMethod->getHash(), p_fragmentMethod->getHash(),
-                                 std::hash<StringId>{}(StringId(vertexPositionOutputName)),
-                                 p_fragmentOutputs->getHash()}}))
+CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(const PropertyAliases &aliases,
+                                                             String vertexPositionOutputName,
+                                                             const PropertyList &fragmentOutputs,
+                                                             ComponentRoot &root)
+    : m_aliases(aliases), m_vertexPositionOutputName(vertexPositionOutputName),
+      m_fragmentOutputs(fragmentOutputs), mp_root(&root),
+      m_hash(combinedHashes<3>({{aliases.hash(), fragmentOutputs.getHash(),
+                                 std::hash<StringId>{}(StringId(vertexPositionOutputName))}}))
 {}
 
 CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
-    ComponentRoot &root, dynasma::FirmPtr<Method<ShaderTask>> p_computeMethod,
-    dynasma::FirmPtr<const PropertyList> p_desiredResults,
+    ComponentRoot &root, const PropertyAliases &aliases, const PropertyList &desiredResults,
     PropertyGetter<std::uint32_t> invocationCountX, PropertyGetter<std::uint32_t> invocationCountY,
     PropertyGetter<std::uint32_t> invocationCountZ, glm::uvec3 groupSize,
     bool allowOutOfBoundsCompute)
-    : mp_computeMethod(p_computeMethod), mp_desiredResults(p_desiredResults), mp_root(&root),
+    : mp_root(&root), m_aliases(aliases), m_desiredResults(desiredResults),
       m_invocationCountX(invocationCountX), m_invocationCountY(invocationCountY),
       m_invocationCountZ(invocationCountZ), m_groupSize(groupSize),
       m_allowOutOfBoundsCompute(allowOutOfBoundsCompute),
       m_hash(combinedHashes<9>({{
-          p_computeMethod->getHash(),
-          p_desiredResults->getHash(),
+          aliases.hash(),
+          desiredResults.getHash(),
           std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountX),
           std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountY),
           std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountZ),
@@ -49,25 +48,31 @@ CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
 CompiledGLSLShader::CompiledGLSLShader(const SurfaceShaderParams &params)
     : CompiledGLSLShader(
           {{
-              CompilationSpec{.p_method = params.getVertexMethodPtr(),
-                              .predefinedVarsToOutputs =
-                                  {
-                                      {"gl_Position", params.getVertexPositionOutputName()},
+              CompilationSpec{.aliases = PropertyAliases(
+                                  std::initializer_list{
+                                      &params.getAliases(),
                                   },
+                                  {
+                                      {params.getVertexPositionOutputName(), "gl_Position"},
+                                  }),
                               .outVarPrefix = "vert_",
                               .shaderType = GL_VERTEX_SHADER},
-              CompilationSpec{.p_method = params.getFragmentMethodPtr(),
+              CompilationSpec{.aliases = PropertyAliases(std::initializer_list{
+                                  &params.getAliases(),
+                              }),
                               .outVarPrefix = "frag_",
                               .shaderType = GL_FRAGMENT_SHADER},
           }},
-          params.getRoot(), *params.getFragmentOutputsPtr())
+          params.getRoot(), params.getFragmentOutputs())
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
     : CompiledGLSLShader(
           {{
               CompilationSpec{
-                  .p_method = params.getComputeMethodPtr(),
+                  .aliases = PropertyAliases(std::initializer_list{
+                      &params.getAliases(),
+                  }),
                   .outVarPrefix = "comp_",
                   .shaderType = GL_COMPUTE_SHADER,
                   .computeSpec =
@@ -80,7 +85,7 @@ CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
                       },
               },
           }},
-          params.getRoot(), *params.getDesiredResultsPtr())
+          params.getRoot(), params.getDesiredResults())
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs,
@@ -90,26 +95,17 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(root.getComponent<Renderer>());
 
-    // util lambdas
-    auto specToMutableGlName = [&](const TypeInfo &typeInfo) -> std::string_view {
-        return rend.getTypeConversion(typeInfo).glTypeSpec.glMutableTypeName;
-    };
-    auto specToConstGlName = [&](const TypeInfo &typeInfo) -> std::string_view {
-        return rend.getTypeConversion(typeInfo).glTypeSpec.glConstTypeName;
-    };
-
     // uniforms are global variables given to all shader steps
     String uniVarPrefix = "uniform_";
-    String sharedVarPrefix = "shared_";
-    String bufferVarPrefix = "buffer_";
-    std::map<StringId, PropertySpec> uniformVarSpecs;
+    String bindingVarPrefix = "bind_";
+    String uboBlockPrefix = "ubo_block_";
+    String uboVarPrefix = "ubo_";
+    String ssboBlockPrefix = "buffer_block_";
+    String ssboVarPrefix = "buffer_";
+    String localVarPrefix = "tmp_";
 
     // mesh vertex element data is given to the vertex shader and passed through to other steps
     String elemVarPrefix = "elem_";
-    std::map<StringId, PropertySpec> elemVarSpecs;
-
-    // local variables are intermediate results
-    String localVarPrefix = "m_";
 
     struct CompilationHelp
     {
@@ -136,95 +132,58 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
     // generate pipelines, from the end result to the first pipeline
     {
-        std::vector<PropertySpec> passedVarSpecs(desiredOutputs.getSpecList().begin(),
-                                                 desiredOutputs.getSpecList().end());
+        PropertyList passedVarSpecs = desiredOutputs;
 
         for (auto p_helper : invHelperOrder) {
+            // stage-specific required outputs
             if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
-                passedVarSpecs.push_back(PropertySpec{
-                    .name = p_helper->p_compSpec->predefinedVarsToOutputs.at("gl_Position"),
-                    .typeInfo = StandardShaderPropertyTypes::VERTEX_OUTPUT});
+                passedVarSpecs.insert_back({
+                    .name = p_helper->p_compSpec->aliases.choiceStringFor("gl_Position"),
+                    .typeInfo = StandardShaderPropertyTypes::VERTEX_OUTPUT,
+                });
+            }
+
+            // get the method
+            dynasma::FirmPtr<const Method<ShaderTask>> p_method;
+            switch (p_helper->p_compSpec->shaderType) {
+            case GL_VERTEX_SHADER:
+                p_method = root.getComponent<MethodCollection>().getVertexMethod();
+                break;
+            case GL_FRAGMENT_SHADER:
+                p_method = root.getComponent<MethodCollection>().getFragmentMethod();
+                break;
+            case GL_COMPUTE_SHADER:
+                p_method = root.getComponent<MethodCollection>().getComputeMethod();
+                break;
+            default:
+                assert(false);
             }
 
             p_helper->pipeline =
-                Pipeline<ShaderTask>(p_helper->p_compSpec->p_method, passedVarSpecs, {});
+                Pipeline<ShaderTask>(p_method, passedVarSpecs, p_helper->p_compSpec->aliases);
 
-            passedVarSpecs.clear();
-            for (auto [reqNameId, reqSpec] : p_helper->pipeline.inputSpecs) {
-                passedVarSpecs.push_back(reqSpec);
-            }
-        }
-    }
+            // stage-specific required inputs
+            if (p_helper->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
 
-    // separate inputs into uniform and vertex layout variables
-    for (auto [nameId, spec] : helperOrder[0]->pipeline.inputSpecs) {
-        if (&spec.typeInfo == &Variant::getTypeInfo<void>()) {
-            tokenPropertyNames.insert(spec.name);
-        } else if (helperOrder[0]->p_compSpec->shaderType == GL_VERTEX_SHADER &&
-                   rend.getAllVertexBufferSpecs().find(spec.name) !=
-                       rend.getAllVertexBufferSpecs().end()) {
-            elemVarSpecs.emplace(nameId, spec);
-        } else {
-            uniformVarSpecs.emplace(nameId, spec);
-        }
-    }
+                auto &computeSpec = p_helper->p_compSpec->computeSpec.value();
 
-    // additional inputs rrequired by the shader itself
-    if (helperOrder[0]->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
-        auto &computeSpec = helperOrder[0]->p_compSpec->computeSpec.value();
-
-        if (!computeSpec.allowOutOfBoundsCompute) {
-            if (!computeSpec.invocationCountX.isFixed()) {
-                uniformVarSpecs.emplace(computeSpec.invocationCountX.getSpec().name,
-                                        computeSpec.invocationCountX.getSpec());
-            }
-            if (!computeSpec.invocationCountY.isFixed()) {
-                uniformVarSpecs.emplace(computeSpec.invocationCountY.getSpec().name,
-                                        computeSpec.invocationCountY.getSpec());
-            }
-            if (!computeSpec.invocationCountZ.isFixed()) {
-                uniformVarSpecs.emplace(computeSpec.invocationCountZ.getSpec().name,
-                                        computeSpec.invocationCountZ.getSpec());
-            }
-        }
-    }
-
-    // make a list of all types we need to define
-    std::vector<const GLTypeSpec *> typeDeclarationOrder;
-
-    {
-        std::set<const GLTypeSpec *> mentionedTypes;
-
-        std::function<void(const GLTypeSpec &)> processTypeNameId =
-            [&](const GLTypeSpec &glTypeSpec) -> void {
-            if (mentionedTypes.find(&glTypeSpec) == mentionedTypes.end()) {
-                mentionedTypes.insert(&glTypeSpec);
-
-                for (auto p_dependencyTypeSpec : glTypeSpec.memberTypeDependencies) {
-                    processTypeNameId(*p_dependencyTypeSpec);
+                if (!computeSpec.allowOutOfBoundsCompute) {
+                    if (!computeSpec.invocationCountX.isFixed()) {
+                        p_helper->pipeline.inputSpecs.insert_back(
+                            computeSpec.invocationCountX.getSpec());
+                    }
+                    if (!computeSpec.invocationCountY.isFixed()) {
+                        p_helper->pipeline.inputSpecs.insert_back(
+                            computeSpec.invocationCountY.getSpec());
+                    }
+                    if (!computeSpec.invocationCountZ.isFixed()) {
+                        p_helper->pipeline.inputSpecs.insert_back(
+                            computeSpec.invocationCountZ.getSpec());
+                    }
                 }
 
-                typeDeclarationOrder.push_back(&glTypeSpec);
-            }
-        };
-
-        for (auto varSpecs : {uniformVarSpecs, elemVarSpecs}) {
-            for (auto [varNameId, varSpec] : varSpecs) {
-                processTypeNameId(rend.getTypeConversion(varSpec.typeInfo).glTypeSpec);
-            }
-        }
-
-        for (auto p_helper : helperOrder) {
-            std::set<const TypeInfo *> usedTypeSet;
-
-            for (auto &pipeItem : p_helper->pipeline.items) {
-                pipeItem.p_task->extractUsedTypes(usedTypeSet);
-            }
-
-            for (auto p_type : usedTypeSet) {
-                if (*p_type != Variant::getTypeInfo<void>()) {
-                    processTypeNameId(rend.getTypeConversion(*p_type).glTypeSpec);
-                }
+                passedVarSpecs = p_helper->pipeline.inputSpecs;
+                passedVarSpecs.merge(p_helper->pipeline.filterSpecs);
             }
         }
     }
@@ -241,23 +200,288 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         }
     };
 
+    // prepare previous stage inputs
+    StableMap<StringId, LocationSpec> prevStageOutputs;
+    String prevStageOutVarPrefix;
+
+    // Select uniforms, bindings, UBOs and SSBOs
+    {
+        MMETER_SCOPE_PROFILER("Selecting program inputs");
+
+        auto p_helper = helperOrder[0];
+
+        // select the input prefix
+        if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
+            prevStageOutVarPrefix = elemVarPrefix;
+        }
+
+        // Input & consuming specs
+        for (const PropertyList *p_specs : {
+                 &p_helper->pipeline.inputSpecs,
+                 &p_helper->pipeline.consumingSpecs,
+                 &p_helper->pipeline.filterSpecs,
+                 &p_helper->pipeline.pipethroughSpecs,
+             }) {
+            for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
+                if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                    // just a token, skip
+                } else if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER &&
+                           rend.getAllVertexBufferSpecs().find(nameId) !=
+                               rend.getAllVertexBufferSpecs().end()) {
+                    // vertex shader receives inputs from the mesh
+                    prevStageOutputs.emplace(
+                        nameId,
+                        LocationSpec{.srcSpec = spec,
+                                     .location = (int)rend.getVertexBufferLayoutIndex(nameId)});
+                } else {
+                    // decide how to convert it
+                    const GLConversionSpec &convSpec = rend.getTypeConversion(spec.typeInfo);
+                    const GLTypeSpec &glTypeSpec = convSpec.glTypeSpec;
+
+                    if (convSpec.setUniform) {
+                        this->uniformSpecs.emplace(nameId, LocationSpec{
+                                                               .srcSpec = spec,
+                                                               .location = -1, // will be set later
+                                                           });
+                    } else if (convSpec.setOpaqueBinding) {
+                        this->opaqueBindingSpecs.emplace(nameId,
+                                                         BindingSpec{
+                                                             .srcSpec = spec,
+                                                             .location = -1,    // will be set later
+                                                             .bindingIndex = 0, // will be set later
+                                                         });
+                    } else if (convSpec.setUBOBinding) {
+                        this->uboSpecs.emplace(nameId, BindingSpec{
+                                                           .srcSpec = spec,
+                                                           .location = -1,    // will be set later
+                                                           .bindingIndex = 0, // will be set later
+                                                       });
+                    } else if (convSpec.setSSBOBinding) {
+                        this->ssboSpecs.emplace(nameId, BindingSpec{
+                                                            .srcSpec = spec,
+                                                            .location = -1,    // will be set later
+                                                            .bindingIndex = 0, // will be set later
+                                                        });
+                    } else {
+                        throw std::runtime_error(
+                            "Shader compilation failed: unconvertible property " + spec.name);
+                    }
+                }
+            }
+        }
+    }
+
     // build the source code
     {
         String prevVarPrefix = "";
         for (auto p_helper : helperOrder) {
-            // code output
+
+            // Property storage choosing
+            PropertyList stageUniformList;
+            PropertyList stageOpaqueBindingList;
+            PropertyList stageUBOList;
+            PropertyList stageSSBOList;
+            PropertyList stageInputList;
+            PropertyList stageOutputList;
+            PropertyList stageLocalList;
+            std::map<StringId, String> tobeStageAliases;
+            std::vector<std::pair<String, String>> initialPipethroughList;
+
+            {
+                MMETER_SCOPE_PROFILER("Property storage choosing");
+
+                // Separate source values - Input & consuming & filter & pipethrough specs
+                for (const PropertyList *p_specs : {
+                         &p_helper->pipeline.inputSpecs,
+                         &p_helper->pipeline.consumingSpecs,
+                         &p_helper->pipeline.filterSpecs,
+                         &p_helper->pipeline.pipethroughSpecs,
+                     }) {
+                    for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
+                        if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                            // just a token, skip
+                        } else if (prevStageOutputs.find(nameId) != prevStageOutputs.end()) {
+                            // normal input
+                            stageInputList.insert_back(spec);
+                            tobeStageAliases[spec.name] = prevVarPrefix + spec.name;
+                        } else if (this->uniformSpecs.find(nameId) != this->uniformSpecs.end()) {
+                            // uniform
+                            stageUniformList.insert_back(spec);
+                            tobeStageAliases[spec.name] = uniVarPrefix + spec.name;
+                        } else if (this->opaqueBindingSpecs.find(nameId) !=
+                                   this->opaqueBindingSpecs.end()) {
+                            // opaque binding
+                            stageOpaqueBindingList.insert_back(spec);
+                            tobeStageAliases[spec.name] = bindingVarPrefix + spec.name;
+                        } else if (this->uboSpecs.find(nameId) != this->uboSpecs.end()) {
+                            // UBO
+                            stageUBOList.insert_back(spec);
+                            tobeStageAliases[spec.name] = uboVarPrefix + spec.name;
+                        } else if (this->ssboSpecs.find(nameId) != this->ssboSpecs.end()) {
+                            // SSBO
+                            stageSSBOList.insert_back(spec);
+                            tobeStageAliases[spec.name] = ssboVarPrefix + spec.name;
+                        }
+                    }
+                }
+
+                // filter specs
+                for (auto [nameId, spec] : p_helper->pipeline.filterSpecs.getMappedSpecs()) {
+                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                        // just a token, skip
+                    } else if ((stageOpaqueBindingList.getMappedSpecs().find(nameId) !=
+                                stageOpaqueBindingList.getMappedSpecs().end()) ||
+                               (stageSSBOList.getMappedSpecs().find(nameId) !=
+                                stageSSBOList.getMappedSpecs().end())) {
+                        // Just skip bindings that can be modified
+                    } else {
+                        // The value needs to be copied before it can be modified
+                        // Will be output
+
+                        // check if we can
+                        const GLConversionSpec &convSpec = rend.getTypeConversion(spec.typeInfo);
+                        const GLTypeSpec &glTypeSpec = convSpec.glTypeSpec;
+
+                        if (!glTypeSpec.valueTypeName.empty()) {
+                            initialPipethroughList.push_back({
+                                p_helper->p_compSpec->outVarPrefix + spec.name,
+                                tobeStageAliases.at(spec.name),
+                            });
+                            tobeStageAliases[spec.name] =
+                                p_helper->p_compSpec->outVarPrefix + spec.name;
+                            stageOutputList.insert_back(spec);
+                        } else {
+                            throw std::runtime_error("Shader compilation failed: property " +
+                                                     spec.name +
+                                                     " cannot be reasigned to an output");
+                        }
+                    }
+                }
+
+                // pipethrough specs
+                for (auto [nameId, spec] : p_helper->pipeline.pipethroughSpecs.getMappedSpecs()) {
+                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                        // just a token, skip
+                    } else if (stageInputList.getMappedSpecs().find(nameId) !=
+                               stageInputList.getMappedSpecs().end()) {
+                        // The value needs to be copied to an output
+
+                        // check if we can
+                        const GLConversionSpec &convSpec = rend.getTypeConversion(spec.typeInfo);
+                        const GLTypeSpec &glTypeSpec = convSpec.glTypeSpec;
+
+                        if (!glTypeSpec.valueTypeName.empty()) {
+                            initialPipethroughList.push_back({
+                                p_helper->p_compSpec->outVarPrefix + spec.name,
+                                tobeStageAliases.at(spec.name),
+                            });
+                            stageOutputList.insert_back(spec);
+                        } else {
+                            throw std::runtime_error("Shader compilation failed: property " +
+                                                     spec.name +
+                                                     " cannot be reasigned to an output");
+                        }
+                    }
+                }
+
+                // output specs
+                for (auto [nameId, spec] : p_helper->pipeline.outputSpecs.getMappedSpecs()) {
+                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                        // just a token, skip
+                    } else {
+                        // Check if we can store it as output
+                        const GLConversionSpec &convSpec = rend.getTypeConversion(spec.typeInfo);
+                        const GLTypeSpec &glTypeSpec = convSpec.glTypeSpec;
+
+                        if (!glTypeSpec.valueTypeName.empty() ||
+                            (!glTypeSpec.structBodySnippet.empty() &&
+                             !glTypeSpec.flexibleMemberSpec.has_value())) {
+                            // can be stored as normal output
+                            tobeStageAliases[spec.name] =
+                                p_helper->p_compSpec->outVarPrefix + spec.name;
+                            stageOutputList.insert_back(spec);
+                        } else {
+                            throw std::runtime_error("Shader compilation failed: property " +
+                                                     spec.name + " cannot be used as output");
+                        }
+                    }
+                }
+
+                // Local specs
+                for (auto [nameId, spec] : p_helper->pipeline.localSpecs.getMappedSpecs()) {
+                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                        // just a token, skip
+                    } else {
+                        // Check if we can store it as a local variable
+                        const GLConversionSpec &convSpec = rend.getTypeConversion(spec.typeInfo);
+                        const GLTypeSpec &glTypeSpec = convSpec.glTypeSpec;
+
+                        if (!glTypeSpec.valueTypeName.empty() ||
+                            (!glTypeSpec.structBodySnippet.empty() &&
+                             !glTypeSpec.flexibleMemberSpec.has_value())) {
+                            // can be stored as normal output
+                            tobeStageAliases[spec.name] = localVarPrefix + spec.name;
+                            stageLocalList.insert_back(spec);
+                        } else {
+                            throw std::runtime_error("Shader compilation failed: property " +
+                                                     spec.name +
+                                                     " cannot be used as a local variable");
+                        }
+                    }
+                }
+            }
+
+            // make a list of all types we need to define
+            std::vector<const GLTypeSpec *> typeDeclarationOrder;
+            {
+                std::set<const TypeInfo *> usedTypeSet;
+
+                for (auto p_task : p_helper->pipeline.items) {
+                    p_task->extractUsedTypes(usedTypeSet, p_helper->p_compSpec->aliases);
+                }
+
+                std::set<const GLTypeSpec *> mentionedTypes;
+
+                std::function<void(const GLTypeSpec &)> processTypeNameId =
+                    [&](const GLTypeSpec &glTypeSpec) -> void {
+                    if (mentionedTypes.find(&glTypeSpec) == mentionedTypes.end()) {
+                        mentionedTypes.insert(&glTypeSpec);
+
+                        for (auto p_dependencyTypeSpec : glTypeSpec.memberTypeDependencies) {
+                            processTypeNameId(*p_dependencyTypeSpec);
+                        }
+
+                        typeDeclarationOrder.push_back(&glTypeSpec);
+                    }
+                };
+
+                for (auto p_type : usedTypeSet) {
+                    if (*p_type != Variant::getTypeInfo<void>()) {
+                        processTypeNameId(rend.getTypeConversion(*p_type).glTypeSpec);
+                    }
+                }
+            }
+
+            // === code output ===
+
             std::stringstream ss;
-            ShaderTask::BuildContext context{.output = ss, .renderer = rend};
-            std::map<StringId, String> inputParametersToGlobalVars;
-            std::map<StringId, String> outputParametersToGlobalVars;
+            PropertyAliases stageAliases({{&p_helper->p_compSpec->aliases}},
+                                         StableMap<StringId, String>(std::move(tobeStageAliases)));
+            ShaderTask::BuildContext context{
+                .output = ss,
+                .root = root,
+                .renderer = rend,
+                .aliases = stageAliases,
+            };
 
             // boilerplate stuff
             ss << "#version 460 core\n"
                << "\n"
                << "\n";
 
-            // compute shader spec
+            // Specifications unique to shader stages
             if (p_helper->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
+                // compute shader spec
                 auto &computeSpec = helperOrder[0]->p_compSpec->computeSpec.value();
 
                 ss << "layout (local_size_x = " << computeSpec.groupSize.x
@@ -266,239 +490,156 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                    << "\n";
             }
 
-            // type definitions
+            // write type definitions
             for (auto p_glType : typeDeclarationOrder) {
-                if (!p_glType->glslDefinitionSnippet.empty()) {
-                    // skip structs with FAMs because they would cause issues, and they are only
-                    // used in SSBO blocks
-                    if (!p_glType->flexibleMemberSpec.has_value()) {
-                        ss << p_glType->glslDefinitionSnippet << "\n";
-                    }
+                if (!p_glType->valueTypeName.empty() && !p_glType->structBodySnippet.empty()) {
+                    ss << "struct " << p_glType->valueTypeName << " {\n"
+                       << p_glType->structBodySnippet << "\n"
+                       << "};\n"
+                       << "\n";
                 }
             }
 
             // p_task function declarations
-            for (auto &pipeItem : p_helper->pipeline.items) {
-                pipeItem.p_task->outputDeclarationCode(context);
+            for (auto p_task : p_helper->pipeline.items) {
+                p_task->outputDeclarationCode(context);
                 ss << "\n";
             }
 
-            // predefined variables
-            auto &predefinedInputParameterMap = p_helper->p_compSpec->inputsToPredefinedVars;
-
-            ss << "\n"
-               << "\n";
+            // Receiving values
 
             // uniforms
-            for (auto [nameId, spec] : uniformVarSpecs) {
-
-                // UNIFORMS
-
+            for (auto &spec : stageUniformList.getSpecList()) {
                 const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
 
-                std::string_view glslMemberList = "";
-                if (glTypeSpec.glslDefinitionSnippet.find_first_of("struct") != std::string::npos) {
-                    glslMemberList =
-                        std::string_view(glTypeSpec.glslDefinitionSnippet)
-                            .substr(glTypeSpec.glslDefinitionSnippet.find_first_of('{') + 1,
-                                    glTypeSpec.glslDefinitionSnippet.find_last_of('}') -
-                                        glTypeSpec.glslDefinitionSnippet.find_first_of('{') - 1);
+                ss << "uniform " << glTypeSpec.valueTypeName << " " << uniVarPrefix << spec.name
+                   << ";\n";
+            }
+
+            // opaque bindings
+            for (auto &spec : stageOpaqueBindingList.getSpecList()) {
+                const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
+
+                ss << "uniform " << glTypeSpec.opaqueTypeName << " " << bindingVarPrefix
+                   << spec.name << ";\n";
+            }
+
+            // UBOs
+            for (auto &spec : stageUBOList.getSpecList()) {
+                const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
+
+                ss << "layout(std430, binding=" << getBinding(spec.name) << ") ";
+                ss << "uniform " << uboBlockPrefix << spec.name << " {\n";
+                if (glTypeSpec.valueTypeName.empty()) {
+                    ss << glTypeSpec.structBodySnippet << "\n";
+                    ss << "} " << uboVarPrefix << spec.name << ";\n";
+                } else {
+                    ss << glTypeSpec.valueTypeName << " " << uboVarPrefix << spec.name << ";\n";
+                    ss << "};\n";
                 }
+            }
 
-                OpenGLRenderer::GpuValueStorageMethod minimalMethod =
-                    rend.getGpuStorageMethod(glTypeSpec);
+            // SSBOs
+            for (auto &spec : stageSSBOList.getSpecList()) {
+                const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
 
-                if (minimalMethod == OpenGLRenderer::GpuValueStorageMethod::SSBO) {
-
-                    // SSBOs
-                    ss << "layout(std430, binding=" << getBinding(nameId) << ") ";
-
-                    if (glslMemberList.empty()) {
-                        ss << "buffer " << spec.name << " {\n";
-                        ss << "\t" << specToMutableGlName(spec.typeInfo) << " value" << ";\n";
-                        ss << "} " << bufferVarPrefix << spec.name << ";\n";
-
-                        inputParametersToGlobalVars.emplace(nameId,
-                                                            bufferVarPrefix + spec.name + ".value");
-                    } else {
-                        ss << "buffer " << spec.name << " {";
-                        ss << glslMemberList;
-                        ss << "} " << bufferVarPrefix << spec.name << ";\n";
-
-                        inputParametersToGlobalVars.emplace(nameId, bufferVarPrefix + spec.name);
-                    }
-                } else if (p_helper->pipeline.outputSpecs.find(nameId) !=
-                               p_helper->pipeline.outputSpecs.end() &&
-                           p_helper->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
-                    switch (minimalMethod) {
-                    case OpenGLRenderer::GpuValueStorageMethod::UniformBinding:
-
-                        // EDITABLE IMAGE UNIFORMs
-
-                        ss << "layout(binding=" << getBinding(nameId) << ") ";
-                        ss << "uniform " << specToMutableGlName(spec.typeInfo) << " "
-                           << uniVarPrefix << spec.name << ";\n";
-
-                        inputParametersToGlobalVars.emplace(nameId, uniVarPrefix + spec.name);
-                        break;
-                    case OpenGLRenderer::GpuValueStorageMethod::Uniform:
-                    case OpenGLRenderer::GpuValueStorageMethod::UBO:
-
-                        // (also) SSBOs
-                        ss << "layout(std430, binding=" << getBinding(nameId) << ") ";
-
-                        if (glslMemberList.empty()) {
-                            ss << "buffer " << spec.name << " {\n";
-                            ss << "\t" << specToMutableGlName(spec.typeInfo) << " value"
-                               << ";\n";
-                            ss << "} " << uniVarPrefix << spec.name << ";\n";
-
-                            inputParametersToGlobalVars.emplace(nameId, bufferVarPrefix +
-                                                                            spec.name + ".value");
-                        } else {
-                            ss << "buffer " << spec.name << " {";
-                            ss << glslMemberList;
-                            ss << "} " << uniVarPrefix << spec.name << ";\n";
-
-                            inputParametersToGlobalVars.emplace(nameId,
-                                                                bufferVarPrefix + spec.name);
+                ss << "layout(std430, binding=" << getBinding(spec.name) << ") ";
+                ss << "buffer " << ssboBlockPrefix << spec.name << " {\n";
+                if (glTypeSpec.valueTypeName.empty()) {
+                    if (glTypeSpec.structBodySnippet.empty() &&
+                        glTypeSpec.flexibleMemberSpec.has_value() &&
+                        glTypeSpec.flexibleMemberSpec->memberName.empty()) {
+                        // The buffer is purely an array of FAM data
+                        if (glTypeSpec.flexibleMemberSpec->elementGlTypeSpec.valueTypeName
+                                .empty()) {
+                            throw std::runtime_error("Unable to generate SSBO " + spec.name +
+                                                     " because FAM type has no name");
                         }
-                        break;
+                        ss << glTypeSpec.flexibleMemberSpec->elementGlTypeSpec.valueTypeName << " "
+                           << ssboVarPrefix << spec.name << "[];\n";
+                        ss << "};\n";
+                    } else {
+                        // The buffer has members, possibly a FAM
+                        if (!glTypeSpec.structBodySnippet.empty()) {
+                            ss << glTypeSpec.structBodySnippet << "\n";
+                        }
+                        if (glTypeSpec.flexibleMemberSpec.has_value()) {
+                            if (glTypeSpec.flexibleMemberSpec->elementGlTypeSpec.valueTypeName
+                                    .empty()) {
+                                throw std::runtime_error("Unable to generate SSBO " + spec.name +
+                                                         " because FAM type has no name");
+                            }
+                            ss << glTypeSpec.flexibleMemberSpec->elementGlTypeSpec.valueTypeName
+                               << " " << glTypeSpec.flexibleMemberSpec->memberName << "[];\n";
+                        }
+                        ss << "} " << ssboVarPrefix << spec.name << ";\n";
                     }
                 } else {
-                    switch (minimalMethod) {
-                    case OpenGLRenderer::GpuValueStorageMethod::Uniform:
-                        if (p_helper->pipeline.localSpecs.find(nameId) !=
-                            p_helper->pipeline.localSpecs.end()) {
-
-                            // SHARED LOCAL GROUP VARIABLES
-
-                            ss << "shared " << specToMutableGlName(spec.typeInfo) << " "
-                               << sharedVarPrefix << spec.name << ";\n";
-
-                            inputParametersToGlobalVars.emplace(nameId,
-                                                                sharedVarPrefix + spec.name);
-                            break;
-                        } else {
-                            // fallthrough
-                        }
-                    case OpenGLRenderer::GpuValueStorageMethod::UniformBinding:
-
-                        // UNIFORMS
-
-                        if (minimalMethod != OpenGLRenderer::GpuValueStorageMethod::Uniform) {
-                            ss << "layout(binding=" << getBinding(nameId) << ") ";
-                        }
-                        ss << "uniform " << specToConstGlName(spec.typeInfo) << " " << uniVarPrefix
-                           << spec.name << ";\n";
-
-                        inputParametersToGlobalVars.emplace(nameId, uniVarPrefix + spec.name);
-                        break;
-                    case OpenGLRenderer::GpuValueStorageMethod::UBO:
-
-                        // UNIFORM BUFFER OBJECTS
-
-                        ss << "layout(std430, binding=" << getBinding(nameId) << ") ";
-                        if (glslMemberList.empty()) {
-                            ss << "uniform " << uniVarPrefix << spec.name << " {\n";
-                            ss << "\t" << specToConstGlName(spec.typeInfo) << " value" << ";\n";
-                            ss << "} " << spec.name << ";\n";
-
-                            inputParametersToGlobalVars.emplace(nameId, uniVarPrefix + spec.name +
-                                                                            ".value");
-                        } else {
-                            ss << "uniform " << uniVarPrefix << spec.name << " {\n";
-                            ss << glslMemberList << "\n";
-                            ss << "} " << spec.name << ";\n";
-
-                            inputParametersToGlobalVars.emplace(nameId, uniVarPrefix + spec.name);
-                        }
-                        break;
-                    }
+                    // The buffer is a named struct
+                    ss << glTypeSpec.valueTypeName << " " << ssboVarPrefix << spec.name << ";\n";
+                    ss << "};\n";
                 }
             }
 
-            // input variables
-            for (auto [nameId, spec] : p_helper->pipeline.inputSpecs) {
-                if (spec.typeInfo != Variant::getTypeInfo<void>() &&
-                    uniformVarSpecs.find(nameId) == uniformVarSpecs.end() &&
-                    predefinedInputParameterMap.find(nameId) == predefinedInputParameterMap.end()) {
+            // Inputs
+            for (auto &spec : stageInputList.getSpecList()) {
+                const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
 
-                    if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
-
-                        // VERTEX ATTRIBUTES
-
-                        ss << "layout(location = " << rend.getVertexBufferLayoutIndex(nameId)
-                           << ") in " << specToConstGlName(spec.typeInfo) << " " << elemVarPrefix
-                           << prevVarPrefix << spec.name << ";\n";
-
-                        inputParametersToGlobalVars.emplace(nameId, elemVarPrefix + spec.name);
-                    } else {
-
-                        // PREVIOUS STAGE OUTPUTS
-
-                        ss << "in " << specToMutableGlName(spec.typeInfo) << " " << prevVarPrefix
-                           << spec.name << ";\n";
-
-                        inputParametersToGlobalVars.emplace(nameId, prevVarPrefix + spec.name);
-                    }
+                if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
+                    const LocationSpec &locationSpec = prevStageOutputs.at(spec.name);
+                    ss << "layout(location=" << locationSpec.location << ") ";
                 }
-            }
-            inputParametersToGlobalVars.merge(std::move(predefinedInputParameterMap));
 
-            ss << "\n";
-
-            // output variables
-            for (auto [nameId, spec] : p_helper->pipeline.outputSpecs) {
-                if (spec.typeInfo != Variant::getTypeInfo<void>() &&
-                    uniformVarSpecs.find(nameId) == uniformVarSpecs.end()) {
-
-                    // NORMAL OUTPUTS
-
-                    if (p_helper->p_compSpec->shaderType == GL_FRAGMENT_SHADER) {
-                        std::size_t index =
-                            std::find(desiredOutputs.getSpecNameIds().begin(),
-                                      desiredOutputs.getSpecNameIds().end(), nameId) -
-                            desiredOutputs.getSpecNameIds().begin();
-
-                        assert(index < desiredOutputs.getSpecNameIds().size());
-
-                        ss << "layout(location = " << index << ") out "
-                           << specToMutableGlName(spec.typeInfo) << " "
-                           << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
-                    } else {
-                        ss << "out " << specToMutableGlName(spec.typeInfo) << " "
-                           << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
-                    }
-                    inputParametersToGlobalVars.emplace(nameId, p_helper->p_compSpec->outVarPrefix +
-                                                                    spec.name);
-                    outputParametersToGlobalVars.emplace(
-                        nameId, p_helper->p_compSpec->outVarPrefix + spec.name);
+                if (glTypeSpec.valueTypeName.empty()) {
+                    throw std::runtime_error("Unable to generate input " + spec.name +
+                                             " because type has no name");
                 }
+
+                ss << "in " << glTypeSpec.valueTypeName << " " << prevStageOutVarPrefix << spec.name
+                   << ";\n";
             }
 
-            ss << "\n";
+            // Outputs
+            for (auto &spec : stageInputList.getSpecList()) {
+                const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
 
-            // p_task function definitions
-            for (auto &pipeItem : p_helper->pipeline.items) {
-                pipeItem.p_task->outputDefinitionCode(context);
-                ss << "\n";
+                if (p_helper->p_compSpec->shaderType == GL_FRAGMENT_SHADER) {
+                    std::size_t index =
+                        std::find(desiredOutputs.getSpecNameIds().begin(),
+                                  desiredOutputs.getSpecNameIds().end(), spec.name) -
+                        desiredOutputs.getSpecNameIds().begin();
+
+                    assert(index < desiredOutputs.getSpecNameIds().size());
+
+                    ss << "layout(location=" << index << ") ";
+                }
+
+                if (glTypeSpec.valueTypeName.empty()) {
+                    throw std::runtime_error("Unable to generate output " + spec.name +
+                                             " because type has no name");
+                }
+
+                ss << "out " << glTypeSpec.valueTypeName << " "
+                   << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
             }
 
-            ss << "\n";
+            // Main function
 
-            // local variables
             ss << "void main() {\n";
-            for (auto [nameId, spec] : p_helper->pipeline.localSpecs) {
-                if (spec.typeInfo != Variant::getTypeInfo<void>() &&
-                    rend.getGpuStorageMethod(rend.getTypeConversion(spec.typeInfo).glTypeSpec) !=
-                        OpenGLRenderer::GpuValueStorageMethod::SSBO) {
-                    ss << "    " << specToMutableGlName(spec.typeInfo) << " " << localVarPrefix
-                       << spec.name << ";\n";
+
+            // Local variables
+            for (auto &spec : stageLocalList.getSpecList()) {
+                const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
+
+                if (glTypeSpec.valueTypeName.empty()) {
+                    throw std::runtime_error("Unable to generate output " + spec.name +
+                                             " because type has no name");
                 }
-                inputParametersToGlobalVars.emplace(nameId, localVarPrefix + spec.name);
-                outputParametersToGlobalVars.emplace(nameId, localVarPrefix + spec.name);
+
+                ss << glTypeSpec.valueTypeName << " " << localVarPrefix << spec.name << ";\n";
             }
+
+            ss << "\n";
 
             // early return conditions
             if (p_helper->p_compSpec->shaderType == GL_COMPUTE_SHADER) {
@@ -513,7 +654,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                     } else {
                         if (computeSpec.groupSize.x > 1)
                             ss << "    if (gl_GlobalInvocationID.x >= "
-                               << inputParametersToGlobalVars.at(
+                               << stageAliases.choiceStringFor(
                                       computeSpec.invocationCountX.getSpec().name)
                                << ") return;\n";
                     }
@@ -525,7 +666,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                     } else {
                         if (computeSpec.groupSize.y > 1)
                             ss << "    if (gl_GlobalInvocationID.y >= "
-                               << inputParametersToGlobalVars.at(
+                               << stageAliases.choiceStringFor(
                                       computeSpec.invocationCountY.getSpec().name)
                                << ") return;\n";
                     }
@@ -537,44 +678,30 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                     } else {
                         if (computeSpec.groupSize.z > 1)
                             ss << "    if (gl_GlobalInvocationID.z >= "
-                               << inputParametersToGlobalVars.at(
+                               << stageAliases.choiceStringFor(
                                       computeSpec.invocationCountZ.getSpec().name)
                                << ") return;\n";
                     }
                 }
             }
 
+            // pipethroughs
+            for (const auto &[to, from] : initialPipethroughList) {
+                ss << to << " = " << from << ";\n";
+            }
+
+            ss << "\n";
+
             // execution pipeline
-            for (auto &pipeItem : p_helper->pipeline.items) {
+            for (auto p_task : p_helper->pipeline.items) {
                 ss << "    ";
-                pipeItem.p_task->outputUsageCode(context, inputParametersToGlobalVars,
-                                                 outputParametersToGlobalVars);
+                p_task->outputUsageCode(context);
                 ss << "\n";
             }
 
-            // pipethrough variables
-            for (auto nameId : p_helper->pipeline.pipethroughInputNames) {
-                if (&p_helper->pipeline.inputSpecs.at(nameId).typeInfo !=
-                    &Variant::getTypeInfo<void>()) {
-                    if (uniformVarSpecs.find(nameId) == uniformVarSpecs.end()) {
-                        ss << "    " << outputParametersToGlobalVars.at(nameId) << " = "
-                           << inputParametersToGlobalVars.at(nameId) << ";\n";
-                    }
-                }
-            }
+            ss << "}\n // main()";
 
-            // built-in variables
-            for (auto [predefName, outNameId] : p_helper->p_compSpec->predefinedVarsToOutputs) {
-                if (auto it = outputParametersToGlobalVars.find(outNameId);
-                    it != outputParametersToGlobalVars.end()) {
-                    ss << "    " << predefName << " = " << it->second << ";\n";
-                } else {
-                    auto &globVarName = inputParametersToGlobalVars.at(outNameId);
-                    ss << "    " << predefName << " = " << globVarName << ";\n";
-                }
-            }
-
-            ss << "}\n";
+            // === Compile ===
 
             // create the shader with the source
             std::string srcCode = ss.str();
@@ -583,9 +710,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             glShaderSource(p_helper->shaderId, 1, &c_code, NULL);
 
             // debug
-            String filePrefix = std::string("shaderdebug/") +
-                                String(p_helper->p_compSpec->p_method->getFriendlyName()) + "_" +
-                                std::to_string(desiredOutputs.getHash()) +
+            String filePrefix = std::string("shaderdebug/") + getPipelineId(p_helper->pipeline) +
                                 p_helper->p_compSpec->outVarPrefix;
             {
                 std::ofstream file;
@@ -608,11 +733,20 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                                      << "/" << filename << "'" << std::endl;
             }
 
-            prevVarPrefix = p_helper->p_compSpec->outVarPrefix;
+            // === Prepare for the next stage ===
+
+            prevStageOutVarPrefix = p_helper->p_compSpec->outVarPrefix;
+            prevStageOutputs.clear();
+            for (const auto &[nameId, spec] : stageOutputList.getMappedSpecs()) {
+                prevStageOutputs.emplace(nameId, LocationSpec{
+                                                     .srcSpec = spec,
+                                                     .location = 0, /// TODO: fixed locations
+                                                 });
+            }
         }
     }
 
-    // compile shaders
+    // Link shaders
     {
         int success;
         char cmplLog[1024];
@@ -652,73 +786,200 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
     }
 
     // store uniform indices
-    for (auto [uniNameId, uniSpec] : uniformVarSpecs) {
-        std::string uniFullName = uniVarPrefix + uniSpec.name;
-
-        auto minimalStorageMethod =
-            rend.getGpuStorageMethod(rend.getTypeConversion(uniSpec.typeInfo).glTypeSpec);
-
-        if (std::find(desiredOutputs.getSpecNameIds().begin(),
-                      desiredOutputs.getSpecNameIds().end(),
-                      uniNameId) != desiredOutputs.getSpecNameIds().end()) {
-            if (minimalStorageMethod == OpenGLRenderer::GpuValueStorageMethod::UniformBinding) {
-                bindingSpecs.emplace(uniNameId, BindingSpec{
-                                                    .srcSpec = uniSpec,
-                                                    .location = glGetUniformLocation(
-                                                        programGLName, uniFullName.c_str()),
-                                                    .bindingIndex = namedBindings.at(uniNameId),
-                                                });
-            } else {
-                GLint index = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
-                                                        uniSpec.name.c_str());
-                bindingSpecs.emplace(uniNameId, BindingSpec{
-                                                    .srcSpec = uniSpec,
-                                                    .location = index,
-                                                    .bindingIndex = namedBindings.at(uniNameId),
-                                                });
-            }
-        } else {
-
-            switch (minimalStorageMethod) {
-            case OpenGLRenderer::GpuValueStorageMethod::Uniform:
-                uniformSpecs.emplace(
-                    uniNameId, UniformSpec{.srcSpec = uniSpec,
-                                           .location = glGetUniformLocation(programGLName,
-                                                                            uniFullName.c_str())});
-                break;
-            case OpenGLRenderer::GpuValueStorageMethod::UniformBinding:
-                bindingSpecs.emplace(uniNameId, BindingSpec{
-                                                    .srcSpec = uniSpec,
-                                                    .location = glGetUniformLocation(
-                                                        programGLName, uniFullName.c_str()),
-                                                    .bindingIndex = namedBindings.at(uniNameId),
-                                                });
-                break;
-            case OpenGLRenderer::GpuValueStorageMethod::UBO:
-                uboSpecs.emplace(uniNameId, BindingSpec{
-                                                .srcSpec = uniSpec,
-                                                .location = (GLint)glGetUniformBlockIndex(
-                                                    programGLName, uniFullName.c_str()),
-                                                .bindingIndex = namedBindings.at(uniNameId),
-                                            });
-                break;
-            case OpenGLRenderer::GpuValueStorageMethod::SSBO:
-                GLint index = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
-                                                        uniSpec.name.c_str());
-                bindingSpecs.emplace(uniNameId, BindingSpec{
-                                                    .srcSpec = uniSpec,
-                                                    .location = index,
-                                                    .bindingIndex = namedBindings.at(uniNameId),
-                                                });
-                break;
-            }
-        }
+    for (auto [nameId, spec] : this->uniformSpecs) {
+        spec.location = glGetUniformLocation(programGLName, spec.srcSpec.name.c_str());
+    }
+    for (auto [nameId, spec] : this->opaqueBindingSpecs) {
+        spec.location = glGetUniformLocation(programGLName, spec.srcSpec.name.c_str());
+        spec.bindingIndex = namedBindings.at(nameId);
+    }
+    for (auto [nameId, spec] : this->uboSpecs) {
+        spec.location = glGetUniformBlockIndex(programGLName, spec.srcSpec.name.c_str());
+        spec.bindingIndex = namedBindings.at(nameId);
+    }
+    for (auto [nameId, spec] : this->ssboSpecs) {
+        spec.location = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
+                                                  spec.srcSpec.name.c_str());
+        spec.bindingIndex = namedBindings.at(nameId);
     }
 }
 
 CompiledGLSLShader::~CompiledGLSLShader()
 {
     glDeleteProgram(programGLName);
+}
+
+void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &env) const
+{
+    MMETER_SCOPE_PROFILER(
+        "CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &env) const");
+
+    for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
+        rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+            .setUniform(uniSpec.location, env.get(propertyNameId));
+    }
+
+    for (auto [propertyNameId, bindSpec] : this->opaqueBindingSpecs) {
+        rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
+            .setOpaqueBinding(bindSpec.location, env.get(propertyNameId));
+    }
+
+    for (auto [propertyNameId, uboSpec] : this->uboSpecs) {
+        rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
+            .setUBOBinding(uboSpec.location, env.get(propertyNameId));
+    }
+
+    for (auto [propertyNameId, ssboSpec] : this->ssboSpecs) {
+        rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
+            .setSSBOBinding(ssboSpec.location, env.get(propertyNameId));
+    }
+}
+
+void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &envProperties,
+                                         const Material &material) const
+{
+    MMETER_SCOPE_PROFILER("CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict "
+                          "&envProperties, const Material &material) const");
+
+    auto &matProperties = material.getProperties();
+
+    for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
+        if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
+            // this is set per model
+            /// TODO: This is a hack currently
+        } else if (auto nameValIt = matProperties.find(propertyNameId);
+                   nameValIt != matProperties.end()) {
+            // convert material variant to uniform
+            rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                .setUniform(uniSpec.location, (*nameValIt).second);
+        } else {
+            // convert context variant to uniform
+            rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                .setUniform(uniSpec.location, envProperties.get(propertyNameId));
+        }
+    }
+
+    for (auto [propertyNameId, bindSpec] : this->opaqueBindingSpecs) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
+            // bind material variant value
+            rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
+                .setOpaqueBinding(bindSpec.bindingIndex, (*nameValIt).second);
+        } else {
+            // bind context variant value
+            rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
+                .setOpaqueBinding(bindSpec.bindingIndex, envProperties.get(propertyNameId));
+        }
+    }
+
+    for (auto [propertyNameId, uboSpec] : this->uboSpecs) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
+            // bind material variant UBO
+            rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
+                .setUBOBinding(uboSpec.bindingIndex, (*nameValIt).second);
+        } else {
+            // bind context variant UBO
+            rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
+                .setUBOBinding(uboSpec.bindingIndex, envProperties.get(propertyNameId));
+        }
+    }
+
+    for (auto [propertyNameId, ssboSpec] : this->ssboSpecs) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
+            // bind material variant buffer
+            rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
+                .setSSBOBinding(ssboSpec.bindingIndex, (*nameValIt).second);
+        } else {
+            // bind context variant buffer
+            rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
+                .setSSBOBinding(ssboSpec.bindingIndex, envProperties.get(propertyNameId));
+        }
+    }
+}
+
+void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, ScopedDict &envProperties,
+                                                    const Material &firstMaterial) const
+{
+    MMETER_SCOPE_PROFILER("CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, "
+                          "ScopedDict &envProperties, "
+                          "const Material &firstMaterial) const");
+
+    auto &matProperties = firstMaterial.getProperties();
+
+    for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
+        if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
+            // this is set per model
+            /// TODO: This is a hack currently
+        } else if (matProperties.find(propertyNameId) == matProperties.end()) {
+            // convert context variant to uniform
+            rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                .setUniform(uniSpec.location, envProperties.get(propertyNameId));
+        }
+    }
+
+    for (auto [propertyNameId, bindSpec] : this->opaqueBindingSpecs) {
+        if (matProperties.find(propertyNameId) == matProperties.end()) {
+            // bind context variant
+            rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
+                .setOpaqueBinding(bindSpec.bindingIndex, envProperties.get(propertyNameId));
+        }
+    }
+
+    for (auto [propertyNameId, uboSpec] : this->uboSpecs) {
+        if (matProperties.find(propertyNameId) == matProperties.end()) {
+            // bind context variant UBO
+            rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
+                .setUBOBinding(uboSpec.bindingIndex, envProperties.get(propertyNameId));
+        }
+    }
+
+    for (auto [propertyNameId, ssboSpec] : this->ssboSpecs) {
+        if (matProperties.find(propertyNameId) == matProperties.end()) {
+            // bind context variant buffer
+            rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
+                .setSSBOBinding(ssboSpec.bindingIndex, envProperties.get(propertyNameId));
+        }
+    }
+}
+
+void CompiledGLSLShader::setupMaterialProperties(OpenGLRenderer &rend,
+                                                 const Material &material) const
+{
+    MMETER_SCOPE_PROFILER("CompiledGLSLShader::setupMaterialProperties(OpenGLRenderer &rend, const "
+                          "Material &material) const");
+
+    auto &matProperties = material.getProperties();
+
+    for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
+            // convert material variant to uniform
+            rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                .setUniform(uniSpec.location, (*nameValIt).second);
+        }
+    }
+
+    for (auto [propertyNameId, bindSpec] : this->opaqueBindingSpecs) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
+            // bind material variant
+            rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
+                .setOpaqueBinding(bindSpec.bindingIndex, (*nameValIt).second);
+        }
+    }
+
+    for (auto [propertyNameId, uboSpec] : this->uboSpecs) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
+            // bind material variant UBO
+            rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
+                .setUBOBinding(uboSpec.bindingIndex, (*nameValIt).second);
+        }
+    }
+
+    for (auto [propertyNameId, ssboSpec] : this->ssboSpecs) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
+            // bind material variant buffer
+            rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
+                .setSSBOBinding(ssboSpec.bindingIndex, (*nameValIt).second);
+        }
+    }
 }
 
 } // namespace Vitrae

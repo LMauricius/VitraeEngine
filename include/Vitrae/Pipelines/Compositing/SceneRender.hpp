@@ -16,18 +16,15 @@ class ComposeSceneRender : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        String sceneInputPropertyName;
+        std::vector<String> inputTokenNames;
+        std::vector<String> outputTokenNames;
         String vertexPositionOutputPropertyName;
-        String displayInputPropertyName;
-        String displayOutputPropertyName;
         CullingMode cullingMode = CullingMode::Backface;
         RasterizingMode rasterizingMode = RasterizingMode::DerivationalFillCenters;
         bool smoothFilling : 1 = false;
         bool smoothTracing : 1 = false;
         bool smoothDotting : 1 = false;
     };
-
-    using ComposeTask::ComposeTask;
 };
 
 struct ComposeSceneRenderKeeperSeed

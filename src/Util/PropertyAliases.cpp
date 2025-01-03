@@ -38,7 +38,7 @@ PropertyAliases::PropertyAliases(StableMap<StringId, String> &&aliases)
     }
 }
 
-PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs)
+PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentPtrs)
     : m_parentPtrs(parentPtrs), m_hash(0)
 {
     for (const auto *p_parent : parentPtrs) {
@@ -46,7 +46,7 @@ PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs)
     }
 }
 
-PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
                                  const StableMap<StringId, String> &aliases)
     : m_parentPtrs(parentPtrs), m_localAliases(convertAliases(aliases)), m_hash(0)
 {
@@ -60,7 +60,7 @@ PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
     }
 }
 
-PropertyAliases::PropertyAliases(std::span<const PropertyAliases *> parentPtrs,
+PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
                                  StableMap<StringId, String> &&aliases)
     : m_parentPtrs(parentPtrs), m_localAliases(convertAliases(aliases)), m_hash(0)
 {

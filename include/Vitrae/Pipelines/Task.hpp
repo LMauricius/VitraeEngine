@@ -52,12 +52,14 @@ class Task : public dynasma::PolymorphicBase
      * Adds all types used by this task (its properties and internal execution) to the typeSet
      * @param typeSet The output set to add types to
      */
-    virtual void extractUsedTypes(std::set<const TypeInfo *> &typeSet) const = 0;
+    virtual void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                  const PropertyAliases &propMapping) const = 0;
 
     /**
      * Adds all subtasks used by this task to the taskSet
      */
-    virtual void extractSubTasks(std::set<const Task *> &taskSet) const = 0;
+    virtual void extractSubTasks(std::set<const Task *> &taskSet,
+                                 const PropertyAliases &propMapping) const = 0;
 
     /**
      * @returns The user-friendly name of the task

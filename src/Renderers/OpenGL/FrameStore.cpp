@@ -59,7 +59,7 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
         width = p_texture->getSize().x;
         height = p_texture->getSize().y;
 
-        renderComponents.emplace_back(spec.fragmentPropertySpec);
+        renderComponents.emplace_back(spec.fragmentSpec);
 
         colorAttachmentUnusedIndex++;
     }
@@ -156,7 +156,7 @@ void OpenGLFrameStore::sync()
     std::visit([](auto &contextSwitcher) { contextSwitcher.sync(); }, m_contextSwitcher);
 }
 
-void OpenGLFrameStore::enterRender(const ScopedDict &properties, glm::vec2 topLeft,
+void OpenGLFrameStore::enterRender(const ArgumentScope &properties, glm::vec2 topLeft,
                                    glm::vec2 bottomRight)
 {
     std::visit(
@@ -183,7 +183,7 @@ glm::vec2 OpenGLFrameStore::FramebufferContextSwitcher::getSize() const
 {
     return glm::vec2(width, height);
 }
-void OpenGLFrameStore::FramebufferContextSwitcher::enterContext(const ScopedDict &properties,
+void OpenGLFrameStore::FramebufferContextSwitcher::enterContext(const ArgumentScope &properties,
                                                                 glm::vec2 topLeft,
                                                                 glm::vec2 bottomRight)
 {
@@ -209,14 +209,10 @@ glm::vec2 OpenGLFrameStore::WindowContextSwitcher::getSize() const
     glfwGetFramebufferSize(window, &width, &height);
     return glm::vec2(width, height);
 }
-void OpenGLFrameStore::WindowContextSwitcher::enterContext(const ScopedDict &properties,
+void OpenGLFrameStore::WindowContextSwitcher::enterContext(const ArgumentScope &properties,
                                                            glm::vec2 topLeft, glm::vec2 bottomRight)
 {
-    if (auto p = properties.getPtr("vsync"); p && p->get<bool>()) {
-        glfwSwapInterval(1);
-    } else {
-        glfwSwapInterval(0);
-    }
+    glfwSwapInterval(properties.get("vsync").get<bool>() ? 1 : 0);
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
@@ -232,7 +228,11 @@ void OpenGLFrameStore::WindowContextSwitcher::sync()
 
     // wait (for profiling)
 #ifdef VITRAE_ENABLE_DETERMINISTIC_RENDERING
-    glFinish();
+    {
+        MMETER_SCOPE_PROFILER("Waiting for GL operations");
+
+        glFinish();
+    }
 #endif
 }
 

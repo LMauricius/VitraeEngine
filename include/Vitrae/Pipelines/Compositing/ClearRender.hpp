@@ -9,6 +9,10 @@
 namespace Vitrae
 {
 
+/**
+ * Clears the frame with the background color
+ *
+ */
 class ComposeClearRender : public ComposeTask
 {
   public:
@@ -16,11 +20,18 @@ class ComposeClearRender : public ComposeTask
     {
         ComponentRoot &root;
         glm::vec4 backgroundColor;
-        String displayInputPropertyName;
-        String displayOutputPropertyName;
+        std::vector<String> outputTokenNames;
     };
 
-    using ComposeTask::ComposeTask;
+    /**
+     * The spec for frame_store filter property
+     */
+    static const PropertySpec FRAME_STORE_SPEC;
+
+    /**
+     * The constant filter specs of ComposeClearRender
+     */
+    static const PropertyList FILTER_SPECS;
 };
 
 struct ComposeClearRenderKeeperSeed

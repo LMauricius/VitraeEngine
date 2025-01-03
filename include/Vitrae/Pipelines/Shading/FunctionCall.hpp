@@ -11,14 +11,14 @@ namespace Vitrae {
 
 class ShaderFunctionCall : public ShaderTask {
   public:
-    struct StringParams {
-        std::vector<PropertySpec> inputSpecs;
-        std::vector<PropertySpec> outputSpecs;
+    struct StringParams
+    {
+        PropertyList consumingSpecs;
+        PropertyList inputSpecs;
+        PropertyList filterSpecs;
+        PropertyList outputSpecs;
         String functionName;
     };
-
-    inline ShaderFunctionCall(const StringParams &params)
-        : ShaderTask(params.inputSpecs, params.outputSpecs) {}
 };
 
 struct ShaderFunctionCallKeeperSeed {

@@ -31,4 +31,9 @@ Variant &&ArgumentScope::move(StringId key)
     StringId actualKey = mp_propertySelection->choiceFor(key);
     return mp_scope->move(actualKey);
 }
+bool ArgumentScope::has(StringId key) const
+{
+    StringId actualKey = mp_propertySelection->choiceFor(key);
+    return mp_scope->has(actualKey);
+}
 } // namespace Vitrae
