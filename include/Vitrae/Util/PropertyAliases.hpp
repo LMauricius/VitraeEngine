@@ -36,6 +36,7 @@ class PropertyAliases
      * (choice)
      */
     PropertyAliases(const StableMap<StringId, String> &aliases);
+    PropertyAliases(std::initializer_list<std::pair<StringId, String>> aliases);
 
     PropertyAliases(StableMap<StringId, String> &&aliases);
 

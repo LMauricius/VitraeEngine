@@ -29,6 +29,10 @@ PropertyAliases::PropertyAliases(const StableMap<StringId, String> &aliases)
     }
 }
 
+PropertyAliases::PropertyAliases(std::initializer_list<std::pair<StringId, String>> aliases)
+    : PropertyAliases(StableMap<StringId, String>(aliases))
+{}
+
 PropertyAliases::PropertyAliases(StableMap<StringId, String> &&aliases)
     : m_parentPtrs{}, m_localAliases(convertAliases(aliases)), m_hash(0)
 {
