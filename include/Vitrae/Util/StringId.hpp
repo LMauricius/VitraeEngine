@@ -71,11 +71,7 @@ class StringId
     }
 
     constexpr bool operator==(StringId id) const { return m_hash == id.m_hash; }
-    constexpr bool operator!=(StringId id) const { return m_hash != id.m_hash; }
-    constexpr bool operator>=(StringId id) const { return m_hash >= id.m_hash; }
-    constexpr bool operator<=(StringId id) const { return m_hash <= id.m_hash; }
-    constexpr bool operator>(StringId id) const { return m_hash > id.m_hash; }
-    constexpr bool operator<(StringId id) const { return m_hash < id.m_hash; }
+    constexpr auto operator<=>(StringId id) const { return m_hash <=> id.m_hash; }
 };
 } // namespace Vitrae
 
