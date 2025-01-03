@@ -8,10 +8,8 @@
 namespace Vitrae
 {
 ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
-    : m_root(params.root), m_filterFrameName(params.filterFrameName),
-      m_outputColorTextureName(params.outputColorTextureName),
+    : m_root(params.root), m_outputColorTextureName(params.outputColorTextureName),
       m_outputDepthTextureName(params.outputDepthTextureName),
-      m_filterFrameNameId(params.filterFrameName),
       m_outputColorTextureNameId(params.outputColorTextureName),
       m_outputDepthTextureNameId(params.outputDepthTextureName),
       m_outputTexturePropertySpecs(params.outputs), m_size(params.size),
@@ -44,10 +42,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
         m_friendlyName += spec.fragmentSpec.name;
     }
 
-    m_inputSpecs.insert_back({
-        m_filterFrameName,
-        Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>(),
-    });
+    m_filterSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
 
     for (auto &tokenName : params.inputTokenNames) {
         m_inputSpecs.insert_back({tokenName, Variant::getTypeInfo<void>()});
@@ -70,7 +65,7 @@ const PropertyList &ComposeFrameToTexture::getOutputSpecs(const PropertyAliases 
 
 const PropertyList &ComposeFrameToTexture::getFilterSpecs(const PropertyAliases &) const
 {
-    return EMPTY_PROPERTY_LIST;
+    return m_filterSpecs;
 }
 
 const PropertyList &ComposeFrameToTexture::getConsumingSpecs(const PropertyAliases &) const
@@ -90,11 +85,12 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
     FrameStoreManager &frameManager = m_root.getComponent<FrameStoreManager>();
     TextureManager &textureManager = m_root.getComponent<TextureManager>();
 
-    FrameStore::TextureBindParams frameParams = {.root = m_root,
-                                                 .p_colorTexture = {},
-                                                 .p_depthTexture = {},
-                                                 .outputTextureSpecs = {},
-                                                 .friendlyName = m_filterFrameName};
+    FrameStore::TextureBindParams frameParams = {
+        .root = m_root,
+        .p_colorTexture = {},
+        .p_depthTexture = {},
+        .outputTextureSpecs = {},
+        .friendlyName = ctx.aliases.choiceStringFor(FRAME_STORE_TARGET_SPEC.name)};
     glm::vec2 retrSize = m_size.get(ctx.properties);
 
     if (m_outputColorTextureNameId != "") {
@@ -147,7 +143,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
     }
 
     auto frame = frameManager.register_asset({frameParams});
-    ctx.properties.set(m_filterFrameNameId, frame);
+    ctx.properties.set(FRAME_STORE_TARGET_SPEC.name, frame);
 }
 
 StringView ComposeFrameToTexture::getFriendlyName() const
