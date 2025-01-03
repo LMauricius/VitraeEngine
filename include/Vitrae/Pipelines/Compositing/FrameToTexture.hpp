@@ -26,8 +26,8 @@ class ComposeFrameToTexture : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        String inputFrameName;
         std::vector<String> inputTokenNames;
+        String filterFrameName;
         String outputColorTextureName;
         String outputDepthTextureName;
         std::vector<OutputTexturePropertySpec> outputs;
@@ -59,8 +59,8 @@ class ComposeFrameToTexture : public ComposeTask
     PropertyList m_inputSpecs;
     PropertyList m_outputSpecs;
 
-    String m_inputFrameName, m_outputColorTextureName, m_outputDepthTextureName;
-    StringId m_inputFrameNameId, m_outputColorTextureNameId, m_outputDepthTextureNameId;
+    String m_filterFrameName, m_outputColorTextureName, m_outputDepthTextureName;
+    StringId m_filterFrameNameId, m_outputColorTextureNameId, m_outputDepthTextureNameId;
     std::vector<OutputTexturePropertySpec> m_outputTexturePropertySpecs;
     PropertyGetter<glm::vec2> m_size;
     Texture::ChannelType m_channelType;

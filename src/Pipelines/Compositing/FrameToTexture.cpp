@@ -8,10 +8,10 @@
 namespace Vitrae
 {
 ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
-    : m_root(params.root), m_inputFrameName(params.inputFrameName),
+    : m_root(params.root), m_filterFrameName(params.filterFrameName),
       m_outputColorTextureName(params.outputColorTextureName),
       m_outputDepthTextureName(params.outputDepthTextureName),
-      m_inputFrameNameId(params.inputFrameName),
+      m_filterFrameNameId(params.filterFrameName),
       m_outputColorTextureNameId(params.outputColorTextureName),
       m_outputDepthTextureNameId(params.outputDepthTextureName),
       m_outputTexturePropertySpecs(params.outputs), m_size(params.size),
@@ -45,7 +45,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
     }
 
     m_inputSpecs.insert_back({
-        m_inputFrameName,
+        m_filterFrameName,
         Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>(),
     });
 
@@ -94,7 +94,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
                                                  .p_colorTexture = {},
                                                  .p_depthTexture = {},
                                                  .outputTextureSpecs = {},
-                                                 .friendlyName = m_inputFrameName};
+                                                 .friendlyName = m_filterFrameName};
     glm::vec2 retrSize = m_size.get(ctx.properties);
 
     if (m_outputColorTextureNameId != "") {
@@ -147,7 +147,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
     }
 
     auto frame = frameManager.register_asset({frameParams});
-    ctx.properties.set(m_inputFrameNameId, frame);
+    ctx.properties.set(m_filterFrameNameId, frame);
 }
 
 StringView ComposeFrameToTexture::getFriendlyName() const
