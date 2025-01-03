@@ -10,6 +10,11 @@ namespace Vitrae {
 
 ComposeAdaptTasks::ComposeAdaptTasks(const SetupParams &params) : m_params(params) {}
 
+std::size_t ComposeAdaptTasks::memory_cost() const
+{
+    return sizeof(ComposeAdaptTasks);
+}
+
 const PropertyList &ComposeAdaptTasks::getInputSpecs(const PropertyAliases &externalAliases) const
 {
     return getAdaptorPerAliases(externalAliases, m_params.root.getComponent<MethodCollection>())
@@ -33,6 +38,25 @@ const PropertyList &ComposeAdaptTasks::getConsumingSpecs(
 {
     return getAdaptorPerAliases(externalAliases, m_params.root.getComponent<MethodCollection>())
         .consumeSpecs;
+}
+
+void ComposeAdaptTasks::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                         const PropertyAliases &aliases) const
+{
+    auto &specs = getAdaptorPerAliases(aliases, m_params.root.getComponent<MethodCollection>());
+
+    for (const PropertyList *p_specs :
+         {&specs.inputSpecs, &specs.outputSpecs, &specs.filterSpecs, &specs.consumeSpecs}) {
+        for (const PropertySpec &spec : p_specs->getSpecList()) {
+            typeSet.insert(&spec.typeInfo);
+        }
+    }
+}
+
+void ComposeAdaptTasks::extractSubTasks(std::set<const Task *> &taskSet,
+                                        const PropertyAliases &aliases) const
+{
+    taskSet.insert(this);
 }
 
 void ComposeAdaptTasks::run(RenderComposeContext ctx) const

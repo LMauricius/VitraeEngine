@@ -310,4 +310,10 @@ StringView OpenGLComposeDataRender::getFriendlyName() const
     return m_friendlyName;
 }
 
+std::size_t OpenGLComposeDataRender::getSpecsKey(const PropertyAliases &aliases) const
+{
+    return combinedHashes<2>(
+        {{std::hash<StringId>{}(m_params.vertexPositionOutputPropertyName), aliases.hash()}});
+}
+
 } // namespace Vitrae

@@ -53,6 +53,11 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
     }
 }
 
+std::size_t ComposeFrameToTexture::memory_cost() const
+{
+    return sizeof(ComposeFrameToTexture);
+}
+
 const PropertyList &ComposeFrameToTexture::getInputSpecs(const PropertyAliases &) const
 {
     return m_inputSpecs;
@@ -71,6 +76,22 @@ const PropertyList &ComposeFrameToTexture::getFilterSpecs(const PropertyAliases 
 const PropertyList &ComposeFrameToTexture::getConsumingSpecs(const PropertyAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
+}
+
+void ComposeFrameToTexture::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                             const PropertyAliases &aliases) const
+{
+    for (const PropertyList *p_specs : {&m_inputSpecs, &m_outputSpecs, &m_filterSpecs}) {
+        for (const PropertySpec &spec : p_specs->getSpecList()) {
+            typeSet.insert(&spec.typeInfo);
+        }
+    }
+}
+
+void ComposeFrameToTexture::extractSubTasks(std::set<const Task *> &taskSet,
+                                            const PropertyAliases &aliases) const
+{
+    taskSet.insert(this);
 }
 
 void ComposeFrameToTexture::run(RenderComposeContext ctx) const

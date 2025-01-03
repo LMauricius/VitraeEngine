@@ -10,6 +10,11 @@ ComposeFunction::ComposeFunction(const SetupParams &params)
       m_inputSpecs(params.inputSpecs), m_outputSpecs(params.outputSpecs)
 {}
 
+std::size_t ComposeFunction::memory_cost() const
+{
+    return sizeof(ComposeFunction);
+}
+
 const PropertyList &ComposeFunction::getInputSpecs(const PropertyAliases &) const
 {
     return m_inputSpecs;
@@ -28,6 +33,23 @@ const PropertyList &ComposeFunction::getFilterSpecs(const PropertyAliases &) con
 const PropertyList &ComposeFunction::getConsumingSpecs(const PropertyAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
+}
+
+void ComposeFunction::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                                       const PropertyAliases &aliases) const
+{
+    for (const PropertyList *p_specs :
+         {&m_inputSpecs, &m_outputSpecs, &m_filterSpecs, &m_consumingSpecs}) {
+        for (const PropertySpec &spec : p_specs->getSpecList()) {
+            typeSet.insert(&spec.typeInfo);
+        }
+    }
+}
+
+void ComposeFunction::extractSubTasks(std::set<const Task *> &taskSet,
+                                      const PropertyAliases &aliases) const
+{
+    taskSet.insert(this);
 }
 
 void ComposeFunction::run(RenderComposeContext args) const
