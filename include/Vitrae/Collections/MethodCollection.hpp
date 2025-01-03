@@ -31,10 +31,7 @@ class MethodCollection
     void registerShaderTask(dynasma::FirmPtr<ShaderTask> p_task, ShaderStageFlags supportedStages);
     void registerComposeTask(dynasma::FirmPtr<ComposeTask> p_task);
 
-    void registerShaderPropertyOption(const String &outputPropertyName,
-                                      const String &optionPropertyName);
-    void registerComposePropertyOption(const String &outputPropertyName,
-                                       const String &optionPropertyName);
+    void registerPropertyOption(const String &outputPropertyName, const String &optionPropertyName);
 
     void registerCompositorOutput(const String &outputPropertyName);
 
@@ -43,10 +40,8 @@ class MethodCollection
     dynasma::FirmPtr<const Method<ShaderTask>> getComputeMethod() const;
     dynasma::FirmPtr<const Method<ComposeTask>> getComposeMethod() const;
 
-    std::span<const String> getShaderPropertyOptions(StringId outputPropertyNameId) const;
-    std::span<const String> getComposePropertyOptions(StringId outputPropertyNameId) const;
-    const StableMap<StringId, std::vector<String>> &getShaderPropertyOptionsMap() const;
-    const StableMap<StringId, std::vector<String>> &getComposePropertyOptionsMap() const;
+    std::span<const String> getPropertyOptions(String outputPropertyNameId) const;
+    const StableMap<String, std::vector<String>> &getPropertyOptionsMap() const;
 
     const std::vector<String> &getCompositorOutputs() const { return m_compositorOutputs; }
 
@@ -55,8 +50,7 @@ class MethodCollection
     std::vector<dynasma::FirmPtr<ComposeTask>> m_composeTasks;
     dynasma::FirmPtr<Method<ShaderTask>> mp_vertexMethod, mp_fragmentMethod, mp_computeMethod;
     dynasma::FirmPtr<Method<ComposeTask>> mp_composeMethod;
-    StableMap<StringId, std::vector<String>> m_shaderPropertyOptions;
-    StableMap<StringId, std::vector<String>> m_composePropertyOptions;
+    StableMap<String, std::vector<String>> m_propertyOptions;
     std::vector<String> m_compositorOutputs;
 };
 

@@ -53,16 +53,10 @@ void MethodCollection::registerComposeTask(dynasma::FirmPtr<ComposeTask> p_task)
         });
 }
 
-void MethodCollection::registerShaderPropertyOption(const String &outputPropertyName,
-                                                    const String &optionPropertyName)
+void MethodCollection::registerPropertyOption(const String &outputPropertyName,
+                                              const String &optionPropertyName)
 {
-    m_shaderPropertyOptions[outputPropertyName].push_back(optionPropertyName);
-}
-
-void MethodCollection::registerComposePropertyOption(const String &outputPropertyName,
-                                                     const String &optionPropertyName)
-{
-    m_composePropertyOptions[outputPropertyName].push_back(optionPropertyName);
+    m_propertyOptions[outputPropertyName].push_back(optionPropertyName);
 }
 
 void MethodCollection::registerCompositorOutput(const String &outputPropertyName)
@@ -90,28 +84,14 @@ dynasma::FirmPtr<const Method<ComposeTask>> MethodCollection::getComposeMethod()
     return mp_composeMethod;
 }
 
-std::span<const String> MethodCollection::getShaderPropertyOptions(
-    StringId outputPropertyNameId) const
+std::span<const String> MethodCollection::getPropertyOptions(String outputPropertyNameId) const
 {
-    return m_shaderPropertyOptions.at(outputPropertyNameId);
+    return m_propertyOptions.at(outputPropertyNameId);
 }
 
-std::span<const String> MethodCollection::getComposePropertyOptions(
-    StringId outputPropertyNameId) const
+const StableMap<String, std::vector<String>> &MethodCollection::getPropertyOptionsMap() const
 {
-    return m_composePropertyOptions.at(outputPropertyNameId);
-}
-
-const StableMap<StringId, std::vector<String>> &MethodCollection::getShaderPropertyOptionsMap()
-    const
-{
-    return m_shaderPropertyOptions;
-}
-
-const StableMap<StringId, std::vector<String>> &MethodCollection::getComposePropertyOptionsMap()
-    const
-{
-    return m_composePropertyOptions;
+    return m_propertyOptions;
 }
 
 } // namespace Vitrae
