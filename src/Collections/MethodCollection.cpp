@@ -65,6 +65,11 @@ void MethodCollection::registerComposePropertyOption(const String &outputPropert
     m_composePropertyOptions[outputPropertyName].push_back(optionPropertyName);
 }
 
+void MethodCollection::registerCompositorOutput(const String &outputPropertyName)
+{
+    m_compositorOutputs.push_back(outputPropertyName);
+}
+
 dynasma::FirmPtr<const Method<ShaderTask>> MethodCollection::getVertexMethod() const
 {
     return mp_vertexMethod;

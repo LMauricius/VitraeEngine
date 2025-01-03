@@ -36,6 +36,8 @@ class MethodCollection
     void registerComposePropertyOption(const String &outputPropertyName,
                                        const String &optionPropertyName);
 
+    void registerCompositorOutput(const String &outputPropertyName);
+
     dynasma::FirmPtr<const Method<ShaderTask>> getVertexMethod() const;
     dynasma::FirmPtr<const Method<ShaderTask>> getFragmentMethod() const;
     dynasma::FirmPtr<const Method<ShaderTask>> getComputeMethod() const;
@@ -46,6 +48,8 @@ class MethodCollection
     const StableMap<StringId, std::vector<String>> &getShaderPropertyOptionsMap() const;
     const StableMap<StringId, std::vector<String>> &getComposePropertyOptionsMap() const;
 
+    const std::vector<String> &getCompositorOutputs() const { return m_compositorOutputs; }
+
   protected:
     std::vector<dynasma::FirmPtr<ShaderTask>> m_vertexTasks, m_fragmentTasks, m_computeTasks;
     std::vector<dynasma::FirmPtr<ComposeTask>> m_composeTasks;
@@ -53,6 +57,7 @@ class MethodCollection
     dynasma::FirmPtr<Method<ComposeTask>> mp_composeMethod;
     StableMap<StringId, std::vector<String>> m_shaderPropertyOptions;
     StableMap<StringId, std::vector<String>> m_composePropertyOptions;
+    std::vector<String> m_compositorOutputs;
 };
 
 } // namespace Vitrae
