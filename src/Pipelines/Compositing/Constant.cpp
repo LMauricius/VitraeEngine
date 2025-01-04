@@ -14,7 +14,7 @@ const PropertyList &ComposeConstant::getInputSpecs(const PropertyAliases &) cons
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &ComposeConstant::getOutputSpecs(const PropertyAliases &) const
+const PropertyList &ComposeConstant::getOutputSpecs() const
 {
     return m_outputSpecs;
 }

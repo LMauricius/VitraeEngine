@@ -47,7 +47,7 @@ class ComposeAdaptTasks : public ComposeTask
     std::size_t memory_cost() const override;
 
     const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs() const override;
     const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
     const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
 
@@ -73,7 +73,7 @@ class ComposeAdaptTasks : public ComposeTask
 
         Pipeline<ComposeTask> pipeline;
 
-        PropertyList inputSpecs, outputSpecs, filterSpecs, consumeSpecs;
+        PropertyList inputSpecs, filterSpecs, consumeSpecs;
 
         AdaptorPerAliases() = delete;
         AdaptorPerAliases(AdaptorPerAliases &&) = default;
@@ -83,7 +83,7 @@ class ComposeAdaptTasks : public ComposeTask
 
         AdaptorPerAliases(const PropertyAliases &adaptorAliases, const PropertyList &desiredOutputs,
                           const PropertyAliases &externalAliases,
-                          const MethodCollection &methodCollection);
+                          const MethodCollection &methodCollection, StringView friendlyName);
     };
 
     mutable StableMap<std::size_t, AdaptorPerAliases> m_adaptorPerSelectionHash;

@@ -40,7 +40,7 @@ class Task : public dynasma::PolymorphicBase
      * @returns A specification of output properties of this task. Those usually don't exist before
      * running the task (although there can be collisions) and are set by the task
      */
-    virtual const PropertyList &getOutputSpecs(const PropertyAliases &propMapping) const = 0;
+    virtual const PropertyList &getOutputSpecs() const = 0;
 
     /**
      * @returns A specification of filter properties of this task. Those properties exist both

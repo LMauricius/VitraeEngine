@@ -19,7 +19,7 @@ const PropertyList &OpenGLShaderConstant::getInputSpecs(const PropertyAliases &)
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &OpenGLShaderConstant::getOutputSpecs(const PropertyAliases &) const
+const PropertyList &OpenGLShaderConstant::getOutputSpecs() const
 {
     return m_outputSpecs;
 }

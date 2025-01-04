@@ -57,8 +57,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         return String("Prop_") + spec.name;
     };
     auto getTaskId = [&](const BasicTask &task) -> String {
-        return String("Task_") + escapedLabel(task.getFriendlyName()) +
-               std::to_string((std::size_t)&task);
+        return String("Task_") + std::to_string((std::size_t)&task);
     };
     auto outputTaskNode = [&](StringView id, std::size_t ord, const BasicTask &task) {
         out << id << " [";
@@ -297,8 +296,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
             sameRank(curPropNodeId, getTaskId(*p_task));
         }
 
-        for (auto [nameId, spec] :
-             p_task->getOutputSpecs(pipeline.usedSelection).getMappedSpecs()) {
+        for (auto [nameId, spec] : p_task->getOutputSpecs().getMappedSpecs()) {
             out << "\t";
             outputGeneration(getTaskId(*p_task), currentPropertyNodeReference(spec), false);
         }

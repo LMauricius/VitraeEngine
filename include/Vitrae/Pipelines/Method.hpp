@@ -48,23 +48,8 @@ template <TaskChild BasicTask> class Method : public dynasma::PolymorphicBase
     // Constructor
     Method(const MethodParams &params) : m_friendlyName(params.friendlyName)
     {
-        /*
-        TODO: Better idea than this hack
-
-        For now, let's assume that property aliasing won't affect the set of filterSpecs+outputSpecs
-        of Tasks. Ideally, the output tasks shouldn't be affected by aliasing,
-        but depending on alias setup, some outputSpecs might get turned into filterSpecs.
-
-        That's the case for AdaptTasks for now, so we just use this hack
-        */
-
-        PropertyAliases dummyAliases;
-
         for (auto task : params.tasks) {
-            for (auto outputId : task->getOutputSpecs(dummyAliases).getSpecNameIds()) {
-                m_tasksPerOutput[outputId] = task;
-            }
-            for (auto outputId : task->getFilterSpecs(dummyAliases).getSpecNameIds()) {
+            for (auto outputId : task->getOutputSpecs().getSpecNameIds()) {
                 m_tasksPerOutput[outputId] = task;
             }
         }

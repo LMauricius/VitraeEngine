@@ -37,7 +37,7 @@ const PropertyList &OpenGLComposeClearRender::getInputSpecs(const PropertyAliase
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &OpenGLComposeClearRender::getOutputSpecs(const PropertyAliases &) const
+const PropertyList &OpenGLComposeClearRender::getOutputSpecs() const
 {
     return m_outputSpecs;
 }

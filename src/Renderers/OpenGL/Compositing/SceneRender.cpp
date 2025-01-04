@@ -57,6 +57,10 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
             m_friendlyName += " dotting";
         }
     }
+
+    for (const auto &spec : params.outputTokenNames) {
+        m_outputSpecs.insert_back({.name = spec, .typeInfo = Variant::getTypeInfo<void>()});
+    }
 }
 
 std::size_t OpenGLComposeSceneRender::memory_cost() const
@@ -73,13 +77,9 @@ const PropertyList &OpenGLComposeSceneRender::getInputSpecs(const PropertyAliase
     }
 }
 
-const PropertyList &OpenGLComposeSceneRender::getOutputSpecs(const PropertyAliases &aliases) const
+const PropertyList &OpenGLComposeSceneRender::getOutputSpecs() const
 {
-    if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.outputSpecs;
-    } else {
-        return EMPTY_PROPERTY_LIST;
-    }
+    return m_outputSpecs;
 }
 
 const PropertyList &OpenGLComposeSceneRender::getFilterSpecs(const PropertyAliases &aliases) const
@@ -105,9 +105,11 @@ void OpenGLComposeSceneRender::extractUsedTypes(std::set<const TypeInfo *> &type
                                                 const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
+        const SpecsPerAliases &specsPerAliases = (*it).second;
+
         for (const PropertyList *p_specs :
-             {&(*it).second.inputSpecs, &(*it).second.outputSpecs, &(*it).second.filterSpecs,
-              &(*it).second.consumingSpecs}) {
+             {&specsPerAliases.inputSpecs, &m_outputSpecs, &specsPerAliases.filterSpecs,
+              &specsPerAliases.consumingSpecs}) {
             for (const PropertySpec &spec : p_specs->getSpecList()) {
                 typeSet.insert(&spec.typeInfo);
             }
@@ -141,11 +143,6 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
         }
 
         specsContainer.inputSpecs.insert_back(SCENE_SPEC);
-
-        for (auto &tokenName : m_params.outputTokenNames) {
-            specsContainer.outputSpecs.insert_back(
-                {.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
-        }
     }
 
     SpecsPerAliases &specsContainer = (*specsIt).second;
@@ -254,8 +251,6 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                         needsRebuild |=
                             (specsContainer.inputSpecs.merge(p_compiledShader->inputSpecs) > 0);
                         needsRebuild |=
-                            (specsContainer.outputSpecs.merge(p_compiledShader->outputSpecs) > 0);
-                        needsRebuild |=
                             (specsContainer.filterSpecs.merge(p_compiledShader->filterSpecs) > 0);
                         needsRebuild |= (specsContainer.consumingSpecs.merge(
                                              p_compiledShader->consumingSpecs) > 0);
@@ -271,10 +266,14 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                         // set the 'environmental' uniforms
                         // skip those that will be set by the material
                         auto p_firstMat = materials2props.begin()->first;
-                        GLint glModelMatrixUniformLocation =
-                            p_compiledShader->uniformSpecs
-                                .at(StandardShaderPropertyNames::INPUT_MODEL)
-                                .location;
+                        GLint glModelMatrixUniformLocation;
+                        if (auto it = p_compiledShader->uniformSpecs.find(
+                                StandardShaderPropertyNames::INPUT_MODEL);
+                            it != p_compiledShader->uniformSpecs.end()) {
+                            glModelMatrixUniformLocation = (*it).second.location;
+                        } else {
+                            glModelMatrixUniformLocation = -1;
+                        }
 
                         p_compiledShader->setupNonMaterialProperties(rend, directProperties,
                                                                      *p_firstMat);
@@ -294,9 +293,11 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                                         static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
 
                                     glBindVertexArray(mesh.VAO);
-                                    glUniformMatrix4fv(
-                                        glModelMatrixUniformLocation, 1, GL_FALSE,
-                                        &(p_meshProp->transform.getModelMatrix()[0][0]));
+                                    if (glModelMatrixUniformLocation != -1) {
+                                        glUniformMatrix4fv(
+                                            glModelMatrixUniformLocation, 1, GL_FALSE,
+                                            &(p_meshProp->transform.getModelMatrix()[0][0]));
+                                    }
                                     glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
                                                    GL_UNSIGNED_INT, 0);
                                 }

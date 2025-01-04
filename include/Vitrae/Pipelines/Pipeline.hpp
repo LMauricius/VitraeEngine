@@ -154,7 +154,7 @@ template <TaskChild BasicTask> class Pipeline
                 const Task &task = *maybeTask.value();
 
                 // task outputs (store the outputs as visited)
-                for (auto [nameId, spec] : task.getOutputSpecs(selection).getMappedSpecs()) {
+                for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
                     visitedOutputs.insert(nameId);
                 }
 
@@ -231,7 +231,7 @@ template <TaskChild BasicTask> class Pipeline
 
             if (satisfiedAnyDependencies) {
                 // task outputs (store the outputs as visited)
-                for (auto [nameId, spec] : task.getOutputSpecs(selection).getMappedSpecs()) {
+                for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
                     visitedOutputs.insert(nameId);
                 }
 
@@ -327,7 +327,7 @@ template <TaskChild BasicTask> class Pipeline
                 consumeProperty(spec);
             }
 
-            for (auto &spec : task.getOutputSpecs(selection).getSpecList()) {
+            for (auto &spec : task.getOutputSpecs().getSpecList()) {
                 usingProperty(spec, taskContextName);
                 setProperty(spec);
             }

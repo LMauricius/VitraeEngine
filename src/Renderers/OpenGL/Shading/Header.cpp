@@ -47,7 +47,7 @@ const PropertyList &OpenGLShaderHeader::getInputSpecs(const PropertyAliases &) c
     return m_inputSpecs;
 }
 
-const PropertyList &OpenGLShaderHeader::getOutputSpecs(const PropertyAliases &) const
+const PropertyList &OpenGLShaderHeader::getOutputSpecs() const
 {
     return m_outputSpecs;
 }

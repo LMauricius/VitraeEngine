@@ -53,7 +53,7 @@ CompiledGLSLShader::CompiledGLSLShader(const SurfaceShaderParams &params)
                                       &params.getAliases(),
                                   },
                                   {
-                                      {params.getVertexPositionOutputName(), "gl_Position"},
+                                      {"gl_Position", params.getVertexPositionOutputName()},
                                   }),
                               .outVarPrefix = "vert_",
                               .shaderType = GL_VERTEX_SHADER},
@@ -697,6 +697,12 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 ss << "    ";
                 p_task->outputUsageCode(context);
                 ss << "\n";
+            }
+
+            // predefined outputs
+            if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
+                ss << "gl_Position = "
+                   << p_helper->p_compSpec->aliases.choiceStringFor("gl_Position") << ";\n";
             }
 
             ss << "}\n // main()";

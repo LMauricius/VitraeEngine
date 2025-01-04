@@ -1,9 +1,11 @@
 #include "Vitrae/Pipelines/Compositing/AdaptTasks.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Debugging/PipelineExport.hpp"
 
 #include "MMeter.h"
 
+#include <fstream>
 #include <ranges>
 
 namespace Vitrae {
@@ -21,10 +23,9 @@ const PropertyList &ComposeAdaptTasks::getInputSpecs(const PropertyAliases &exte
         .inputSpecs;
 }
 
-const PropertyList &ComposeAdaptTasks::getOutputSpecs(const PropertyAliases &externalAliases) const
+const PropertyList &ComposeAdaptTasks::getOutputSpecs() const
 {
-    return getAdaptorPerAliases(externalAliases, m_params.root.getComponent<MethodCollection>())
-        .outputSpecs;
+    return m_params.desiredOutputs;
 }
 
 const PropertyList &ComposeAdaptTasks::getFilterSpecs(const PropertyAliases &externalAliases) const
@@ -46,7 +47,7 @@ void ComposeAdaptTasks::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
     auto &specs = getAdaptorPerAliases(aliases, m_params.root.getComponent<MethodCollection>());
 
     for (const PropertyList *p_specs :
-         {&specs.inputSpecs, &specs.outputSpecs, &specs.filterSpecs, &specs.consumeSpecs}) {
+         {&specs.inputSpecs, &m_params.desiredOutputs, &specs.filterSpecs, &specs.consumeSpecs}) {
         for (const PropertySpec &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
@@ -159,7 +160,7 @@ const ComposeAdaptTasks::AdaptorPerAliases &ComposeAdaptTasks::getAdaptorPerAlia
     if (it == m_adaptorPerSelectionHash.end()) {
         it = m_adaptorPerSelectionHash
                  .emplace(externalAliases.hash(), m_params.adaptorAliases, m_params.desiredOutputs,
-                          externalAliases, methodCollection)
+                          externalAliases, methodCollection, m_params.friendlyName)
                  .first;
 
         return (*it).second;
@@ -175,13 +176,24 @@ void ComposeAdaptTasks::forgetAdaptorPerAliases(const PropertyAliases &externalA
 ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &adaptorAliases,
                                                         const PropertyList &desiredOutputs,
                                                         const PropertyAliases &externalAliases,
-                                                        const MethodCollection &methodCollection)
+                                                        const MethodCollection &methodCollection,
+                                                        StringView friendlyName)
 {
     const PropertyAliases *aliasArray[] = {&adaptorAliases, &externalAliases};
     PropertyAliases subAliases(aliasArray);
 
     pipeline =
         Pipeline<ComposeTask>(methodCollection.getComposeMethod(), desiredOutputs, subAliases);
+
+    String filePrefix =
+        std::string("shaderdebug/") + "adaptor_" + String(friendlyName) + getPipelineId(pipeline);
+    {
+        std::ofstream file;
+        String filename = filePrefix + ".dot";
+        file.open(filename);
+        exportPipeline(pipeline, file);
+        file.close();
+    }
 
     using ListConvPair = std::pair<const PropertyList *, PropertyList *>;
 
@@ -196,26 +208,57 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
         }
     }
 
-    std::unordered_map<StringId, StringId> choosen2desired;
-    for (auto desiredId : desiredOutputs.getSpecNameIds()) {
-        auto choice = adaptorAliases.choiceFor(desiredId);
-        choosen2desired.emplace(choice, desiredId);
-    }
+    for (auto [desiredId, desiredSpec] : desiredOutputs.getMappedSpecs()) {
+        auto outerChoice = adaptorAliases.choiceFor(desiredId);
 
-    for (const auto &specs : {pipeline.outputSpecs, pipeline.filterSpecs}) {
-        for (auto id : specs.getSpecNameIds()) {
-            for (auto desiredId : desiredOutputs.getSpecNameIds()) {
+        bool found = false;
 
-                auto outerChoice = adaptorAliases.choiceFor(desiredId);
-                auto innerChoice = adaptorAliases.choiceFor(id);
+        // check if it's in the outputs
+        for (auto [nameId, spec] : pipeline.outputSpecs.getMappedSpecs()) {
+            auto innerChoice = adaptorAliases.choiceFor(nameId);
+            if (outerChoice == innerChoice) {
+                if (spec.typeInfo != Variant::getTypeInfo<void>()) {
+                    finishingMapping.emplace(innerChoice, desiredId);
+                }
+                found = true;
+                break;
+            }
+        }
 
-                if (outerChoice == innerChoice) {
-                    if (innerChoice != desiredId) {
+        // check if it's in the filters
+        for (auto [nameId, spec] : pipeline.filterSpecs.getMappedSpecs()) {
+            auto innerChoice = adaptorAliases.choiceFor(nameId);
+            if (outerChoice == innerChoice) {
+                if (desiredId != innerChoice) {
+                    if (spec.typeInfo != Variant::getTypeInfo<void>()) {
                         finishingMapping.emplace(innerChoice, desiredId);
                     }
-                    break;
+                } else {
+                    throw std::runtime_error("Desired output spec is a true filter property");
                 }
+                found = true;
+                break;
             }
+        }
+
+        // check if it's in the pipethroughs
+        for (auto [nameId, spec] : pipeline.pipethroughSpecs.getMappedSpecs()) {
+            auto innerChoice = adaptorAliases.choiceFor(nameId);
+            if (outerChoice == innerChoice) {
+                if (desiredId != innerChoice) {
+                    if (spec.typeInfo != Variant::getTypeInfo<void>()) {
+                        finishingMapping.emplace(innerChoice, desiredId);
+                    }
+                } else {
+                    throw std::runtime_error("Desired output spec is a pipethrough property");
+                }
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            throw std::runtime_error("Desired output spec not found");
         }
     }
 }

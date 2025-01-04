@@ -33,7 +33,7 @@ class ComposeFunction : public ComposeTask
     std::size_t memory_cost() const override;
 
     const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs(const PropertyAliases &) const override;
+    const PropertyList &getOutputSpecs() const override;
     const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
     const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
 

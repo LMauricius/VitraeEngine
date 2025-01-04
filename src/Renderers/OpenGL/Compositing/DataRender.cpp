@@ -20,6 +20,7 @@ OpenGLComposeDataRender::OpenGLComposeDataRender(const SetupParams &params)
     m_friendlyName = "Render data:";
     for (const auto &spec : params.outputTokenNames) {
         m_friendlyName += "\n- " + spec;
+        m_outputSpecs.insert_back({.name = spec, .typeInfo = Variant::getTypeInfo<void>()});
     }
 }
 
@@ -38,13 +39,9 @@ const PropertyList &OpenGLComposeDataRender::getInputSpecs(const PropertyAliases
     }
 }
 
-const PropertyList &OpenGLComposeDataRender::getOutputSpecs(const PropertyAliases &aliases) const
+const PropertyList &OpenGLComposeDataRender::getOutputSpecs() const
 {
-    if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.outputSpecs;
-    } else {
-        return EMPTY_PROPERTY_LIST;
-    }
+    return m_outputSpecs;
 }
 
 const PropertyList &OpenGLComposeDataRender::getFilterSpecs(const PropertyAliases &aliases) const
@@ -69,9 +66,11 @@ void OpenGLComposeDataRender::extractUsedTypes(std::set<const TypeInfo *> &typeS
                                                const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
+        const SpecsPerAliases &specsPerAliases = (*it).second;
+
         for (const PropertyList *p_specs :
-             {&(*it).second.inputSpecs, &(*it).second.outputSpecs, &(*it).second.filterSpecs,
-              &(*it).second.consumingSpecs}) {
+             {&specsPerAliases.inputSpecs, &m_outputSpecs, &specsPerAliases.filterSpecs,
+              &specsPerAliases.consumingSpecs}) {
             for (const PropertySpec &spec : p_specs->getSpecList()) {
                 typeSet.insert(&spec.typeInfo);
             }
@@ -101,11 +100,6 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
 
         for (auto &tokenName : m_params.inputTokenNames) {
             specsContainer.inputSpecs.insert_back(
-                {.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
-        }
-
-        for (auto &tokenName : m_params.outputTokenNames) {
-            specsContainer.outputSpecs.insert_back(
                 {.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
         }
     }
@@ -145,7 +139,6 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
             // Store pipeline property specs
             bool needsRebuild = false;
             needsRebuild |= (specsContainer.inputSpecs.merge(p_compiledShader->inputSpecs) > 0);
-            needsRebuild |= (specsContainer.outputSpecs.merge(p_compiledShader->outputSpecs) > 0);
             needsRebuild |= (specsContainer.filterSpecs.merge(p_compiledShader->filterSpecs) > 0);
             needsRebuild |=
                 (specsContainer.consumingSpecs.merge(p_compiledShader->consumingSpecs) > 0);

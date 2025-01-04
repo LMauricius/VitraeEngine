@@ -30,7 +30,7 @@ const PropertyList &OpenGLShaderSnippet::getInputSpecs(const PropertyAliases &) 
     return m_inputSpecs;
 }
 
-const PropertyList &OpenGLShaderSnippet::getOutputSpecs(const PropertyAliases &) const
+const PropertyList &OpenGLShaderSnippet::getOutputSpecs() const
 {
     return m_outputSpecs;
 }

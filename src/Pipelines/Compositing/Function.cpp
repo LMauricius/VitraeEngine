@@ -20,7 +20,7 @@ const PropertyList &ComposeFunction::getInputSpecs(const PropertyAliases &) cons
     return m_inputSpecs;
 }
 
-const PropertyList &ComposeFunction::getOutputSpecs(const PropertyAliases &) const
+const PropertyList &ComposeFunction::getOutputSpecs() const
 {
     return m_outputSpecs;
 }

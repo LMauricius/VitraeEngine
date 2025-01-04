@@ -63,7 +63,7 @@ const PropertyList &ComposeFrameToTexture::getInputSpecs(const PropertyAliases &
     return m_inputSpecs;
 }
 
-const PropertyList &ComposeFrameToTexture::getOutputSpecs(const PropertyAliases &) const
+const PropertyList &ComposeFrameToTexture::getOutputSpecs() const
 {
     return m_outputSpecs;
 }

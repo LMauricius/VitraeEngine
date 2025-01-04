@@ -58,9 +58,9 @@ const PropertyList &OpenGLComposeCompute::getInputSpecs(const PropertyAliases &a
     return getProgramPerAliases(aliases).inputSpecs;
 }
 
-const PropertyList &OpenGLComposeCompute::getOutputSpecs(const PropertyAliases &aliases) const
+const PropertyList &OpenGLComposeCompute::getOutputSpecs() const
 {
-    return getProgramPerAliases(aliases).outputSpecs;
+    return m_params.outputSpecs;
 }
 
 const PropertyList &OpenGLComposeCompute::getFilterSpecs(const PropertyAliases &aliases) const
@@ -76,10 +76,10 @@ const PropertyList &OpenGLComposeCompute::getConsumingSpecs(const PropertyAliase
 void OpenGLComposeCompute::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
                                             const PropertyAliases &aliases) const
 {
-    auto &specs = getProgramPerAliases(aliases);
+    const auto &specs = getProgramPerAliases(aliases);
 
     for (const PropertyList *p_specs :
-         {&specs.inputSpecs, &specs.outputSpecs, &specs.filterSpecs, &specs.consumeSpecs}) {
+         {&specs.inputSpecs, &m_params.outputSpecs, &specs.filterSpecs, &specs.consumeSpecs}) {
         for (const PropertySpec &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
@@ -118,7 +118,8 @@ void OpenGLComposeCompute::run(RenderComposeContext args) const
             }
         }
 
-        for (auto p_specs : {&programPerAliases.outputSpecs, &programPerAliases.filterSpecs}) {
+        for (auto p_specs :
+             {&m_params.outputSpecs, (const PropertyList *)&programPerAliases.filterSpecs}) {
             for (auto nameId : p_specs->getSpecNameIds()) {
                 if (!args.properties.has(nameId)) {
                     needsToRun = true;
@@ -218,7 +219,6 @@ OpenGLComposeCompute::ProgramPerAliases &OpenGLComposeCompute::getProgramPerAlia
                      .emplace(aliases.hash(),
                               ProgramPerAliases{
                                   .inputSpecs = p_compiledShader->inputSpecs,
-                                  .outputSpecs = p_compiledShader->outputSpecs,
                                   .filterSpecs = p_compiledShader->filterSpecs,
                                   .consumeSpecs = p_compiledShader->consumingSpecs,
                               })
