@@ -177,6 +177,11 @@ class PropertyList : public dynasma::PolymorphicBase
 
     inline std::size_t count() const { return m_specList.size(); }
 
+    inline bool contains(StringId nameId) const
+    {
+        return m_mappedSpecs.find(nameId) != m_mappedSpecs.end();
+    }
+
     /*
     Comparisons
     */
