@@ -16,9 +16,10 @@ namespace Vitrae
 
 OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
     : m_root(params.root),
-      m_friendlyName(String("Clear to\n") + toHexString(255 * m_color.r, 2) +
-                     toHexString(255 * m_color.g, 2) + toHexString(255 * m_color.b, 2) + "*" +
-                     std::to_string(m_color.a))
+      m_friendlyName(String("Clear to\n") + toHexString(255 * params.backgroundColor.r, 2) +
+                     toHexString(255 * params.backgroundColor.g, 2) +
+                     toHexString(255 * params.backgroundColor.b, 2) + "*" +
+                     std::to_string(params.backgroundColor.a))
 {
     for (auto &tokenName : params.outputTokenNames) {
         m_outputSpecs.insert_back({.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});

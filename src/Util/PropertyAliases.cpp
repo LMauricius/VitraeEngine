@@ -107,9 +107,13 @@ std::optional<StringId> PropertyAliases::directChoiceFor(StringId key) const
     auto it = m_localAliases.find(key);
     if (it != m_localAliases.end()) {
         return (*it).second.first;
-    } else if (mp_parent) {
-        return mp_parent->directChoiceFor(key);
     } else {
+        for (auto p_parent : m_parentPtrs) {
+            auto c = p_parent->directChoiceFor(key);
+            if (c.has_value()) {
+                return c;
+            }
+        }
         return {};
     }
 }
@@ -119,9 +123,13 @@ std::optional<String> PropertyAliases::directChoiceStringFor(StringId key) const
     auto it = m_localAliases.find(key);
     if (it != m_localAliases.end()) {
         return (*it).second.second;
-    } else if (mp_parent) {
-        return mp_parent->directChoiceStringFor(key);
     } else {
+        for (auto p_parent : m_parentPtrs) {
+            auto c = p_parent->directChoiceStringFor(key);
+            if (c.has_value()) {
+                return c;
+            }
+        }
         return {};
     }
 }

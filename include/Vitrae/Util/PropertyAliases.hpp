@@ -102,7 +102,6 @@ class PropertyAliases
 
   private:
     std::span<const PropertyAliases *const> m_parentPtrs;
-    const PropertyAliases *mp_parent;
     StableMap<StringId, std::pair<StringId, String>> m_localAliases;
     std::size_t m_hash;
 };
