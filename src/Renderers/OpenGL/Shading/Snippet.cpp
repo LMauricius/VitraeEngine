@@ -37,12 +37,12 @@ const PropertyList &OpenGLShaderSnippet::getOutputSpecs() const
 
 const PropertyList &OpenGLShaderSnippet::getFilterSpecs(const PropertyAliases &) const
 {
-    return EMPTY_PROPERTY_LIST;
+    return m_filterSpecs;
 }
 
 const PropertyList &OpenGLShaderSnippet::getConsumingSpecs(const PropertyAliases &) const
 {
-    return EMPTY_PROPERTY_LIST;
+    return m_consumingSpecs;
 }
 
 void OpenGLShaderSnippet::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
@@ -67,9 +67,32 @@ void OpenGLShaderSnippet::outputDefinitionCode(BuildContext args) const {}
 
 void OpenGLShaderSnippet::outputUsageCode(BuildContext args) const
 {
+    for (auto p_specs : {
+             &m_inputSpecs,
+             &m_outputSpecs,
+             &m_filterSpecs,
+             &m_consumingSpecs,
+         }) {
+        for (auto &spec : p_specs->getSpecList()) {
+            args.output << "#define " << spec.name << " " << args.aliases.choiceStringFor(spec.name)
+                        << "\n";
+        }
+    }
+
     args.output << " {\n";
     args.output << m_snippet;
     args.output << "}\n";
+
+    for (auto p_specs : {
+             &m_inputSpecs,
+             &m_outputSpecs,
+             &m_filterSpecs,
+             &m_consumingSpecs,
+         }) {
+        for (auto &spec : p_specs->getSpecList()) {
+            args.output << "#undef " << spec.name << "\n";
+        }
+    }
 }
 
 StringView OpenGLShaderSnippet::getFriendlyName() const {
