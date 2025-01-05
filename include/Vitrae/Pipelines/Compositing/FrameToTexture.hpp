@@ -63,7 +63,7 @@ class ComposeFrameToTexture : public ComposeTask
   protected:
     ComponentRoot &m_root;
     PropertyList m_inputSpecs;
-    PropertyList m_filterSpecs;
+    PropertyList m_consumeSpecs;
     PropertyList m_outputSpecs;
 
     String m_outputColorTextureName, m_outputDepthTextureName;

@@ -42,7 +42,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
         m_friendlyName += spec.fragmentSpec.name;
     }
 
-    m_filterSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
+    m_consumeSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
 
     for (auto &tokenName : params.inputTokenNames) {
         m_inputSpecs.insert_back({tokenName, Variant::getTypeInfo<void>()});
@@ -70,18 +70,18 @@ const PropertyList &ComposeFrameToTexture::getOutputSpecs() const
 
 const PropertyList &ComposeFrameToTexture::getFilterSpecs(const PropertyAliases &) const
 {
-    return m_filterSpecs;
+    return EMPTY_PROPERTY_LIST;
 }
 
 const PropertyList &ComposeFrameToTexture::getConsumingSpecs(const PropertyAliases &) const
 {
-    return EMPTY_PROPERTY_LIST;
+    return m_consumeSpecs;
 }
 
 void ComposeFrameToTexture::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
                                              const PropertyAliases &aliases) const
 {
-    for (const PropertyList *p_specs : {&m_inputSpecs, &m_outputSpecs, &m_filterSpecs}) {
+    for (const PropertyList *p_specs : {&m_inputSpecs, &m_outputSpecs, &m_consumeSpecs}) {
         for (const PropertySpec &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
