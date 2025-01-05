@@ -181,10 +181,12 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                             computeSpec.invocationCountZ.getSpec());
                     }
                 }
-
-                passedVarSpecs = p_helper->pipeline.inputSpecs;
-                passedVarSpecs.merge(p_helper->pipeline.filterSpecs);
             }
+
+            passedVarSpecs = p_helper->pipeline.inputSpecs;
+            passedVarSpecs.merge(p_helper->pipeline.filterSpecs);
+            passedVarSpecs.merge(p_helper->pipeline.consumingSpecs);
+            passedVarSpecs.merge(p_helper->pipeline.pipethroughSpecs);
         }
     }
 
@@ -520,8 +522,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             for (auto &spec : stageOpaqueBindingList.getSpecList()) {
                 const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
 
-                ss << "uniform " << glTypeSpec.opaqueTypeName << " " << bindingVarPrefix
-                   << spec.name << ";\n";
+                ss << "layout(binding=" << getBinding(spec.name) << ") " << "uniform "
+                   << glTypeSpec.opaqueTypeName << " " << bindingVarPrefix << spec.name << ";\n";
             }
 
             // UBOs
@@ -600,7 +602,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             }
 
             // Outputs
-            for (auto &spec : stageInputList.getSpecList()) {
+            for (auto &spec : stageOutputList.getSpecList()) {
                 const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
 
                 if (p_helper->p_compSpec->shaderType == GL_FRAGMENT_SHADER) {
@@ -722,7 +724,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 std::ofstream file;
                 String filename = filePrefix + ".dot";
                 file.open(filename);
-                exportPipeline(p_helper->pipeline, file);
+                exportPipeline(p_helper->pipeline, p_helper->p_compSpec->aliases, file);
                 file.close();
 
                 root.getInfoStream() << "Graph stored to: '" << std::filesystem::current_path()
@@ -807,6 +809,46 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         spec.location = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
                                                   spec.srcSpec.name.c_str());
         spec.bindingIndex = namedBindings.at(nameId);
+    }
+
+    // combine the property specs
+    for (auto [nameId, spec] : desiredOutputs.getMappedSpecs()) {
+        this->outputSpecs.insert_back(spec);
+    }
+    for (auto p_specs : {
+             &helperOrder[0]->pipeline.inputSpecs,
+             &helperOrder[0]->pipeline.filterSpecs,
+             &helperOrder[0]->pipeline.consumingSpecs,
+             &helperOrder[0]->pipeline.pipethroughSpecs,
+         }) {
+        for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
+            if (this->uniformSpecs.find(nameId) != this->uniformSpecs.end() ||
+                this->opaqueBindingSpecs.find(nameId) != this->opaqueBindingSpecs.end() ||
+                this->uboSpecs.find(nameId) != this->uboSpecs.end() ||
+                this->ssboSpecs.find(nameId) != this->ssboSpecs.end()) {
+                // the property is used
+                bool wasConsumed = false;
+                bool wasModified = false;
+                for (auto p_helper : helperOrder) {
+                    if (p_helper->pipeline.consumingSpecs.contains(nameId)) {
+                        wasConsumed = true;
+                    } else if (p_helper->pipeline.filterSpecs.contains(nameId)) {
+                        wasModified = true;
+                    } else if (p_helper->pipeline.outputSpecs.contains(nameId)) {
+                        wasConsumed = false;
+                        wasModified = true;
+                    }
+                }
+
+                if (wasConsumed) {
+                    this->consumingSpecs.insert_back(spec);
+                } else if (wasModified) {
+                    this->filterSpecs.insert_back(spec);
+                } else {
+                    this->inputSpecs.insert_back(spec);
+                }
+            }
+        }
     }
 }
 
