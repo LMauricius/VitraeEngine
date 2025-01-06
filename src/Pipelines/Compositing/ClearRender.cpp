@@ -4,7 +4,7 @@ namespace Vitrae
 {
 
 const PropertySpec ComposeClearRender::FRAME_STORE_SPEC = {
-    .name = "frame_store",
+    .name = "fs_target",
     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>(),
 };
 
