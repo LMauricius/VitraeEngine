@@ -148,7 +148,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         if (!changeRank) {
             connectionsSS << "minlen=0,";
         }
-        connectionsSS << "dir=none,";
+        connectionsSS << "dir=forward,";
+        connectionsSS << "arrowhead=dot,";
         connectionsSS << "color=darkblue";
         connectionsSS << "] ";
         connectionsSS << ";\n";
@@ -160,7 +161,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
             connectionsSS << "minlen=0,";
         }
         connectionsSS << "dir=forward,";
-        connectionsSS << "color=red";
+        connectionsSS << "arrowhead=tee,";
+        connectionsSS << "color=crimson";
         connectionsSS << "] ";
         connectionsSS << ";\n";
     };
@@ -171,7 +173,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
             connectionsSS << "minlen=0,";
         }
         connectionsSS << "dir=forward,";
-        connectionsSS << "color=forestgreen";
+        connectionsSS << "color=darkgreen";
         connectionsSS << "] ";
         connectionsSS << ";\n";
     };
@@ -182,7 +184,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
             connectionsSS << "minlen=0,";
         }
         connectionsSS << "dir=both,";
-        connectionsSS << "color=fuchsia";
+        connectionsSS << "color=darkmagenta";
         connectionsSS << "] ";
         connectionsSS << ";\n";
     };
@@ -199,7 +201,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         if (!changeRank) {
             connectionsSS << ", minlen=0";
         }
-        connectionsSS << ", dir=none";
+        connectionsSS << ", dir=both";
+        connectionsSS << ", arrowhead=obox, arrowtail=obox";
         connectionsSS << "];\n";
     };
     auto outputInvisibleDirection = [&](StringView from, StringView to, bool changeRank,
@@ -345,7 +348,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     out << "\t}\n";
 
     out << "\tsubgraph cluster_" << prefix << "processing {\n";
-    out << "\t\tlabel=\"Tasks\";\n";
+    out << "\t\tlabel=\"\";\n";
     out << "\t\tcluster=true;\n";
     out << "\t\tstyle=invis;\n";
 
