@@ -74,12 +74,14 @@ void OpenGLShaderSnippet::outputUsageCode(BuildContext args) const
              &m_consumingSpecs,
          }) {
         for (auto &spec : p_specs->getSpecList()) {
-            args.output << "#define " << spec.name << " " << args.aliases.choiceStringFor(spec.name)
-                        << "\n";
+            if (spec.name != args.aliases.choiceStringFor(spec.name)) {
+                args.output << "#define " << spec.name << " "
+                            << args.aliases.choiceStringFor(spec.name) << "\n";
+            }
         }
     }
 
-    args.output << " {\n";
+    args.output << "{\n";
     args.output << m_snippet;
     args.output << "}\n";
 
@@ -90,7 +92,9 @@ void OpenGLShaderSnippet::outputUsageCode(BuildContext args) const
              &m_consumingSpecs,
          }) {
         for (auto &spec : p_specs->getSpecList()) {
-            args.output << "#undef " << spec.name << "\n";
+            if (spec.name != args.aliases.choiceStringFor(spec.name)) {
+                args.output << "#undef " << spec.name << "\n";
+            }
         }
     }
 }
