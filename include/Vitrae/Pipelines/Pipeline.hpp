@@ -13,6 +13,16 @@ class PipelineSetupException : public std::runtime_error
     using std::runtime_error::runtime_error;
 };
 
+/**
+ * @brief Describes how dependency task generation works in relation to pipeline parameters
+ * @note A parametrized task is one that depends on a pipeline parameter property
+ */
+enum class PipelineParametrizationPolicy {
+    AllDependencies,                  // Generates all output and indirect dependency tasks
+    ParametrizedOrDirectDependencies, // Generates output tasks and paramatrized dependency tasks
+    ParametrizedDependencies,         // Generates only paramatrized dependency tasks
+};
+
 template <TaskChild BasicTask> class Pipeline
 {
   public:
@@ -33,14 +43,23 @@ template <TaskChild BasicTask> class Pipeline
     {
         std::map<StringId, String> wipUsedSelection;
 
+        // desired spec aliases (optimization and later setup)
+        PropertyList actualDesiredOutputSpecs;
+        for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
+            actualDesiredOutputSpecs.insert_back({
+                .name = selection.choiceStringFor(outputSpec.name),
+                .typeInfo = outputSpec.typeInfo,
+            });
+        }
+
         // solve dependencies
         std::set<StringId> visitedOutputs;
-        for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
+        for (auto &outputSpec : actualDesiredOutputSpecs.getSpecList()) {
             tryAddDependency(outputSpec, *p_method, visitedOutputs, selection, wipUsedSelection);
         }
 
         // Process tasks' properties and add them to the pipeline
-        setupPropertiesFromTasks({{}}, desiredOutputSpecs, selection);
+        setupPropertiesFromTasks(actualDesiredOutputSpecs, selection);
 
         // Add used selections
         usedSelection = PropertyAliases(StableMap<StringId, String>(std::move(wipUsedSelection)));
@@ -58,24 +77,34 @@ template <TaskChild BasicTask> class Pipeline
      * @param desiredOutputNameIds The desired outputs
      */
     Pipeline(dynasma::FirmPtr<const Method<BasicTask>> p_method,
-             std::span<const PropertySpec> parametricInputSpecs,
-             std::span<const PropertySpec> desiredOutputSpecs, const PropertyAliases &selection)
+             std::span<const StringId> parametricInputIds,
+             PipelineParametrizationPolicy parametrizationPolicy,
+             const PropertyList &desiredOutputSpecs, const PropertyAliases &selection)
     {
-        std::map<StringId, StringId> wipUsedSelection;
+        std::map<StringId, String> wipUsedSelection;
+
+        // desired spec aliases (optimization and later setup)
+        PropertyList actualDesiredOutputSpecs;
+        for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
+            actualDesiredOutputSpecs.insert_back({
+                .name = selection.choiceStringFor(outputSpec.name),
+                .typeInfo = outputSpec.typeInfo,
+            });
+        }
 
         // solve dependencies
         std::set<StringId> visitedOutputs;
-        for (auto &paramSpec : parametricInputSpecs) {
-            visitedOutputs.insert(paramSpec.name);
+        for (auto &nameId : parametricInputIds) {
+            visitedOutputs.insert(nameId);
         }
 
-        for (auto &outputSpec : desiredOutputSpecs) {
-            tryAddDependencyIfParametrized(outputSpec, *p_method, visitedOutputs, selection,
-                                           wipUsedSelection);
+        for (auto &outputSpec : actualDesiredOutputSpecs.getSpecList()) {
+            tryAddDependencyIfParametrized(outputSpec, *p_method, visitedOutputs,
+                                           parametrizationPolicy, selection, wipUsedSelection);
         }
 
         // Process tasks' properties and add them to the pipeline
-        setupPropertiesFromTasks(parametricInputSpecs, desiredOutputSpecs, selection);
+        setupPropertiesFromTasks(actualDesiredOutputSpecs, selection);
 
         // Add used selections
         usedSelection = PropertyAliases(wipUsedSelection);
@@ -184,10 +213,15 @@ template <TaskChild BasicTask> class Pipeline
     /**
      * Adds a task outputting the desired property if possible and all its dependency properties,
      * but only if it directly or indirectly depends on one of already visited outputs.
-     * If a task is added, all its outputs are added to the visitedOutputs set
+     * If a task is added, all its outputs are added to the visitedOutputs set.
+     * If policy==AllDependencies; then even non-parametrized dependencies are added;
+     * If policy==ParametrizedOrDirectDependencies; then this dependency is added even if it is
+     * non-parametrized, but its dependencies are added with policy=ParametrizedDependencies;
+     * If policy==ParametrizedDependencies; then only parametrized dependencies are added.
      * @param desiredOutputSpec The dependency property
      * @param method The method we use to get the task
      * @param visitedOutputs The set of visited outputs
+     * @param parametrizationPolicy The parametrization policy
      * @param selection The property mapping
      * @param outUsedSelection The used property mapping
      * @returns Whether the dependency is satisfied
@@ -195,6 +229,7 @@ template <TaskChild BasicTask> class Pipeline
     bool tryAddDependencyIfParametrized(const PropertySpec &desiredOutputSpec,
                                         const Method<BasicTask> &method,
                                         std::set<StringId> &visitedOutputs,
+                                        PipelineParametrizationPolicy parametrizationPolicy,
                                         const PropertyAliases &selection,
                                         std::map<StringId, String> &outUsedSelection)
     {
@@ -214,22 +249,28 @@ template <TaskChild BasicTask> class Pipeline
             const Task &task = *maybeTask.value();
 
             bool satisfiedAnyDependencies = false;
+            PipelineParametrizationPolicy indirectDepPolicy =
+                parametrizationPolicy == PipelineParametrizationPolicy::AllDependencies
+                    ? PipelineParametrizationPolicy::AllDependencies
+                    : PipelineParametrizationPolicy::ParametrizedDependencies;
 
             // task deps (input + filter + consuming)
             for (auto [nameId, spec] : task.getInputSpecs(selection).getMappedSpecs()) {
                 satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
-                    spec, method, visitedOutputs, selection, outUsedSelection);
+                    spec, method, visitedOutputs, indirectDepPolicy, selection, outUsedSelection);
             }
             for (auto [nameId, spec] : task.getFilterSpecs(selection).getMappedSpecs()) {
                 satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
-                    spec, method, visitedOutputs, selection, outUsedSelection);
+                    spec, method, visitedOutputs, indirectDepPolicy, selection, outUsedSelection);
             }
             for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
                 satisfiedAnyDependencies |= tryAddDependencyIfParametrized(
-                    spec, method, visitedOutputs, selection, outUsedSelection);
+                    spec, method, visitedOutputs, indirectDepPolicy, selection, outUsedSelection);
             }
 
-            if (satisfiedAnyDependencies) {
+            if (satisfiedAnyDependencies ||
+                parametrizationPolicy != PipelineParametrizationPolicy::ParametrizedDependencies) {
+
                 // task outputs (store the outputs as visited)
                 for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
                     visitedOutputs.insert(nameId);
@@ -257,8 +298,7 @@ template <TaskChild BasicTask> class Pipeline
      * @param desiredOutputSpecs The desired output specs
      * @param selection The property mapping
      */
-    void setupPropertiesFromTasks(const PropertyList &fixedInputSpecs,
-                                  const PropertyList &desiredOutputSpecs,
+    void setupPropertiesFromTasks(const PropertyList &desiredOutputSpecs,
                                   const PropertyAliases &selection)
     {
         // 4 maps/sets needed to know how we use properties
@@ -270,46 +310,49 @@ template <TaskChild BasicTask> class Pipeline
         // helper functions for controlling the maps/sets
 
         auto requireProperty = [&](const PropertySpec &propertySpec) {
-            if (currentPropertyNames.find(propertySpec.name) == currentPropertyNames.end()) {
-                if (everUsedProperties.find(propertySpec.name) == everUsedProperties.end()) {
-                    missingPropertyNames.insert(propertySpec.name);
-                    currentPropertyNames.insert(propertySpec.name);
+            StringId actualName = selection.choiceFor(propertySpec.name);
+
+            if (currentPropertyNames.find(actualName) == currentPropertyNames.end()) {
+                if (everUsedProperties.find(actualName) == everUsedProperties.end()) {
+                    missingPropertyNames.insert(actualName);
+                    currentPropertyNames.insert(actualName);
                 } else {
                     throw PipelineSetupException(
-                        std::string("Property ") + propertySpec.name +
+                        std::string("Property ") + selection.choiceStringFor(propertySpec.name) +
                         "' was consumed, but also depended on later in the pipeline");
                 }
             }
         };
 
         auto usingProperty = [&](const PropertySpec &propertySpec, const String &byWho) {
-            auto it = everUsedProperties.find(propertySpec.name);
+            StringId actualName = selection.choiceFor(propertySpec.name);
+
+            auto it = everUsedProperties.find(actualName);
             if (it != everUsedProperties.end()) {
                 if ((*it).second.typeInfo != propertySpec.typeInfo) {
                     throw PipelineSetupException(
-                        String("Property '") + propertySpec.name + "' was first used as " +
-                        String((*it).second.typeInfo.getShortTypeName()) + " but late as " +
-                        String(propertySpec.typeInfo.getShortTypeName()) + " by " + byWho);
+                        String("Property '") + selection.choiceStringFor(propertySpec.name) +
+                        "' was first used as " + String((*it).second.typeInfo.getShortTypeName()) +
+                        " but late as " + String(propertySpec.typeInfo.getShortTypeName()) +
+                        " by " + byWho);
                 }
             } else {
-                everUsedProperties.emplace(propertySpec.name, propertySpec);
+                everUsedProperties.emplace(actualName, propertySpec);
             }
         };
 
         auto setProperty = [&](const PropertySpec &propertySpec) {
-            modifiedPropertyNames.insert(propertySpec.name);
-            currentPropertyNames.insert(propertySpec.name);
+            StringId actualName = selection.choiceFor(propertySpec.name);
+
+            modifiedPropertyNames.insert(actualName);
+            currentPropertyNames.insert(actualName);
         };
 
         auto consumeProperty = [&](const PropertySpec &propertySpec) {
-            currentPropertyNames.erase(propertySpec.name);
-        };
+            StringId actualName = selection.choiceFor(actualName);
 
-        // use fixed input properties before the tasks need them
-        for (auto &spec : fixedInputSpecs.getSpecList()) {
-            requireProperty(spec);
-            usingProperty(spec, "pipeline parameters");
-        }
+            currentPropertyNames.erase(actualName);
+        };
 
         // iterate over the tasks and simulate property usage
         for (auto &p_item : items) {
