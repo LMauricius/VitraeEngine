@@ -60,6 +60,9 @@ class ComposeAdaptTasks : public ComposeTask, public PipelineContainer<ComposeTa
     const Pipeline<ComposeTask> &getContainedPipeline(
         const PropertyAliases &aliases) const override;
 
+    PropertyAliases constructContainedPipelineAliases(
+        const PropertyAliases &aliases) const override;
+
     void run(RenderComposeContext ctx) const override;
     void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
 

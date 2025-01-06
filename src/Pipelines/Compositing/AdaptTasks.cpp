@@ -60,6 +60,28 @@ void ComposeAdaptTasks::extractSubTasks(std::set<const Task *> &taskSet,
     taskSet.insert(this);
 }
 
+const Pipeline<ComposeTask> &ComposeAdaptTasks::getContainedPipeline(
+    const PropertyAliases &aliases) const
+{
+    if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
+        it != m_adaptorPerSelectionHash.end()) {
+        return (*it).second->pipeline;
+    }
+
+    throw std::runtime_error{"Adaptor not found"};
+}
+
+PropertyAliases ComposeAdaptTasks::constructContainedPipelineAliases(
+    const PropertyAliases &aliases) const
+{
+    if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
+        it != m_adaptorPerSelectionHash.end()) {
+        return PropertyAliases({{&m_params.adaptorAliases, &aliases}});
+    }
+
+    throw std::runtime_error{"Adaptor not found"};
+}
+
 void ComposeAdaptTasks::run(RenderComposeContext ctx) const
 {
     MMETER_SCOPE_PROFILER("ComposeAdaptTasks::run");

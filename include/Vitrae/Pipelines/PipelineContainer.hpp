@@ -16,6 +16,13 @@ template <TaskChild BasicTask> class PipelineContainer
 
     virtual const Pipeline<BasicTask> &getContainedPipeline(
         const PropertyAliases &aliases) const = 0;
+
+    /**
+     * @returns The aliases used by the contained pipeline.
+     * @note This object is valid until either this Task or the passed aliases are destroyed
+     */
+    virtual PropertyAliases constructContainedPipelineAliases(
+        const PropertyAliases &aliases) const = 0;
 };
 
 } // namespace Vitrae

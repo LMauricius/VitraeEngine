@@ -58,7 +58,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     /*
     This lists all subpipelines, by name
     */
-    std::unordered_map<String, const Pipeline *> subpipelines;
+    std::unordered_map<String, const PipelineContainer *> subpipelines;
 
     auto colorFromHash = [&](std::size_t hash) {
         hash = (hash & 0xffffff) ^ ((hash >> 24) & 0xffffff) ^ (hash >> 48);
@@ -99,8 +99,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
             expandSubGraphs && p_container) {
             out << "fillcolor=\"" + colorFromName(task.getFriendlyName()) + "\", ";
             out << "bgcolor=\"" + colorFromName(task.getFriendlyName()) + "\", ";
-            subpipelines.emplace(String(task.getFriendlyName()),
-                                 &p_container->getContainedPipeline(aliases));
+            subpipelines.emplace(String(task.getFriendlyName()), p_container);
         } else {
             out << "fillcolor=\"lightblue\", ";
             out << "bgcolor=\"lightblue\", ";
@@ -429,7 +428,9 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         out << "\t\tcolor=\"black\";\n";
         out << "\t\tfillcolor=\"" + colorFromName(name) + "\";\n";
 
-        exportPipeline(*p, aliases, out, newPref, false, expandSubGraphs);
+        exportPipeline(p->getContainedPipeline(aliases),
+                       p->constructContainedPipelineAliases(aliases), out, newPref, false,
+                       expandSubGraphs);
 
         out << "\t}\n";
     }
