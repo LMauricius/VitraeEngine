@@ -135,4 +135,49 @@ std::optional<String> PropertyAliases::directChoiceStringFor(StringId key) const
     }
 }
 
+void PropertyAliases::extractAliasStrings(std::unordered_map<StringId, String> &aliases) const
+{
+    std::unordered_set<StringId> targets;
+    extractAliasProxyIds(targets);
+
+    for (const auto &target : targets) {
+        std::optional<String> optChoiceString = directChoiceStringFor(target);
+        if (optChoiceString.has_value()) {
+            String choiceString = optChoiceString.value();
+            while ((optChoiceString = directChoiceStringFor(choiceString)).has_value()) {
+                choiceString = optChoiceString.value();
+            }
+            aliases.emplace(target, choiceString);
+        }
+    }
+}
+
+void PropertyAliases::extractAliasNameIds(std::unordered_map<StringId, StringId> &aliases) const
+{
+    std::unordered_set<StringId> targets;
+    extractAliasProxyIds(targets);
+
+    for (const auto &target : targets) {
+        std::optional<StringId> optChoice = directChoiceFor(target);
+        if (optChoice.has_value()) {
+            StringId choice = optChoice.value();
+            while ((optChoice = directChoiceFor(choice)).has_value()) {
+                choice = optChoice.value();
+            }
+            aliases.emplace(target, choice);
+        }
+    }
+}
+
+void PropertyAliases::extractAliasProxyIds(std::unordered_set<StringId> &targets) const
+{
+    for (const auto &[key, value] : m_localAliases) {
+        targets.insert(key);
+    }
+
+    for (auto p_parent : m_parentPtrs) {
+        p_parent->extractAliasProxyIds(targets);
+    }
+}
+
 } // namespace Vitrae

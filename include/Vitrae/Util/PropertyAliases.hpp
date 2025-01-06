@@ -5,12 +5,20 @@
 #include "Vitrae/Util/StringId.hpp"
 
 #include <optional>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Vitrae {
 
 /**
- * A class that encompasses mapping between needed properties and more specific
- * properties that we select as aliases
+ * A class that encompasses mapping between required properties and more specific
+ * properties that we choose as providers of the functionality
+ * The required property is called a proxy
+ * The selected property is called a provider
+ * An alias is one direct mapping between a proxy and a provider
+ * The collection of all aliases is called a selection
+ * Providers can also be proxies to other providers
+ * No cycles are allowed
  */
 class PropertyAliases
 {
@@ -32,7 +40,7 @@ class PropertyAliases
 
     /**
      * Constructor for parentless alias mapping
-     * @param aliases A map of aliases; key = target (to choose), value = source
+     * @param aliases A map of aliases; key = proxy, value = provider
      * (choice)
      */
     PropertyAliases(const StableMap<StringId, String> &aliases);
@@ -50,7 +58,7 @@ class PropertyAliases
     /**
      * Constructor for alias mapping with inheritance
      * @param parent The parent PropertyAliases
-     * @param aliases A map of aliases; key = target (to choose), value = source
+     * @param aliases A map of aliases; key = proxy, value = provider
      * (choice)
      * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
@@ -71,34 +79,54 @@ class PropertyAliases
     PropertyAliases &operator=(PropertyAliases &&other) = default;
 
     /**
-     * @returns The choice for the specified target, or target if not found
+     * @returns The provider for the specified proxy, or proxy if not found
      * @note supports aliases to aliases
      */
-    StringId choiceFor(StringId target) const;
+    StringId choiceFor(StringId proxy) const;
 
     /**
-     * @returns The choice for the specified target, or target if not found;
+     * @returns The provider for the specified proxy, or proxy if not found;
      * in full string form
      * @note supports aliases to aliases
      */
-    String choiceStringFor(String target) const;
+    String choiceStringFor(String proxy) const;
 
     /**
-     * @returns The directly specified choice for the specified target, or empty if not found
+     * @returns The directly specified provider for the specified proxy, or empty if not found
      */
-    std::optional<StringId> directChoiceFor(StringId target) const;
+    std::optional<StringId> directChoiceFor(StringId proxy) const;
 
     /**
-     * @returns The directly specified choice for the specified target, or empty if not found;
+     * @returns The directly specified provider for the specified proxy, or empty if not found;
      * in full string form
      */
-    std::optional<String> directChoiceStringFor(StringId target) const;
+    std::optional<String> directChoiceStringFor(StringId proxy) const;
 
     /**
-     * @returns The has unique for this selection of choices. Order is
+     * @returns The has unique for this selection of providers. Order is
      * unimportant, just as the parent-child hierarchy
      */
     inline std::size_t hash() const { return m_hash; }
+
+    /**
+     * @brief Extracts all aliases used in this selection, including parents
+     * @note The map is expected to not have any aliases of this selection already
+     * @param aliases A map of aliases using Strings for providers; key = proxy, value = provider
+     */
+    void extractAliasStrings(std::unordered_map<StringId, String> &aliases) const;
+
+    /**
+     * @brief Extracts all aliases used in this selection, including parents
+     * @note The map is expected to not have any aliases of this selection already
+     * @param aliases A map of aliases using StringIds for providers; key = proxy, value = provider
+     */
+    void extractAliasNameIds(std::unordered_map<StringId, StringId> &aliases) const;
+
+    /**
+     * @brief Extracts all aliases proxys used in this selection, including parents
+     * @param proxys A set of aliases proxys
+     */
+    void extractAliasProxyIds(std::unordered_set<StringId> &proxys) const;
 
   private:
     std::span<const PropertyAliases *const> m_parentPtrs;
