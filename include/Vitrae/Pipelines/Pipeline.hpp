@@ -46,8 +46,12 @@ template <TaskChild BasicTask> class Pipeline
         // desired spec aliases (optimization and later setup)
         PropertyList actualDesiredOutputSpecs;
         for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
+            String choiceStr = selection.choiceStringFor(outputSpec.name);
+            if (choiceStr != outputSpec.name) {
+                wipUsedSelection[outputSpec.name] = choiceStr;
+            }
             actualDesiredOutputSpecs.insert_back({
-                .name = selection.choiceStringFor(outputSpec.name),
+                .name = choiceStr,
                 .typeInfo = outputSpec.typeInfo,
             });
         }
@@ -62,6 +66,14 @@ template <TaskChild BasicTask> class Pipeline
         setupPropertiesFromTasks(actualDesiredOutputSpecs, selection);
 
         // Add used selections
+        for (auto p_specs : {&inputSpecs, &outputSpecs, &filterSpecs, &consumingSpecs}) {
+            for (auto &spec : p_specs->getSpecList()) {
+                String choiceStr = selection.choiceStringFor(spec.name);
+                if (choiceStr != spec.name) {
+                    wipUsedSelection[spec.name] = choiceStr;
+                }
+            }
+        }
         usedSelection = PropertyAliases(StableMap<StringId, String>(std::move(wipUsedSelection)));
     }
 
@@ -86,8 +98,12 @@ template <TaskChild BasicTask> class Pipeline
         // desired spec aliases (optimization and later setup)
         PropertyList actualDesiredOutputSpecs;
         for (auto &outputSpec : desiredOutputSpecs.getSpecList()) {
+            String choiceStr = selection.choiceStringFor(outputSpec.name);
+            if (choiceStr != outputSpec.name) {
+                wipUsedSelection[outputSpec.name] = choiceStr;
+            }
             actualDesiredOutputSpecs.insert_back({
-                .name = selection.choiceStringFor(outputSpec.name),
+                .name = choiceStr,
                 .typeInfo = outputSpec.typeInfo,
             });
         }
@@ -107,6 +123,14 @@ template <TaskChild BasicTask> class Pipeline
         setupPropertiesFromTasks(actualDesiredOutputSpecs, selection);
 
         // Add used selections
+        for (auto p_specs : {&inputSpecs, &outputSpecs, &filterSpecs, &consumingSpecs}) {
+            for (auto &spec : p_specs->getSpecList()) {
+                String choiceStr = selection.choiceStringFor(spec.name);
+                if (choiceStr != spec.name) {
+                    wipUsedSelection[spec.name] = choiceStr;
+                }
+            }
+        }
         usedSelection = PropertyAliases(wipUsedSelection);
     }
 
@@ -233,6 +257,10 @@ template <TaskChild BasicTask> class Pipeline
                                         const PropertyAliases &selection,
                                         std::map<StringId, String> &outUsedSelection)
     {
+        if (visitedOutputs.find(desiredOutputSpec.name) != visitedOutputs.end()) {
+            return true;
+        }
+
         String actualOutputName = selection.choiceStringFor(desiredOutputSpec.name);
 
         if (actualOutputName != desiredOutputSpec.name) {
