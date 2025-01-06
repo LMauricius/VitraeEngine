@@ -23,6 +23,11 @@ template <TaskChild BasicTask> class PipelineContainer
      */
     virtual PropertyAliases constructContainedPipelineAliases(
         const PropertyAliases &aliases) const = 0;
+
+    /**
+     * Notifies that the contained pipeline should be rebuilt
+     */
+    virtual void rebuildContainedPipeline(const PropertyAliases &aliases) const = 0;
 };
 
 } // namespace Vitrae

@@ -82,6 +82,30 @@ PropertyAliases ComposeAdaptTasks::constructContainedPipelineAliases(
     throw std::runtime_error{"Adaptor not found"};
 }
 
+void ComposeAdaptTasks::rebuildContainedPipeline(const PropertyAliases &aliases) const
+{
+    if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
+        it != m_adaptorPerSelectionHash.end()) {
+
+        const AdaptorPerAliases &adaptor = *(*it).second;
+        PropertyAliases subAliases({{&m_params.adaptorAliases, &aliases}});
+
+        for (auto p_pipeitem : adaptor.pipeline.items) {
+            if (auto p_container = dynamic_cast<const PipelineContainer *>(&*p_pipeitem);
+                p_container) {
+                p_container->rebuildContainedPipeline(subAliases);
+            }
+        }
+
+        m_adaptorPerSelectionHash.erase(it);
+        m_adaptorPerSelectionHash.emplace(
+            aliases.hash(),
+            new AdaptorPerAliases(m_params.adaptorAliases, m_params.desiredOutputs, aliases,
+                                  m_params.root.getComponent<MethodCollection>(),
+                                  m_params.friendlyName));
+    }
+}
+
 void ComposeAdaptTasks::run(RenderComposeContext ctx) const
 {
     MMETER_SCOPE_PROFILER("ComposeAdaptTasks::run");

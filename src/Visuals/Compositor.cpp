@@ -3,6 +3,7 @@
 #include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
+#include "Vitrae/Pipelines/PipelineContainer.hpp"
 
 #include "MMeter.h"
 
@@ -105,6 +106,15 @@ void Compositor::rebuildPipeline()
     MMETER_SCOPE_PROFILER("Compositor::rebuildPipeline");
 
     m_needsRebuild = false;
+
+    // erase previous pipeline
+    for (auto p_task : m_pipeline.items) {
+        if (const PipelineContainer<ComposeTask> *p_container =
+                dynamic_cast<const PipelineContainer<ComposeTask> *>(&*p_task);
+            p_container) {
+            p_container->rebuildContainedPipeline(m_aliases);
+        }
+    }
 
     // setup the rendering context
     ArgumentScope scope(&m_localProperties, &m_aliases);
