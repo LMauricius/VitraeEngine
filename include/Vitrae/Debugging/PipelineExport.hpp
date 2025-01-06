@@ -347,8 +347,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     out << "\tsubgraph cluster_" << prefix << "processing {\n";
     out << "\t\tlabel=\"Tasks\";\n";
     out << "\t\tcluster=true;\n";
-    out << "\t\tstyle=dashed;\n";
-    out << "\t\tcolor=\"black\";\n";
+    out << "\t\tstyle=invis;\n";
 
     // tasks
     std::size_t ordinalI = 0;
