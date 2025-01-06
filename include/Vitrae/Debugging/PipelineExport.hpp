@@ -44,9 +44,12 @@ template <TaskChild BasicTask> inline String getPipelineId(const Pipeline<BasicT
  * @param out The output stream to which to write
  */
 template <TaskChild BasicTask>
-void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
+void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &aliases,
+                    std::ostream &out)
 {
     using Pipeline = Pipeline<BasicTask>;
+
+    std::stringstream connectionsSS;
 
     auto escapedLabel = [&](StringView label) -> String {
         String ret = searchAndReplace(String(label), "\"", "\\\"");
@@ -54,7 +57,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         return ret;
     };
     auto getPropId = [&](const PropertySpec &spec) -> String {
-        return String("Prop_") + spec.name;
+        String realName = aliases.choiceStringFor(spec.name);
+        return String("Prop_") + realName;
     };
     auto getTaskId = [&](const BasicTask &task) -> String {
         return String("Task_") + std::to_string((std::size_t)&task);
@@ -74,10 +78,14 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
     };
     auto outputPropNode = [&](StringView id, const PropertySpec &spec, bool horizontal) {
         out << id << " [";
-        out << "label=\"" << escapedLabel(spec.name);
+        if (aliases.choiceStringFor(spec.name) != spec.name)
+            out << "label=\"" << spec.name << "\n("
+                << escapedLabel(aliases.choiceStringFor(spec.name)) << ")";
+        else
+            out << "label=\"" << escapedLabel(spec.name);
         if (spec.typeInfo == Variant::getTypeInfo<void>()) {
             out << "\", ";
-            out << "shape=hexagon, ";
+            out << "shape=octagon, ";
             out << "style=\"rounded,filled\", ";
             out << "fillcolor=\"lightgoldenrod\", ";
             out << "bgcolor=\"lightgoldenrod\", ";
@@ -101,64 +109,81 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
         out << "];\n";
     };
     auto sameRank = [&](StringView from, StringView to) {
-        out << "{rank=same; " << from << "; " << to << "}\n";
+        out << "{label=\"\";style=invis;rank=same; " << from << "; " << to << "}\n";
     };
     auto outputUsage = [&](StringView from, StringView to, bool changeRank) {
-        out << from << " -> " << to;
+        connectionsSS << from << " -> " << to;
+        connectionsSS << " [";
         if (!changeRank) {
-            out << " [minlen=0]";
+            connectionsSS << "minlen=0,";
         }
-        out << ";\n";
+        connectionsSS << "dir=none,";
+        connectionsSS << "color=darkblue";
+        connectionsSS << "] ";
+        connectionsSS << ";\n";
     };
     auto outputConsumption = [&](StringView from, StringView to, bool changeRank) {
-        out << from << " -> " << to;
+        connectionsSS << from << " -> " << to;
+        connectionsSS << " [";
         if (!changeRank) {
-            out << " [minlen=0]";
+            connectionsSS << "minlen=0,";
         }
-        out << ";\n";
+        connectionsSS << "dir=forward,";
+        connectionsSS << "color=red";
+        connectionsSS << "] ";
+        connectionsSS << ";\n";
     };
     auto outputGeneration = [&](StringView from, StringView to, bool changeRank) {
-        out << from << " -> " << to;
+        connectionsSS << from << " -> " << to;
+        connectionsSS << " [";
         if (!changeRank) {
-            out << " [minlen=0]";
+            connectionsSS << "minlen=0,";
         }
-        out << ";\n";
+        connectionsSS << "dir=forward,";
+        connectionsSS << "color=forestgreen";
+        connectionsSS << "] ";
+        connectionsSS << ";\n";
     };
     auto outputModification = [&](StringView from, StringView to, bool changeRank) {
-        out << from << " -> " << to;
+        connectionsSS << from << " -> " << to;
+        connectionsSS << " [";
         if (!changeRank) {
-            out << " [minlen=0]";
+            connectionsSS << "minlen=0,";
         }
-        out << ";\n";
+        connectionsSS << "dir=both,";
+        connectionsSS << "color=fuchsia";
+        connectionsSS << "] ";
+        connectionsSS << ";\n";
     };
     auto outputEquivalence = [&](StringView from, StringView to, bool changeRank,
                                  StringView lhead = "", StringView ltail = "") {
-        out << from << " -> " << to;
-        out << "[style=dashed";
+        connectionsSS << from << " -> " << to;
+        connectionsSS << "[style=dashed";
         if (lhead.length()) {
-            out << ", lhead=" << lhead;
+            connectionsSS << ", lhead=" << lhead;
         }
         if (ltail.length()) {
-            out << ", ltail=" << ltail;
+            connectionsSS << ", ltail=" << ltail;
         }
         if (!changeRank) {
-            out << ", minlen=0";
+            connectionsSS << ", minlen=0";
         }
-        out << "];\n";
+        connectionsSS << ", dir=none";
+        connectionsSS << "];\n";
     };
     auto outputInvisibleDirection = [&](StringView from, StringView to, bool changeRank,
                                         StringView lhead = "", StringView ltail = "") {
-        out << from << " -> " << to << "[style=invis";
+        connectionsSS << from << " -> " << to << "[style=invis";
         if (lhead.length()) {
-            out << ", lhead=" << lhead;
+            connectionsSS << ", lhead=" << lhead;
         }
         if (ltail.length()) {
-            out << ", ltail=" << ltail;
+            connectionsSS << ", ltail=" << ltail;
         }
         if (!changeRank) {
-            out << ", minlen=0";
+            connectionsSS << ", minlen=0";
         }
-        out << "];\n";
+        connectionsSS << "];\n";
     };
 
     /*
@@ -180,33 +205,47 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
                                    pipeline.outputSpecs.count() > pipeline.items.size();
 
     auto currentPropertyNodeReference = [&](const PropertySpec &spec) {
-        if (auto it = activeNodeIdsPerNameId.find(spec.name); it != activeNodeIdsPerNameId.end()) {
+        String realName = aliases.choiceStringFor(spec.name);
+
+        if (auto it = activeNodeIdsPerNameId.find(realName); it != activeNodeIdsPerNameId.end()) {
             return it->second;
-        } else if (auto it = pendingNodeIdsPerNameId.find(spec.name);
+        } else if (auto it = pendingNodeIdsPerNameId.find(realName);
                    it != pendingNodeIdsPerNameId.end()) {
             return it->second;
         } else {
             String id = getPropId(spec);
-            if (auto it = repetitionCounterPerNameId.find(spec.name);
+            if (auto it = repetitionCounterPerNameId.find(realName);
                 it != repetitionCounterPerNameId.end()) {
                 ++it->second;
                 id += std::to_string(it->second);
             } else {
-                repetitionCounterPerNameId[spec.name] = 1;
+                repetitionCounterPerNameId[realName] = 1;
             }
 
-            pendingNodeIdsPerNameId[spec.name] = id;
+            pendingNodeIdsPerNameId[realName] = id;
             return id;
         }
     };
 
-    auto addPropertyNodeHere = [&](const PropertySpec &spec) {
-        if (auto it = activeNodeIdsPerNameId.find(spec.name); it != activeNodeIdsPerNameId.end()) {
-            throw std::runtime_error("addPropertyNodeHere: property " + std::string(spec.name) +
-                                     " already has an active node: " + it->second);
+    auto consumePropertyNode = [&](const PropertySpec &spec) {
+        String realName = aliases.choiceStringFor(spec.name);
+
+        if (auto it = activeNodeIdsPerNameId.find(realName); it != activeNodeIdsPerNameId.end()) {
+            String id = it->second;
+            activeNodeIdsPerNameId.erase(it);
+            return id;
         } else {
+            throw std::runtime_error("consumePropertyNode: property " + std::string(realName) +
+                                     " has no active");
+        }
+    };
+
+    auto addPropertyNodeBefore = [&](const PropertySpec &spec) {
+        String realName = aliases.choiceStringFor(spec.name);
+
+        if (auto it = activeNodeIdsPerNameId.find(realName); it == activeNodeIdsPerNameId.end()) {
             String id;
-            if (auto it = pendingNodeIdsPerNameId.find(spec.name);
+            if (auto it = pendingNodeIdsPerNameId.find(realName);
                 it != pendingNodeIdsPerNameId.end()) {
                 id = it->second;
                 pendingNodeIdsPerNameId.erase(it);
@@ -214,24 +253,35 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
                 id = currentPropertyNodeReference(spec);
             }
 
-            activeNodeIdsPerNameId.emplace(spec.name, id);
+            activeNodeIdsPerNameId.emplace(realName, id);
             outputPropNode(id, spec, horizontalInputsOutputs);
         }
     };
 
-    auto consumePropertyNode = [&](const PropertySpec &spec) {
-        if (auto it = activeNodeIdsPerNameId.find(spec.name); it != activeNodeIdsPerNameId.end()) {
-            String id = it->second;
-            activeNodeIdsPerNameId.erase(it);
-            return id;
-        } else if (auto it = pendingNodeIdsPerNameId.find(spec.name);
-                   it != pendingNodeIdsPerNameId.end()) {
-            String id = it->second;
-            addPropertyNodeHere(spec);
-            return id;
+    auto addPropertyNodeHere = [&](const PropertySpec &spec) {
+        String realName = aliases.choiceStringFor(spec.name);
+
+        if (auto it = activeNodeIdsPerNameId.find(realName); it != activeNodeIdsPerNameId.end()) {
+            String prevId = it->second;
+            consumePropertyNode(spec);
+            String newId = currentPropertyNodeReference(spec);
+            pendingNodeIdsPerNameId.erase(realName);
+            activeNodeIdsPerNameId[realName] = newId;
+            outputPropNode(newId, spec, horizontalInputsOutputs);
+            outputEquivalence(prevId, newId, true);
         } else {
-            throw std::runtime_error("consumePropertyNode: property " + std::string(spec.name) +
-                                     " has no active or pending node");
+            String id;
+            if (auto it = pendingNodeIdsPerNameId.find(realName);
+                it != pendingNodeIdsPerNameId.end()) {
+                id = it->second;
+                pendingNodeIdsPerNameId.erase(it);
+            } else {
+                id = currentPropertyNodeReference(spec);
+                pendingNodeIdsPerNameId.erase(realName);
+            }
+
+            activeNodeIdsPerNameId.emplace(realName, id);
+            outputPropNode(id, spec, horizontalInputsOutputs);
         }
     };
 
@@ -261,54 +311,56 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
     out << "\t}\n";
 
     out << "\tsubgraph cluster_processing {\n";
+    out << "\t\tlabel=\"Tasks\";\n";
     out << "\t\tcluster=true;\n";
-    out << "\t\tstyle=invis;\n";
+    out << "\t\tstyle=dashed;\n";
 
     // tasks
     std::size_t ordinalI = 0;
     for (auto p_task : pipeline.items) {
         ++ordinalI;
         out << "\t\t";
-        outputTaskNode(getTaskId(*p_task), ordinalI, *p_task);
 
-        for (auto [nameId, spec] : p_task->getInputSpecs(pipeline.usedSelection).getMappedSpecs()) {
+        for (auto [nameId, spec] : p_task->getInputSpecs(aliases).getMappedSpecs()) {
             out << "\t";
+            addPropertyNodeBefore(spec);
             outputUsage(currentPropertyNodeReference(spec), getTaskId(*p_task), true);
         }
 
-        for (auto [nameId, spec] :
-             p_task->getConsumingSpecs(pipeline.usedSelection).getMappedSpecs()) {
+        for (auto [nameId, spec] : p_task->getConsumingSpecs(aliases).getMappedSpecs()) {
             out << "\t";
+            addPropertyNodeBefore(spec);
             String propNodeId = currentPropertyNodeReference(spec);
             consumePropertyNode(spec);
-            outputConsumption(propNodeId, getTaskId(*p_task), false);
+            outputConsumption(propNodeId, getTaskId(*p_task), true);
         }
 
-        for (auto [nameId, spec] :
-             p_task->getFilterSpecs(pipeline.usedSelection).getMappedSpecs()) {
+        for (auto [nameId, spec] : p_task->getFilterSpecs(aliases).getMappedSpecs()) {
             out << "\t";
-            String prevPropNodeId = currentPropertyNodeReference(spec);
-            consumePropertyNode(spec);
-            String curPropNodeId = currentPropertyNodeReference(spec);
             addPropertyNodeHere(spec);
-            outputEquivalence(prevPropNodeId, curPropNodeId, false);
+            String curPropNodeId = currentPropertyNodeReference(spec);
+
             outputModification(curPropNodeId, getTaskId(*p_task), false);
-            sameRank(curPropNodeId, getTaskId(*p_task));
+            sameRank(getTaskId(*p_task), curPropNodeId);
         }
 
         for (auto [nameId, spec] : p_task->getOutputSpecs().getMappedSpecs()) {
             out << "\t";
-            outputGeneration(getTaskId(*p_task), currentPropertyNodeReference(spec), false);
+            if (auto it = activeNodeIdsPerNameId.find(spec.name);
+                it != activeNodeIdsPerNameId.end()) {
+                activeNodeIdsPerNameId.erase(it);
+            }
+            outputGeneration(getTaskId(*p_task), currentPropertyNodeReference(spec), true);
         }
+        outputTaskNode(getTaskId(*p_task), ordinalI, *p_task);
     }
-    out << "\t}\n";
 
     // unused local properties
     for (auto [nameId, spec] : pipeline.localSpecs.getMappedSpecs()) {
-        if (pendingNodeIdsPerNameId.find(nameId) == pendingNodeIdsPerNameId.end()) {
-            addPropertyNodeHere(spec);
-        }
+        addPropertyNodeBefore(spec);
     }
+
+    out << "\t}\n";
 
     // outputs
     out << "\tsubgraph cluster_outputs {\n";
@@ -318,36 +370,16 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, std::ostream &out)
 
     for (auto [nameId, spec] : pipeline.outputSpecs.getMappedSpecs()) {
         out << "\t\t";
-        if (auto it = pendingNodeIdsPerNameId.find(nameId); it != pendingNodeIdsPerNameId.end()) {
-            String id = it->second;
-            addPropertyNodeHere(spec);
-        } else if (auto it = activeNodeIdsPerNameId.find(nameId);
-                   it != activeNodeIdsPerNameId.end()) {
-            String prevPropNodeId = currentPropertyNodeReference(spec);
-            consumePropertyNode(spec);
-            String curPropNodeId = currentPropertyNodeReference(spec);
-            addPropertyNodeHere(spec);
-            outputEquivalence(prevPropNodeId, curPropNodeId, false);
-        } else {
-            throw std::runtime_error("outputs: property " + std::string(spec.name) +
-                                     " has no active or pending node");
-        }
+        addPropertyNodeHere(spec);
     }
     for (auto [nameId, spec] : pipeline.pipethroughSpecs.getMappedSpecs()) {
         out << "\t\t";
-        if (auto it = activeNodeIdsPerNameId.find(nameId); it != activeNodeIdsPerNameId.end()) {
-            String prevPropNodeId = currentPropertyNodeReference(spec);
-            consumePropertyNode(spec);
-            String curPropNodeId = currentPropertyNodeReference(spec);
-            addPropertyNodeHere(spec);
-            outputEquivalence(prevPropNodeId, curPropNodeId, false);
-        } else {
-            throw std::runtime_error("outputs: property " + std::string(spec.name) +
-                                     " has no active or pending node");
-        }
+        addPropertyNodeHere(spec);
     }
 
     out << "\t}\n";
+
+    out << connectionsSS.str() << "\n";
 
     out << "}";
 }
