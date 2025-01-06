@@ -606,10 +606,14 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
 
                 if (p_helper->p_compSpec->shaderType == GL_FRAGMENT_SHADER) {
-                    std::size_t index =
-                        std::find(desiredOutputs.getSpecNameIds().begin(),
-                                  desiredOutputs.getSpecNameIds().end(), spec.name) -
-                        desiredOutputs.getSpecNameIds().begin();
+
+                    std::size_t index = 0;
+                    for (auto &desiredNameId : desiredOutputs.getSpecNameIds()) {
+                        if (spec.name == p_helper->p_compSpec->aliases.choiceFor(desiredNameId)) {
+                            break;
+                        }
+                        ++index;
+                    }
 
                     assert(index < desiredOutputs.getSpecNameIds().size());
 
