@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Vitrae/Pipelines/Pipeline.hpp"
+#include "Vitrae/Pipelines/PipelineContainer.hpp"
+#include "Vitrae/TypeConversion/StringConvert.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 
 #include <filesystem>
@@ -49,8 +51,28 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
                     bool expandSubGraphs = false)
 {
     using Pipeline = Pipeline<BasicTask>;
+    using PipelineContainer = PipelineContainer<BasicTask>;
 
     std::stringstream connectionsSS;
+
+    /*
+    This lists all subpipelines, by name
+    */
+    std::unordered_map<String, const Pipeline *> subpipelines;
+
+    auto colorFromHash = [&](std::size_t hash) {
+        hash = (hash & 0xffffff) ^ ((hash >> 24) & 0xffffff) ^ (hash >> 48);
+        int r = hash & 0xff;
+        int g = (hash >> 8) & 0xff;
+        int b = (hash >> 16) & 0xff;
+        // add a blueish tint
+        return String("#") + toHexString(127 + r / 2, 2) + toHexString(160 + g / 3, 2) +
+               toHexString(192 + b / 4, 2);
+    };
+
+    auto colorFromName = [&](StringView name) {
+        return colorFromHash(std::hash<StringId>{}(name));
+    };
 
     auto escapedLabel = [&](StringView label) -> String {
         String ret = searchAndReplace(String(label), "\"", "\\\"");
@@ -73,8 +95,16 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         out << "group=\"Tasks\", ";
         out << "shape=box, ";
         out << "style=\"filled\", ";
-        out << "fillcolor=\"lightblue\", ";
-        out << "bgcolor=\"lightblue\", ";
+        if (const PipelineContainer *p_container = dynamic_cast<const PipelineContainer *>(&task);
+            expandSubGraphs && p_container) {
+            out << "fillcolor=\"" + colorFromName(task.getFriendlyName()) + "\", ";
+            out << "bgcolor=\"" + colorFromName(task.getFriendlyName()) + "\", ";
+            subpipelines.emplace(String(task.getFriendlyName()),
+                                 &p_container->getContainedPipeline(aliases));
+        } else {
+            out << "fillcolor=\"lightblue\", ";
+            out << "bgcolor=\"lightblue\", ";
+        }
         out << "];\n";
     };
     auto outputPropNode = [&](StringView id, const PropertySpec &spec, bool horizontal) {
@@ -300,10 +330,11 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     }
 
     // inputs
-    out << "\tsubgraph cluster_inputs {\n";
+    out << "\tsubgraph cluster_" << prefix << "inputs {\n";
     out << "\t\tlabel=\"Inputs\";\n";
     out << "\t\tcluster=true;\n";
     out << "\t\tstyle=dashed;\n";
+    out << "\t\tcolor=\"black\";\n";
 
     for (const PropertyList *p_specs : {&pipeline.inputSpecs, &pipeline.filterSpecs,
                                         &pipeline.consumingSpecs, &pipeline.pipethroughSpecs}) {
@@ -314,10 +345,11 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     }
     out << "\t}\n";
 
-    out << "\tsubgraph cluster_processing {\n";
+    out << "\tsubgraph cluster_" << prefix << "processing {\n";
     out << "\t\tlabel=\"Tasks\";\n";
     out << "\t\tcluster=true;\n";
     out << "\t\tstyle=dashed;\n";
+    out << "\t\tcolor=\"black\";\n";
 
     // tasks
     std::size_t ordinalI = 0;
@@ -357,20 +389,21 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
             outputGeneration(getTaskId(*p_task), currentPropertyNodeReference(spec), true);
         }
         outputTaskNode(getTaskId(*p_task), ordinalI, *p_task);
-    }
 
-    // unused local properties
-    for (auto [nameId, spec] : pipeline.localSpecs.getMappedSpecs()) {
-        addPropertyNodeBefore(spec);
+        // unused local properties
+        for (auto [nameId, spec] : pipeline.localSpecs.getMappedSpecs()) {
+            addPropertyNodeBefore(spec);
+        }
     }
 
     out << "\t}\n";
 
     // outputs
-    out << "\tsubgraph cluster_outputs {\n";
+    out << "\tsubgraph cluster_" << prefix << "outputs {\n";
     out << "\t\tlabel=\"Outputs\";\n";
     out << "\t\tcluster=true;\n";
     out << "\t\tstyle=dashed;\n";
+    out << "\t\tcolor=\"black\";\n";
 
     for (auto [nameId, spec] : pipeline.outputSpecs.getMappedSpecs()) {
         out << "\t\t";
@@ -384,6 +417,22 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     out << "\t}\n";
 
     out << connectionsSS.str() << "\n";
+
+    // subpipelines
+    for (auto [name, p] : subpipelines) {
+        String newPref = String(prefix) + "sub" + std::to_string((std::size_t)p) + "_";
+
+        out << "\tsubgraph cluster_" << newPref << "pipeline" << " {\n";
+        out << "\t\tlabel=\"" << escapedLabel(name) << "\";\n";
+        out << "\t\tcluster=true;\n";
+        out << "\t\tstyle=\"dashed,filled\";\n";
+        out << "\t\tcolor=\"black\";\n";
+        out << "\t\tfillcolor=\"" + colorFromName(name) + "\";\n";
+
+        exportPipeline(*p, aliases, out, newPref, false, expandSubGraphs);
+
+        out << "\t}\n";
+    }
 
     if (isMainGraph) {
         out << "}";

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
+#include "Vitrae/Pipelines/PipelineContainer.hpp"
 
 #include "Vitrae/Pipelines/Pipeline.hpp"
 
@@ -19,7 +20,7 @@ class MethodCollection;
  * tasks that require specific property names.
  * Also supports encapsulation of non-filtered properties.
  */
-class ComposeAdaptTasks : public ComposeTask
+class ComposeAdaptTasks : public ComposeTask, public PipelineContainer<ComposeTask>
 {
   public:
     struct SetupParams {
@@ -56,6 +57,9 @@ class ComposeAdaptTasks : public ComposeTask
     void extractSubTasks(std::set<const Task *> &taskSet,
                          const PropertyAliases &aliases) const override;
 
+    const Pipeline<ComposeTask> &getContainedPipeline(
+        const PropertyAliases &aliases) const override;
+
     void run(RenderComposeContext ctx) const override;
     void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
 
@@ -86,7 +90,7 @@ class ComposeAdaptTasks : public ComposeTask
                           const MethodCollection &methodCollection, StringView friendlyName);
     };
 
-    mutable StableMap<std::size_t, AdaptorPerAliases> m_adaptorPerSelectionHash;
+    mutable StableMap<std::size_t, std::unique_ptr<AdaptorPerAliases>> m_adaptorPerSelectionHash;
 
     const AdaptorPerAliases &getAdaptorPerAliases(const PropertyAliases &externalAliases,
                                                   const MethodCollection &methodCollection) const;

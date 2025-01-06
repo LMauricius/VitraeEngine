@@ -65,11 +65,13 @@ void Compositor::compose()
         tryExecute = false;
 
         // rebuild the pipeline if needed
-        if (m_needsRebuild) {
-            rebuildPipeline();
-        }
-        if (m_needsFrameStoreRegeneration) {
-            regenerateFrameStores();
+        while (m_needsRebuild || m_needsFrameStoreRegeneration) {
+            if (m_needsRebuild) {
+                rebuildPipeline();
+            }
+            if (m_needsFrameStoreRegeneration) {
+                regenerateFrameStores();
+            }
         }
 
         try {
@@ -122,7 +124,7 @@ void Compositor::rebuildPipeline()
         std::ofstream file;
         String filename = filePrefix + ".dot";
         file.open(filename);
-        exportPipeline(m_pipeline, file);
+        exportPipeline(m_pipeline, m_aliases, file);
         file.close();
 
         m_root.getInfoStream() << "Compositor graph stored to: '" << std::filesystem::current_path()
@@ -147,8 +149,25 @@ void Compositor::regenerateFrameStores()
     };
 
     // process
-    for (auto p_task : std::ranges::reverse_view{m_pipeline.items}) {
-        p_task->prepareRequiredLocalAssets(context);
+    try {
+        for (auto p_task : std::ranges::reverse_view{m_pipeline.items}) {
+            p_task->prepareRequiredLocalAssets(context);
+        }
+    }
+    catch (ComposeTaskRequirementsChangedException) {
+        m_needsRebuild = true;
+    }
+
+    String filePrefix = std::string("shaderdebug/") + "full_" + getPipelineId(m_pipeline);
+    {
+        std::ofstream file;
+        String filename = filePrefix + ".dot";
+        file.open(filename);
+        exportPipeline(m_pipeline, m_aliases, file, "", true, true);
+        file.close();
+
+        m_root.getInfoStream() << "Compositor graph stored to: '" << std::filesystem::current_path()
+                               << "/" << filename << "'" << std::endl;
     }
 }
 
