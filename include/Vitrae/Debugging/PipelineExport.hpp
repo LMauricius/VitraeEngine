@@ -45,7 +45,8 @@ template <TaskChild BasicTask> inline String getPipelineId(const Pipeline<BasicT
  */
 template <TaskChild BasicTask>
 void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &aliases,
-                    std::ostream &out)
+                    std::ostream &out, StringView prefix = "", bool isMainGraph = true,
+                    bool expandSubGraphs = false)
 {
     using Pipeline = Pipeline<BasicTask>;
 
@@ -64,7 +65,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         return String("Task_") + std::to_string((std::size_t)&task);
     };
     auto outputTaskNode = [&](StringView id, std::size_t ord, const BasicTask &task) {
-        out << id << " [";
+        out << prefix << id << " [";
         out << "label=\""
             << escapedLabel(String("#") + std::to_string(ord) + "\\n" +
                             String(task.getFriendlyName()))
@@ -77,7 +78,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         out << "];\n";
     };
     auto outputPropNode = [&](StringView id, const PropertySpec &spec, bool horizontal) {
-        out << id << " [";
+        out << prefix << id << " [";
         if (aliases.choiceStringFor(spec.name) != spec.name)
             out << "label=\"" << spec.name << "\n("
                 << escapedLabel(aliases.choiceStringFor(spec.name)) << ")";
@@ -103,16 +104,17 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         out << "];\n";
     };
     auto outputInvisNode = [&](StringView id) {
-        out << id << " [";
+        out << prefix << id << " [";
         out << "style=\"invis\", ";
         out << "shape=\"point\", ";
         out << "];\n";
     };
     auto sameRank = [&](StringView from, StringView to) {
-        out << "{label=\"\";style=invis;rank=same; " << from << "; " << to << "}\n";
+        out << "{label=\"\";style=invis;rank=same; " << prefix << from << "; " << prefix << to
+            << "}\n";
     };
     auto outputUsage = [&](StringView from, StringView to, bool changeRank) {
-        connectionsSS << from << " -> " << to;
+        connectionsSS << prefix << from << " -> " << prefix << to;
         connectionsSS << " [";
         if (!changeRank) {
             connectionsSS << "minlen=0,";
@@ -123,7 +125,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         connectionsSS << ";\n";
     };
     auto outputConsumption = [&](StringView from, StringView to, bool changeRank) {
-        connectionsSS << from << " -> " << to;
+        connectionsSS << prefix << from << " -> " << prefix << to;
         connectionsSS << " [";
         if (!changeRank) {
             connectionsSS << "minlen=0,";
@@ -134,7 +136,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         connectionsSS << ";\n";
     };
     auto outputGeneration = [&](StringView from, StringView to, bool changeRank) {
-        connectionsSS << from << " -> " << to;
+        connectionsSS << prefix << from << " -> " << prefix << to;
         connectionsSS << " [";
         if (!changeRank) {
             connectionsSS << "minlen=0,";
@@ -145,7 +147,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         connectionsSS << ";\n";
     };
     auto outputModification = [&](StringView from, StringView to, bool changeRank) {
-        connectionsSS << from << " -> " << to;
+        connectionsSS << prefix << from << " -> " << prefix << to;
         connectionsSS << " [";
         if (!changeRank) {
             connectionsSS << "minlen=0,";
@@ -157,7 +159,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     };
     auto outputEquivalence = [&](StringView from, StringView to, bool changeRank,
                                  StringView lhead = "", StringView ltail = "") {
-        connectionsSS << from << " -> " << to;
+        connectionsSS << prefix << from << " -> " << prefix << to;
         connectionsSS << "[style=dashed";
         if (lhead.length()) {
             connectionsSS << ", lhead=" << lhead;
@@ -173,7 +175,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     };
     auto outputInvisibleDirection = [&](StringView from, StringView to, bool changeRank,
                                         StringView lhead = "", StringView ltail = "") {
-        connectionsSS << from << " -> " << to << "[style=invis";
+        connectionsSS << prefix << from << " -> " << prefix << to;
         if (lhead.length()) {
             connectionsSS << ", lhead=" << lhead;
         }
@@ -289,11 +291,13 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     Output
     */
 
-    out << "digraph {\n";
-    out << "\trankdir=\"LR\"\n";
-    out << "\tranksep=0.25\n";
-    out << "\tnodesep=0.13\n";
-    out << "\tcompound=true;\n";
+    if (isMainGraph) {
+        out << "digraph {\n";
+        out << "\trankdir=\"LR\"\n";
+        out << "\tranksep=0.25\n";
+        out << "\tnodesep=0.13\n";
+        out << "\tcompound=true;\n";
+    }
 
     // inputs
     out << "\tsubgraph cluster_inputs {\n";
@@ -381,7 +385,9 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
 
     out << connectionsSS.str() << "\n";
 
-    out << "}";
+    if (isMainGraph) {
+        out << "}";
+    }
 }
 
 } // namespace Vitrae
