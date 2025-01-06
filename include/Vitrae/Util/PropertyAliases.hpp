@@ -129,7 +129,7 @@ class PropertyAliases
     void extractAliasProxyIds(std::unordered_set<StringId> &proxys) const;
 
   private:
-    std::span<const PropertyAliases *const> m_parentPtrs;
+    std::vector<const PropertyAliases *> m_parentPtrs;
     StableMap<StringId, std::pair<StringId, String>> m_localAliases;
     std::size_t m_hash;
 };
