@@ -313,11 +313,10 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
     std::unordered_set<StringId> parameterProviderIds;
     parameterProviderIds.reserve(totalUsedAliases.size());
     for (auto [target, choice] : totalUsedAliases) {
-        parameterProviderIds.insert(choice);
+        parameterProviderIds.insert(target);
     }
     for (auto desiredNameId : desiredOutputs.getSpecNameIds()) {
-        auto providerId = subAliases.choiceFor(desiredNameId);
-        parameterProviderIds.erase(providerId);
+        parameterProviderIds.erase(desiredNameId);
     }
 
     // We use usedAliasChoices as parameters to the pipeline, so it doesn't generate tasks that
