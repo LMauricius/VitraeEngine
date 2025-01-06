@@ -48,9 +48,16 @@ template <class KeyT, class MappedT> class StableMap
         AbstractStableMapIterator(AbstractStableMapIterator &&) = default;
 
         template <class OtherKeyRefT, class OtherMappedRefT>
-            requires(std::convertible_to<OtherKeyRefT, KeyRefT> &&
-                     std::convertible_to<OtherMappedRefT, MappedRefT>)
+            requires(std::convertible_to<OtherKeyRefT *, KeyRefT *> &&
+                     std::convertible_to<OtherMappedRefT *, MappedRefT *>)
         AbstractStableMapIterator(AbstractStableMapIterator<OtherKeyRefT, OtherMappedRefT> &&other)
+            : mp_key(other.mp_key), mp_value(other.mp_value)
+        {}
+        template <class OtherKeyRefT, class OtherMappedRefT>
+            requires(std::convertible_to<OtherKeyRefT *, KeyRefT *> &&
+                     std::convertible_to<OtherMappedRefT *, MappedRefT *>)
+        AbstractStableMapIterator(
+            const AbstractStableMapIterator<OtherKeyRefT, OtherMappedRefT> &other)
             : mp_key(other.mp_key), mp_value(other.mp_value)
         {}
 
@@ -515,6 +522,14 @@ template <class KeyT, class MappedT> class StableMap
         }
 
         return 0;
+    }
+
+    std::size_t erase(CStableMapIterator pos)
+    {
+        std::size_t ind = pos.mp_key - getKeyList();
+        assert(ind < m_size);
+        realloc_w_erased(ind);
+        return 1;
     }
 
     void clear()
