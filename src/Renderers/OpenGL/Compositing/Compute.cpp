@@ -197,7 +197,7 @@ OpenGLComposeCompute::ProgramPerAliases &OpenGLComposeCompute::getProgramPerAlia
     const PropertyAliases &aliases) const
 {
     if (auto it = m_programPerAliasHash.find(aliases.hash()); it != m_programPerAliasHash.end()) {
-        return (*it).second;
+        return *(*it).second;
     } else {
         OpenGLRenderer &rend =
             static_cast<OpenGLRenderer &>(m_params.root.getComponent<Renderer>());
@@ -215,15 +215,15 @@ OpenGLComposeCompute::ProgramPerAliases &OpenGLComposeCompute::getProgramPerAlia
                 m_params.computeSetup.invocationCountZ, decidedGroupSize,
                 m_params.computeSetup.allowOutOfBoundsCompute)});
 
-        return (*m_programPerAliasHash
-                     .emplace(aliases.hash(),
-                              ProgramPerAliases{
-                                  .inputSpecs = p_compiledShader->inputSpecs,
-                                  .filterSpecs = p_compiledShader->filterSpecs,
-                                  .consumeSpecs = p_compiledShader->consumingSpecs,
-                              })
-                     .first)
-            .second;
+        return *(*m_programPerAliasHash
+                      .emplace(aliases.hash(),
+                               new ProgramPerAliases{
+                                   .inputSpecs = p_compiledShader->inputSpecs,
+                                   .filterSpecs = p_compiledShader->filterSpecs,
+                                   .consumeSpecs = p_compiledShader->consumingSpecs,
+                               })
+                      .first)
+                    .second;
     }
 }
 

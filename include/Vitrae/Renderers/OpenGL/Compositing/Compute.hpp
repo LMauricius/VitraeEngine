@@ -44,7 +44,7 @@ class OpenGLComposeCompute : public ComposeCompute {
         StableMap<StringId, Variant> cachedDependencies;
     };
 
-    mutable StableMap<std::size_t, ProgramPerAliases> m_programPerAliasHash;
+    mutable StableMap<std::size_t, std::unique_ptr<ProgramPerAliases>> m_programPerAliasHash;
 
     ProgramPerAliases &getProgramPerAliases(const PropertyAliases &aliases) const;
 };

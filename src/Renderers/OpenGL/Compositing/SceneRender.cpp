@@ -15,6 +15,10 @@
 namespace Vitrae
 {
 
+const PropertyList OpenGLComposeSceneRender::SHARED_INPUT_PROPERTY_LIST = {SCENE_SPEC};
+const PropertyList OpenGLComposeSceneRender::SHARED_FILTER_PROPERTY_LIST = {
+    FRAME_STORE_TARGET_SPEC};
+
 OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     : m_root(params.root), m_params(params)
 {
@@ -71,9 +75,9 @@ std::size_t OpenGLComposeSceneRender::memory_cost() const
 const PropertyList &OpenGLComposeSceneRender::getInputSpecs(const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.inputSpecs;
+        return (*it).second->inputSpecs;
     } else {
-        return EMPTY_PROPERTY_LIST;
+        return SHARED_INPUT_PROPERTY_LIST;
     }
 }
 
@@ -85,9 +89,9 @@ const PropertyList &OpenGLComposeSceneRender::getOutputSpecs() const
 const PropertyList &OpenGLComposeSceneRender::getFilterSpecs(const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.filterSpecs;
+        return (*it).second->filterSpecs;
     } else {
-        return EMPTY_PROPERTY_LIST;
+        return SHARED_FILTER_PROPERTY_LIST;
     }
 }
 
@@ -95,7 +99,7 @@ const PropertyList &OpenGLComposeSceneRender::getConsumingSpecs(
     const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.consumingSpecs;
+        return (*it).second->consumingSpecs;
     } else {
         return EMPTY_PROPERTY_LIST;
     }
@@ -105,7 +109,7 @@ void OpenGLComposeSceneRender::extractUsedTypes(std::set<const TypeInfo *> &type
                                                 const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        const SpecsPerAliases &specsPerAliases = (*it).second;
+        const SpecsPerAliases &specsPerAliases = *(*it).second;
 
         for (const PropertyList *p_specs :
              {&specsPerAliases.inputSpecs, &m_outputSpecs, &specsPerAliases.filterSpecs,
@@ -134,8 +138,8 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     std::size_t specsKey = getSpecsKey(args.aliases);
     auto specsIt = m_specsPerKey.find(specsKey);
     if (specsIt == m_specsPerKey.end()) {
-        specsIt = m_specsPerKey.emplace(specsKey, SpecsPerAliases()).first;
-        SpecsPerAliases &specsContainer = (*specsIt).second;
+        specsIt = m_specsPerKey.emplace(specsKey, new SpecsPerAliases()).first;
+        SpecsPerAliases &specsContainer = *(*specsIt).second;
 
         for (auto &tokenName : m_params.inputTokenNames) {
             specsContainer.inputSpecs.insert_back(
@@ -143,9 +147,10 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
         }
 
         specsContainer.inputSpecs.insert_back(SCENE_SPEC);
+        specsContainer.filterSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
     }
 
-    SpecsPerAliases &specsContainer = (*specsIt).second;
+    SpecsPerAliases &specsContainer = *(*specsIt).second;
 
     // extract common inputs
     Scene &scene = *args.properties.get(SCENE_SPEC.name).get<dynasma::FirmPtr<Scene>>();
@@ -236,6 +241,8 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                 for (auto &[aliases, materials2props] : aliases2materials2props) {
                     MMETER_SCOPE_PROFILER("Shader iteration");
 
+                    auto p_firstMat = materials2props.begin()->first;
+
                     // compile shader for this material
                     dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader;
 
@@ -248,24 +255,39 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                                 *frame.getRenderComponents(), m_root)});
 
                         // Store pipeline property specs
-                        needsRebuild |=
-                            (specsContainer.inputSpecs.merge(p_compiledShader->inputSpecs) > 0);
-                        needsRebuild |=
-                            (specsContainer.filterSpecs.merge(p_compiledShader->filterSpecs) > 0);
-                        needsRebuild |= (specsContainer.consumingSpecs.merge(
-                                             p_compiledShader->consumingSpecs) > 0);
-                    }
 
-                    // Aliases should've already been taken into account, so use properties directly
-                    ScopedDict &directProperties = args.properties.getUnaliasedScope();
+                        using ListConvPair = std::pair<const PropertyList *, PropertyList *>;
+
+                        for (auto [p_specs, p_targetSpecs] :
+                             {ListConvPair{&p_compiledShader->inputSpecs,
+                                           &specsContainer.inputSpecs},
+                              ListConvPair{&p_compiledShader->filterSpecs,
+                                           &specsContainer.filterSpecs},
+                              ListConvPair{&p_compiledShader->consumingSpecs,
+                                           &specsContainer.consumingSpecs}}) {
+                            for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
+                                if (p_firstMat->getProperties().find(nameId) ==
+                                        p_firstMat->getProperties().end() &&
+                                    nameId != StandardShaderPropertyNames::INPUT_MODEL &&
+                                    p_targetSpecs->getMappedSpecs().find(nameId) ==
+                                        p_targetSpecs->getMappedSpecs().end()) {
+                                    p_targetSpecs->insert_back(spec);
+                                    needsRebuild = true;
+                                }
+                            }
+                        }
+                    }
 
                     if (!needsRebuild) {
                         // OpenGL - use the program
                         glUseProgram(p_compiledShader->programGLName);
 
+                        // Aliases should've already been taken into account, so use properties
+                        // directly
+                        ScopedDict &directProperties = args.properties.getUnaliasedScope();
+
                         // set the 'environmental' uniforms
                         // skip those that will be set by the material
-                        auto p_firstMat = materials2props.begin()->first;
                         GLint glModelMatrixUniformLocation;
                         if (auto it = p_compiledShader->uniformSpecs.find(
                                 StandardShaderPropertyNames::INPUT_MODEL);

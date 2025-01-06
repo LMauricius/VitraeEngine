@@ -115,47 +115,55 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
     glm::vec2 retrSize = m_size.get(ctx.properties);
 
     if (m_outputColorTextureNameId != "") {
-        auto p_texture = textureManager.register_asset(
-            {Texture::EmptyParams{.root = m_root,
-                                  .size = retrSize,
-                                  .channelType = m_channelType,
-                                  .horWrap = m_horWrap,
-                                  .verWrap = m_verWrap,
-                                  .minFilter = m_minFilter,
-                                  .magFilter = m_magFilter,
-                                  .useMipMaps = m_useMipMaps,
-                                  .borderColor = m_borderColor,
-                                  .friendlyName = m_outputColorTextureName}});
+        auto p_texture =
+            textureManager
+                .register_asset({Texture::EmptyParams{.root = m_root,
+                                                      .size = retrSize,
+                                                      .channelType = m_channelType,
+                                                      .horWrap = m_horWrap,
+                                                      .verWrap = m_verWrap,
+                                                      .minFilter = m_minFilter,
+                                                      .magFilter = m_magFilter,
+                                                      .useMipMaps = m_useMipMaps,
+                                                      .borderColor = m_borderColor,
+                                                      .friendlyName = m_outputColorTextureName}})
+                .getLoaded();
+        ;
         frameParams.p_colorTexture = p_texture;
         ctx.properties.set(m_outputColorTextureNameId, p_texture);
     }
     if (m_outputDepthTextureNameId != "") {
-        auto p_texture = textureManager.register_asset(
-            {Texture::EmptyParams{.root = m_root,
-                                  .size = retrSize,
-                                  .channelType = Texture::ChannelType::DEPTH,
-                                  .horWrap = m_horWrap,
-                                  .verWrap = m_verWrap,
-                                  .minFilter = m_minFilter,
-                                  .magFilter = m_magFilter,
-                                  .useMipMaps = m_useMipMaps,
-                                  .borderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-                                  .friendlyName = m_outputDepthTextureName}});
+        auto p_texture =
+            textureManager
+                .register_asset({Texture::EmptyParams{.root = m_root,
+                                                      .size = retrSize,
+                                                      .channelType = Texture::ChannelType::DEPTH,
+                                                      .horWrap = m_horWrap,
+                                                      .verWrap = m_verWrap,
+                                                      .minFilter = m_minFilter,
+                                                      .magFilter = m_magFilter,
+                                                      .useMipMaps = m_useMipMaps,
+                                                      .borderColor = {1.0f, 1.0f, 1.0f, 1.0f},
+                                                      .friendlyName = m_outputDepthTextureName}})
+                .getLoaded();
         frameParams.p_depthTexture = p_texture;
         ctx.properties.set(m_outputDepthTextureNameId, p_texture);
     }
     for (auto &spec : m_outputTexturePropertySpecs) {
         auto p_texture =
-            textureManager.register_asset({Texture::EmptyParams{.root = m_root,
-                                                                .size = retrSize,
-                                                                .channelType = m_channelType,
-                                                                .horWrap = m_horWrap,
-                                                                .verWrap = m_verWrap,
-                                                                .minFilter = m_minFilter,
-                                                                .magFilter = m_magFilter,
-                                                                .useMipMaps = m_useMipMaps,
-                                                                .borderColor = m_borderColor,
-                                                                .friendlyName = spec.textureName}});
+            textureManager
+                .register_asset({Texture::EmptyParams{.root = m_root,
+                                                      .size = retrSize,
+                                                      .channelType = m_channelType,
+                                                      .horWrap = m_horWrap,
+                                                      .verWrap = m_verWrap,
+                                                      .minFilter = m_minFilter,
+                                                      .magFilter = m_magFilter,
+                                                      .useMipMaps = m_useMipMaps,
+                                                      .borderColor = m_borderColor,
+                                                      .friendlyName = spec.textureName}})
+                .getLoaded();
+        ;
         frameParams.outputTextureSpecs.emplace_back(FrameStore::OutputTextureSpec{
             .fragmentSpec = spec.fragmentSpec,
             .p_texture = p_texture,
@@ -163,7 +171,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
         ctx.properties.set(spec.textureName, p_texture);
     }
 
-    auto frame = frameManager.register_asset({frameParams});
+    auto frame = frameManager.register_asset({frameParams}).getLoaded();
     ctx.properties.set(FRAME_STORE_TARGET_SPEC.name, frame);
 }
 

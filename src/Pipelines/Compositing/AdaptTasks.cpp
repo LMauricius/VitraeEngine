@@ -19,8 +19,12 @@ std::size_t ComposeAdaptTasks::memory_cost() const
 
 const PropertyList &ComposeAdaptTasks::getInputSpecs(const PropertyAliases &externalAliases) const
 {
-    return getAdaptorPerAliases(externalAliases, m_params.root.getComponent<MethodCollection>())
-        .inputSpecs;
+    if (auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
+        it != m_adaptorPerSelectionHash.end()) {
+        return (*it).second->inputSpecs;
+    } else {
+        return EMPTY_PROPERTY_LIST;
+    }
 }
 
 const PropertyList &ComposeAdaptTasks::getOutputSpecs() const
@@ -30,26 +34,37 @@ const PropertyList &ComposeAdaptTasks::getOutputSpecs() const
 
 const PropertyList &ComposeAdaptTasks::getFilterSpecs(const PropertyAliases &externalAliases) const
 {
-    return getAdaptorPerAliases(externalAliases, m_params.root.getComponent<MethodCollection>())
-        .filterSpecs;
+    if (auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
+        it != m_adaptorPerSelectionHash.end()) {
+        return (*it).second->filterSpecs;
+    } else {
+        return EMPTY_PROPERTY_LIST;
+    }
 }
 
 const PropertyList &ComposeAdaptTasks::getConsumingSpecs(
     const PropertyAliases &externalAliases) const
 {
-    return getAdaptorPerAliases(externalAliases, m_params.root.getComponent<MethodCollection>())
-        .consumeSpecs;
+    if (auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
+        it != m_adaptorPerSelectionHash.end()) {
+        return (*it).second->consumeSpecs;
+    } else {
+        return EMPTY_PROPERTY_LIST;
+    }
 }
 
 void ComposeAdaptTasks::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
                                          const PropertyAliases &aliases) const
 {
-    auto &specs = getAdaptorPerAliases(aliases, m_params.root.getComponent<MethodCollection>());
+    if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
+        it != m_adaptorPerSelectionHash.end()) {
+        const auto &specs = *(*it).second;
 
-    for (const PropertyList *p_specs :
-         {&specs.inputSpecs, &m_params.desiredOutputs, &specs.filterSpecs, &specs.consumeSpecs}) {
-        for (const PropertySpec &spec : p_specs->getSpecList()) {
-            typeSet.insert(&spec.typeInfo);
+        for (const PropertyList *p_specs : {&specs.inputSpecs, &m_params.desiredOutputs,
+                                            &specs.filterSpecs, &specs.consumeSpecs}) {
+            for (const PropertySpec &spec : p_specs->getSpecList()) {
+                typeSet.insert(&spec.typeInfo);
+            }
         }
     }
 }
@@ -110,21 +125,41 @@ void ComposeAdaptTasks::run(RenderComposeContext ctx) const
 {
     MMETER_SCOPE_PROFILER("ComposeAdaptTasks::run");
 
-    const AdaptorPerAliases &adaptor =
-        getAdaptorPerAliases(ctx.aliases, m_params.root.getComponent<MethodCollection>());
+    auto it = m_adaptorPerSelectionHash.find(ctx.aliases.hash());
+    if (it == m_adaptorPerSelectionHash.end()) {
+        it = m_adaptorPerSelectionHash
+                 .emplace(ctx.aliases.hash(),
+                          new AdaptorPerAliases(
+                              m_params.adaptorAliases, m_params.desiredOutputs, ctx.aliases,
+                              ctx.root.getComponent<MethodCollection>(), m_params.friendlyName))
+                 .first;
+        throw ComposeTaskRequirementsChangedException();
+    }
 
-    ScopedDict encapsulatedScope(&ctx.properties.getUnaliasedScope());
+    const AdaptorPerAliases &adaptor = *(*it).second;
+
+    // ScopedDict encapsulatedScope(&ctx.properties.getUnaliasedScope());
 
     // Note: we will use only the pipeline's usedSelection in the subpipeline,
     // because anything else is unused and potential performance hog
-    ArgumentScope encapsulatedArgumentScope(&encapsulatedScope, &adaptor.pipeline.usedSelection);
+    ArgumentScope encapsulatedArgumentScope(&ctx.properties.getUnaliasedScope(),
+                                            &adaptor.pipeline.usedSelection);
 
     // construct the encapsulated context
+    const PropertyAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
+    PropertyAliases subAliases(aliasArray);
     RenderComposeContext subCtx{
         .properties = encapsulatedArgumentScope,
         .root = ctx.root,
-        .aliases = adaptor.pipeline.usedSelection,
+        .aliases = subAliases,
     };
+
+    // map from external scope to internal scope
+    for (const auto &entry : adaptor.finishingMapping) {
+        if (ctx.properties.has(entry.second)) {
+            encapsulatedArgumentScope.set(entry.first, ctx.properties.move(entry.second));
+        }
+    }
 
     // execute the pipeline
     try {
@@ -144,7 +179,7 @@ void ComposeAdaptTasks::run(RenderComposeContext ctx) const
 
     // map from internal scope to external scope
     for (const auto &entry : adaptor.finishingMapping) {
-        ctx.properties.set(entry.second, encapsulatedScope.move(entry.first));
+        ctx.properties.set(entry.second, encapsulatedArgumentScope.move(entry.first));
     }
 }
 
@@ -152,20 +187,33 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
 {
     MMETER_SCOPE_PROFILER("ComposeAdaptTasks::run");
 
-    const AdaptorPerAliases &adaptor =
-        getAdaptorPerAliases(ctx.aliases, ctx.root.getComponent<MethodCollection>());
+    auto it = m_adaptorPerSelectionHash.find(ctx.aliases.hash());
+    if (it == m_adaptorPerSelectionHash.end()) {
+        it = m_adaptorPerSelectionHash
+                 .emplace(ctx.aliases.hash(),
+                          new AdaptorPerAliases(
+                              m_params.adaptorAliases, m_params.desiredOutputs, ctx.aliases,
+                              ctx.root.getComponent<MethodCollection>(), m_params.friendlyName))
+                 .first;
+        throw ComposeTaskRequirementsChangedException();
+    }
 
-    ScopedDict encapsulatedScope(&ctx.properties.getUnaliasedScope());
+    const AdaptorPerAliases &adaptor = *(*it).second;
+
+    // ScopedDict encapsulatedScope(&ctx.properties.getUnaliasedScope());
 
     // Note: we will use only the pipeline's usedSelection in the subpipeline,
     // because anything else is unused and potential performance hog
-    ArgumentScope encapsulatedArgumentScope(&encapsulatedScope, &adaptor.pipeline.usedSelection);
+    ArgumentScope encapsulatedArgumentScope(&ctx.properties.getUnaliasedScope(),
+                                            &adaptor.pipeline.usedSelection);
 
     // construct the encapsulated context
+    const PropertyAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
+    PropertyAliases subAliases(aliasArray);
     RenderComposeContext subCtx{
         .properties = encapsulatedArgumentScope,
         .root = ctx.root,
-        .aliases = adaptor.pipeline.usedSelection,
+        .aliases = subAliases,
     };
 
     // execute the pipeline
@@ -184,12 +232,30 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
         throw;
     }
 
+    // map from external scope to internal scope
+    for (const auto &entry : adaptor.finishingMapping) {
+        if (ctx.properties.has(entry.second)) {
+            encapsulatedArgumentScope.set(entry.first, ctx.properties.move(entry.second));
+        }
+    }
+
     // map from internal scope to external scope
     // since we are running in reverse, map input specs of the pipeline
-    for (auto p_specs : {&adaptor.pipeline.inputSpecs, &adaptor.pipeline.filterSpecs}) {
-        for (auto specNameId : p_specs->getSpecNameIds()) {
-            ctx.properties.set(m_params.adaptorAliases.choiceFor(specNameId),
-                               encapsulatedArgumentScope.move(specNameId));
+    /*for (auto p_specs : {&adaptor.pipeline.inputSpecs, &adaptor.pipeline.filterSpecs,
+                         &adaptor.pipeline.pipethroughSpecs}) {
+        for (const auto &[specNameId, spec] : p_specs->getMappedSpecs()) {
+            if (spec.typeInfo != Variant::getTypeInfo<void>() &&
+                encapsulatedArgumentScope.has(specNameId)) {
+                ctx.properties.set(subAliases.choiceFor(specNameId),
+                                   encapsulatedArgumentScope.move(specNameId));
+            }
+        }
+    }*/
+
+    // map from internal scope to external scope
+    for (const auto &entry : adaptor.finishingMapping) {
+        if (encapsulatedArgumentScope.has(entry.first)) {
+            ctx.properties.set(entry.second, encapsulatedArgumentScope.move(entry.first));
         }
     }
 }
@@ -205,13 +271,15 @@ const ComposeAdaptTasks::AdaptorPerAliases &ComposeAdaptTasks::getAdaptorPerAlia
     auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
     if (it == m_adaptorPerSelectionHash.end()) {
         it = m_adaptorPerSelectionHash
-                 .emplace(externalAliases.hash(), m_params.adaptorAliases, m_params.desiredOutputs,
-                          externalAliases, methodCollection, m_params.friendlyName)
+                 .emplace(externalAliases.hash(),
+                          new AdaptorPerAliases(m_params.adaptorAliases, m_params.desiredOutputs,
+                                                externalAliases, methodCollection,
+                                                m_params.friendlyName))
                  .first;
 
-        return (*it).second;
+        return *(*it).second;
     }
-    return (*it).second;
+    return *(*it).second;
 }
 
 void ComposeAdaptTasks::forgetAdaptorPerAliases(const PropertyAliases &externalAliases) const
@@ -225,11 +293,41 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
                                                         const MethodCollection &methodCollection,
                                                         StringView friendlyName)
 {
-    const PropertyAliases *aliasArray[] = {&adaptorAliases, &externalAliases};
-    PropertyAliases subAliases(aliasArray);
+    PropertyAliases subAliases({{&adaptorAliases, &externalAliases}});
 
+    // All desired outputs must be aliased
+    for (auto desiredSpec : desiredOutputs.getSpecList()) {
+        auto alias = subAliases.choiceFor(desiredSpec.name);
+        if (alias == desiredSpec.name) {
+            throw std::runtime_error("desired output '" + desiredSpec.name + "' must be aliased");
+        }
+    }
+
+    // Find out where we need to stop the pipeline dependency generation
+    // We only want to add tasks that are influenced by this adaptor's aliases,
+    // So the tasks that could be added to the external pipeline will be added there
+    // This is IMPORTANT to prevent double generation and execution of the same tasks
+    std::unordered_map<StringId, StringId> totalUsedAliases;
+    subAliases.extractAliasNameIds(totalUsedAliases);
+
+    std::unordered_set<StringId> parameterProviderIds;
+    parameterProviderIds.reserve(totalUsedAliases.size());
+    for (auto [target, choice] : totalUsedAliases) {
+        parameterProviderIds.insert(choice);
+    }
+    for (auto desiredNameId : desiredOutputs.getSpecNameIds()) {
+        auto providerId = subAliases.choiceFor(desiredNameId);
+        parameterProviderIds.erase(providerId);
+    }
+
+    // We use usedAliasChoices as parameters to the pipeline, so it doesn't generate tasks that
+    // don't depend on our aliases
+    std::vector<StringId> parameterProviderIdsVec(parameterProviderIds.begin(),
+                                                  parameterProviderIds.end());
     pipeline =
-        Pipeline<ComposeTask>(methodCollection.getComposeMethod(), desiredOutputs, subAliases);
+        Pipeline<ComposeTask>(methodCollection.getComposeMethod(), parameterProviderIdsVec,
+                              PipelineParametrizationPolicy::ParametrizedOrDirectDependencies,
+                              desiredOutputs, subAliases);
 
     String filePrefix =
         std::string("shaderdebug/") + "adaptor_" + String(friendlyName) + getPipelineId(pipeline);
@@ -237,7 +335,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
         std::ofstream file;
         String filename = filePrefix + ".dot";
         file.open(filename);
-        exportPipeline(pipeline, file);
+        exportPipeline(pipeline, subAliases, file);
         file.close();
     }
 
@@ -248,20 +346,20 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
                                           ListConvPair{&pipeline.consumingSpecs, &consumeSpecs}}) {
         for (auto &spec : p_specs->getSpecList()) {
             p_targetSpecs->insert_back(PropertySpec{
-                .name = adaptorAliases.choiceStringFor(spec.name),
+                .name = subAliases.choiceStringFor(spec.name),
                 .typeInfo = spec.typeInfo,
             });
         }
     }
 
     for (auto [desiredId, desiredSpec] : desiredOutputs.getMappedSpecs()) {
-        auto outerChoice = adaptorAliases.choiceFor(desiredId);
+        auto outerChoice = subAliases.choiceFor(desiredId);
 
         bool found = false;
 
         // check if it's in the outputs
         for (auto [nameId, spec] : pipeline.outputSpecs.getMappedSpecs()) {
-            auto innerChoice = adaptorAliases.choiceFor(nameId);
+            auto innerChoice = subAliases.choiceFor(nameId);
             if (outerChoice == innerChoice) {
                 if (spec.typeInfo != Variant::getTypeInfo<void>()) {
                     finishingMapping.emplace(innerChoice, desiredId);
@@ -273,7 +371,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
 
         // check if it's in the filters
         for (auto [nameId, spec] : pipeline.filterSpecs.getMappedSpecs()) {
-            auto innerChoice = adaptorAliases.choiceFor(nameId);
+            auto innerChoice = subAliases.choiceFor(nameId);
             if (outerChoice == innerChoice) {
                 if (desiredId != innerChoice) {
                     if (spec.typeInfo != Variant::getTypeInfo<void>()) {
@@ -289,7 +387,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
 
         // check if it's in the pipethroughs
         for (auto [nameId, spec] : pipeline.pipethroughSpecs.getMappedSpecs()) {
-            auto innerChoice = adaptorAliases.choiceFor(nameId);
+            auto innerChoice = subAliases.choiceFor(nameId);
             if (outerChoice == innerChoice) {
                 if (desiredId != innerChoice) {
                     if (spec.typeInfo != Variant::getTypeInfo<void>()) {
@@ -304,7 +402,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
         }
 
         if (!found) {
-            throw std::runtime_error("Desired output spec not found");
+            throw std::runtime_error("Desired output spec '" + desiredSpec.name + "' not found");
         }
     }
 }

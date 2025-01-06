@@ -33,7 +33,7 @@ std::size_t OpenGLComposeDataRender::memory_cost() const
 const PropertyList &OpenGLComposeDataRender::getInputSpecs(const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.inputSpecs;
+        return (*it).second->inputSpecs;
     } else {
         return EMPTY_PROPERTY_LIST;
     }
@@ -47,7 +47,7 @@ const PropertyList &OpenGLComposeDataRender::getOutputSpecs() const
 const PropertyList &OpenGLComposeDataRender::getFilterSpecs(const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.filterSpecs;
+        return (*it).second->filterSpecs;
     } else {
         return EMPTY_PROPERTY_LIST;
     }
@@ -56,7 +56,7 @@ const PropertyList &OpenGLComposeDataRender::getFilterSpecs(const PropertyAliase
 const PropertyList &OpenGLComposeDataRender::getConsumingSpecs(const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        return (*it).second.consumingSpecs;
+        return (*it).second->consumingSpecs;
     } else {
         return EMPTY_PROPERTY_LIST;
     }
@@ -66,7 +66,7 @@ void OpenGLComposeDataRender::extractUsedTypes(std::set<const TypeInfo *> &typeS
                                                const PropertyAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
-        const SpecsPerAliases &specsPerAliases = (*it).second;
+        const SpecsPerAliases &specsPerAliases = *(*it).second;
 
         for (const PropertyList *p_specs :
              {&specsPerAliases.inputSpecs, &m_outputSpecs, &specsPerAliases.filterSpecs,
@@ -95,8 +95,8 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
     std::size_t specsKey = getSpecsKey(args.aliases);
     auto specsIt = m_specsPerKey.find(specsKey);
     if (specsIt == m_specsPerKey.end()) {
-        specsIt = m_specsPerKey.emplace(specsKey, SpecsPerAliases()).first;
-        SpecsPerAliases &specsContainer = (*specsIt).second;
+        specsIt = m_specsPerKey.emplace(specsKey, new SpecsPerAliases()).first;
+        SpecsPerAliases &specsContainer = *(*specsIt).second;
 
         for (auto &tokenName : m_params.inputTokenNames) {
             specsContainer.inputSpecs.insert_back(
@@ -104,7 +104,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
         }
     }
 
-    SpecsPerAliases &specsContainer = (*specsIt).second;
+    SpecsPerAliases &specsContainer = *(*specsIt).second;
 
     // extract common inputs
     dynasma::FirmPtr<FrameStore> p_frame =
