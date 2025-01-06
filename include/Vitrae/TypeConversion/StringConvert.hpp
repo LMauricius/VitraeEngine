@@ -6,6 +6,8 @@
 #include "glm/glm.hpp"
 #include "glm/gtx/string_cast.hpp"
 
+#include <codecvt>
+#include <locale>
 #include <sstream>
 #include <type_traits>
 #include <utility>
