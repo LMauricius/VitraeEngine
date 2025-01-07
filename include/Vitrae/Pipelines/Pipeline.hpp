@@ -377,7 +377,7 @@ template <TaskChild BasicTask> class Pipeline
         };
 
         auto consumeProperty = [&](const PropertySpec &propertySpec) {
-            StringId actualName = selection.choiceFor(actualName);
+            StringId actualName = selection.choiceFor(propertySpec.name);
 
             currentPropertyNames.erase(actualName);
         };
