@@ -722,8 +722,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             glShaderSource(p_helper->shaderId, 1, &c_code, NULL);
 
             // debug
-            String filePrefix = std::string("shaderdebug/") + getPipelineId(p_helper->pipeline) +
-                                p_helper->p_compSpec->outVarPrefix;
+            String filePrefix = std::string("shaderdebug/") + p_helper->p_compSpec->outVarPrefix +
+                                getPipelineId(p_helper->pipeline);
             {
                 std::ofstream file;
                 String filename = filePrefix + ".dot";
@@ -743,6 +743,19 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                 root.getInfoStream() << "Shader stored to: '" << std::filesystem::current_path()
                                      << "/" << filename << "'" << std::endl;
+            }
+
+            // compile
+            int success;
+            char cmplLog[1024];
+            glCompileShader(p_helper->shaderId);
+
+            glGetShaderInfoLog(p_helper->shaderId, sizeof(cmplLog), nullptr, cmplLog);
+            glGetShaderiv(p_helper->shaderId, GL_COMPILE_STATUS, &success);
+            if (!success) {
+                root.getErrStream() << "Shader compilation error: " << cmplLog << std::endl;
+            } else {
+                root.getInfoStream() << "Shader compiled: " << cmplLog << std::endl;
             }
 
             // === Prepare for the next stage ===
@@ -765,16 +778,6 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
         programGLName = glCreateProgram();
         for (auto p_helper : helperOrder) {
-            glCompileShader(p_helper->shaderId);
-
-            glGetShaderInfoLog(p_helper->shaderId, sizeof(cmplLog), nullptr, cmplLog);
-            glGetShaderiv(p_helper->shaderId, GL_COMPILE_STATUS, &success);
-            if (!success) {
-                root.getErrStream() << "Shader compilation error: " << cmplLog << std::endl;
-            } else {
-                root.getInfoStream() << "Shader compiled: " << cmplLog << std::endl;
-            }
-
             glAttachShader(programGLName, p_helper->shaderId);
         }
         glLinkProgram(programGLName);
