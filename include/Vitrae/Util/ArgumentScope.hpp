@@ -88,7 +88,7 @@ class ArgumentScope
      * @return A move-reference to the value associated with the key.
      * @throws std::runtime_error If the key is not found in any dictionary.
      */
-    Variant &&move(StringId key);
+    Variant move(StringId key);
 
     /**
      * @brief Check if a key exists in the dictionary.

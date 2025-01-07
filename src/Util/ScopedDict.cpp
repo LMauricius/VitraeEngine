@@ -30,7 +30,7 @@ const Variant &ScopedDict::get(StringId key) const
     throw std::runtime_error{"Key not found"};
 }
 
-Variant &&ScopedDict::move(StringId key)
+Variant ScopedDict::move(StringId key)
 {
     auto it = m_dict.find(key);
     if (it != m_dict.end())
