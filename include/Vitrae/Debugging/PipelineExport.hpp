@@ -148,8 +148,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         if (!changeRank) {
             connectionsSS << "minlen=0,";
         }
-        connectionsSS << "dir=forward,";
-        connectionsSS << "arrowhead=dot,";
+        connectionsSS << "dir=back,";
+        connectionsSS << "arrowtail=dot,";
         connectionsSS << "color=darkblue";
         connectionsSS << "] ";
         connectionsSS << ";\n";
@@ -162,7 +162,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         }
         connectionsSS << "dir=forward,";
         connectionsSS << "arrowhead=tee,";
-        connectionsSS << "color=crimson";
+        connectionsSS << "color=darkred";
         connectionsSS << "] ";
         connectionsSS << ";\n";
     };
@@ -183,7 +183,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         if (!changeRank) {
             connectionsSS << "minlen=0,";
         }
-        connectionsSS << "dir=both,";
+        connectionsSS << "dir=back,";
+        connectionsSS << "arrowtail=diamond,";
         connectionsSS << "color=darkmagenta";
         connectionsSS << "] ";
         connectionsSS << ";\n";
