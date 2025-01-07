@@ -406,13 +406,12 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     out << "\t\tstyle=dashed;\n";
     out << "\t\tcolor=\"black\";\n";
 
-    for (auto [nameId, spec] : pipeline.outputSpecs.getMappedSpecs()) {
-        out << "\t\t";
-        addPropertyNodeHere(spec);
-    }
-    for (auto [nameId, spec] : pipeline.pipethroughSpecs.getMappedSpecs()) {
-        out << "\t\t";
-        addPropertyNodeHere(spec);
+    for (const PropertyList *p_specs :
+         {&pipeline.outputSpecs, &pipeline.filterSpecs, &pipeline.pipethroughSpecs}) {
+        for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
+            out << "\t\t";
+            addPropertyNodeHere(spec);
+        }
     }
 
     out << "\t}\n";
