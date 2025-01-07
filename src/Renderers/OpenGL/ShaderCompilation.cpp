@@ -225,50 +225,45 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                  &p_helper->pipeline.pipethroughSpecs,
              }) {
             for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
-                StringId providerId = p_helper->p_compSpec->aliases.choiceFor(nameId);
-
                 if (spec.typeInfo == Variant::getTypeInfo<void>()) {
                     // just a token, skip
                 } else if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER &&
-                           rend.getAllVertexBufferSpecs().find(providerId) !=
+                           rend.getAllVertexBufferSpecs().find(nameId) !=
                                rend.getAllVertexBufferSpecs().end()) {
                     // vertex shader receives inputs from the mesh
                     prevStageOutputs.emplace(
-                        providerId,
+                        nameId,
                         LocationSpec{.srcSpec = spec,
-                                     .location = (int)rend.getVertexBufferLayoutIndex(providerId)});
+                                     .location = (int)rend.getVertexBufferLayoutIndex(nameId)});
                 } else {
                     // decide how to convert it
                     const GLConversionSpec &convSpec = rend.getTypeConversion(spec.typeInfo);
                     const GLTypeSpec &glTypeSpec = convSpec.glTypeSpec;
 
                     if (convSpec.setUniform) {
-                        this->uniformSpecs.emplace(providerId,
-                                                   LocationSpec{
-                                                       .srcSpec = spec,
-                                                       .location = -1, // will be set later
-                                                   });
+                        this->uniformSpecs.emplace(nameId, LocationSpec{
+                                                               .srcSpec = spec,
+                                                               .location = -1, // will be set later
+                                                           });
                     } else if (convSpec.setOpaqueBinding) {
-                        this->opaqueBindingSpecs.emplace(providerId,
+                        this->opaqueBindingSpecs.emplace(nameId,
                                                          BindingSpec{
                                                              .srcSpec = spec,
                                                              .location = -1,    // will be set later
                                                              .bindingIndex = 0, // will be set later
                                                          });
                     } else if (convSpec.setUBOBinding) {
-                        this->uboSpecs.emplace(providerId,
-                                               BindingSpec{
-                                                   .srcSpec = spec,
-                                                   .location = -1,    // will be set later
-                                                   .bindingIndex = 0, // will be set later
-                                               });
+                        this->uboSpecs.emplace(nameId, BindingSpec{
+                                                           .srcSpec = spec,
+                                                           .location = -1,    // will be set later
+                                                           .bindingIndex = 0, // will be set later
+                                                       });
                     } else if (convSpec.setSSBOBinding) {
-                        this->ssboSpecs.emplace(providerId,
-                                                BindingSpec{
-                                                    .srcSpec = spec,
-                                                    .location = -1,    // will be set later
-                                                    .bindingIndex = 0, // will be set later
-                                                });
+                        this->ssboSpecs.emplace(nameId, BindingSpec{
+                                                            .srcSpec = spec,
+                                                            .location = -1,    // will be set later
+                                                            .bindingIndex = 0, // will be set later
+                                                        });
                     } else {
                         throw std::runtime_error(
                             "Shader compilation failed: unconvertible property " + spec.name);
@@ -304,28 +299,26 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                          &p_helper->pipeline.pipethroughSpecs,
                      }) {
                     for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
-                        StringId providerId = p_helper->p_compSpec->aliases.choiceFor(nameId);
                         if (spec.typeInfo == Variant::getTypeInfo<void>()) {
                             // just a token, skip
-                        } else if (prevStageOutputs.find(providerId) != prevStageOutputs.end()) {
+                        } else if (prevStageOutputs.find(nameId) != prevStageOutputs.end()) {
                             // normal input
                             stageInputList.insert_back(spec);
                             tobeStageAliases[spec.name] = prevStageOutVarPrefix + spec.name;
-                        } else if (this->uniformSpecs.find(providerId) !=
-                                   this->uniformSpecs.end()) {
+                        } else if (this->uniformSpecs.find(nameId) != this->uniformSpecs.end()) {
                             // uniform
                             stageUniformList.insert_back(spec);
                             tobeStageAliases[spec.name] = uniVarPrefix + spec.name;
-                        } else if (this->opaqueBindingSpecs.find(providerId) !=
+                        } else if (this->opaqueBindingSpecs.find(nameId) !=
                                    this->opaqueBindingSpecs.end()) {
                             // opaque binding
                             stageOpaqueBindingList.insert_back(spec);
                             tobeStageAliases[spec.name] = bindingVarPrefix + spec.name;
-                        } else if (this->uboSpecs.find(providerId) != this->uboSpecs.end()) {
+                        } else if (this->uboSpecs.find(nameId) != this->uboSpecs.end()) {
                             // UBO
                             stageUBOList.insert_back(spec);
                             tobeStageAliases[spec.name] = uboVarPrefix + spec.name;
-                        } else if (this->ssboSpecs.find(providerId) != this->ssboSpecs.end()) {
+                        } else if (this->ssboSpecs.find(nameId) != this->ssboSpecs.end()) {
                             // SSBO
                             stageSSBOList.insert_back(spec);
                             tobeStageAliases[spec.name] = ssboVarPrefix + spec.name;
