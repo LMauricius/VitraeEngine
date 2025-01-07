@@ -524,6 +524,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                    << ";\n";
             }
 
+            ss << "\n";
+
             // opaque bindings
             for (auto &spec : stageOpaqueBindingList.getSpecList()) {
                 const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
@@ -531,6 +533,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 ss << "layout(binding=" << getBinding(spec.name) << ") " << "uniform "
                    << glTypeSpec.opaqueTypeName << " " << bindingVarPrefix << spec.name << ";\n";
             }
+
+            ss << "\n";
 
             // UBOs
             for (auto &spec : stageUBOList.getSpecList()) {
@@ -546,6 +550,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                     ss << "};\n";
                 }
             }
+
+            ss << "\n";
 
             // SSBOs
             for (auto &spec : stageSSBOList.getSpecList()) {
@@ -589,6 +595,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 }
             }
 
+            ss << "\n";
+
             // Inputs
             for (auto &spec : stageInputList.getSpecList()) {
                 const GLTypeSpec &glTypeSpec = rend.getTypeConversion(spec.typeInfo).glTypeSpec;
@@ -606,6 +614,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 ss << "in " << glTypeSpec.valueTypeName << " " << prevStageOutVarPrefix << spec.name
                    << ";\n";
             }
+
+            ss << "\n";
 
             // Outputs
             for (auto &spec : stageOutputList.getSpecList()) {
@@ -635,6 +645,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                    << p_helper->p_compSpec->outVarPrefix << spec.name << ";\n";
             }
 
+            ss << "\n";
+
             // Main function
 
             ss << "void main() {\n";
@@ -648,7 +660,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                                              " because type has no name");
                 }
 
-                ss << glTypeSpec.valueTypeName << " " << localVarPrefix << spec.name << ";\n";
+                ss << "\t" << glTypeSpec.valueTypeName << " " << localVarPrefix << spec.name
+                   << ";\n";
             }
 
             ss << "\n";
@@ -697,6 +710,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 }
             }
 
+            ss << "\n";
+
             // pipethroughs
             for (const auto &[to, from] : initialPipethroughList) {
                 ss << to << " = " << from << ";\n";
@@ -710,6 +725,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 p_task->outputUsageCode(context);
                 ss << "\n";
             }
+
+            ss << "\n";
 
             // predefined outputs
             if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
