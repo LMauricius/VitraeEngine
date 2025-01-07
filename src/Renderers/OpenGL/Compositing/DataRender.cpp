@@ -211,10 +211,9 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
 
             // generic function for all passes
             auto runDerivationalPass = [&]() {
-                MMETER_SCOPE_PROFILER("Pass");
+                MMETER_SCOPE_PROFILER("Render data");
 
                 // run the data generator
-                MMETER_SCOPE_PROFILER("Render data");
 
                 OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_mesh);
                 mesh.loadToGPU(rend);

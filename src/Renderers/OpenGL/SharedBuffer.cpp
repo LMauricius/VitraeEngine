@@ -1,5 +1,7 @@
 #include "Vitrae/Renderers/OpenGL/SharedBuffer.hpp"
 
+#include "MMeter.h"
+
 namespace Vitrae
 {
 
