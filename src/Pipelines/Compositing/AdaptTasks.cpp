@@ -102,17 +102,17 @@ void ComposeAdaptTasks::rebuildContainedPipeline(const PropertyAliases &aliases)
     if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
 
-        const AdaptorPerAliases &adaptor = *(*it).second;
+        std::unique_ptr<AdaptorPerAliases> p_adaptor = std::move((*it).second);
+        m_adaptorPerSelectionHash.erase(it);
         PropertyAliases subAliases({{&m_params.adaptorAliases, &aliases}});
 
-        for (auto p_pipeitem : adaptor.pipeline.items) {
+        for (auto p_pipeitem : p_adaptor->pipeline.items) {
             if (auto p_container = dynamic_cast<const PipelineContainer *>(&*p_pipeitem);
                 p_container) {
                 p_container->rebuildContainedPipeline(subAliases);
             }
         }
 
-        m_adaptorPerSelectionHash.erase(it);
         m_adaptorPerSelectionHash.emplace(
             aliases.hash(),
             new AdaptorPerAliases(m_params.adaptorAliases, m_params.desiredOutputs, aliases,
