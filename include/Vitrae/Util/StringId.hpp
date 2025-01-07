@@ -3,6 +3,7 @@
 #include <cstring>
 #include <string>
 #include <string_view>
+#include <type_traits>
 
 namespace Vitrae
 {
@@ -18,21 +19,32 @@ class StringId
     char *m_str;
 #endif
 
+    static constexpr std::size_t calcHash(std::string_view str)
+    {
+        // fnv_hash_1a_64
+        std::size_t hash = 0xcbf29ce484222325ULL;
+
+        for (char c : str)
+            hash = (hash ^ c) * 0x100000001b3ULL;
+
+        return hash;
+    }
+
   public:
     constexpr StringId(const char *str) : StringId(std::string_view{str}) {}
     StringId(const std::string &str) : StringId(std::string_view{str}) {}
-    constexpr StringId(const std::string_view str)
+    constexpr StringId(std::string_view str)
     {
-        // fnv_hash_1a_64
-        m_hash = 0xcbf29ce484222325ULL;
-
-        for (char c : str)
-            m_hash = (m_hash ^ c) * 0x100000001b3ULL;
+        m_hash = calcHash(str);
 
 #ifdef VITRAE_DEBUG_STRINGIDS
-        m_str = new char[str.size() + 1];
-        std::copy(str.begin(), str.end(), m_str);
-        m_str[str.size()] = '\0';
+        if (std::is_constant_evaluated()) {
+            m_str = nullptr;
+        } else {
+            m_str = new char[str.size() + 1];
+            std::copy(str.begin(), str.end(), m_str);
+            m_str[str.size()] = '\0';
+        }
 #endif
     }
     constexpr StringId(StringId &&id)
@@ -47,8 +59,12 @@ class StringId
     {
         m_hash = id.m_hash;
 #ifdef VITRAE_DEBUG_STRINGIDS
-        m_str = new char[std::strlen(id.m_str) + 1];
-        std::strcpy(m_str, id.m_str);
+        if (id.m_str) {
+            m_str = new char[std::strlen(id.m_str) + 1];
+            std::strcpy(m_str, id.m_str);
+        } else {
+            m_str = nullptr;
+        }
 #endif
     }
 
@@ -64,8 +80,12 @@ class StringId
     {
         m_hash = id.m_hash;
 #ifdef VITRAE_DEBUG_STRINGIDS
-        m_str = new char[std::strlen(id.m_str) + 1];
-        std::strcpy(m_str, id.m_str);
+        if (id.m_str) {
+            m_str = new char[std::strlen(id.m_str) + 1];
+            std::strcpy(m_str, id.m_str);
+        } else {
+            m_str = nullptr;
+        }
 #endif
         return *this;
     }
