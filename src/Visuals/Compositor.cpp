@@ -15,7 +15,7 @@ namespace Vitrae
 class Renderer;
 
 const PropertySpec Compositor::FRAME_STORE_TARGET_SPEC = {
-    .name = "fs_target",
+    .name = "fs_display",
     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>(),
 
 };
