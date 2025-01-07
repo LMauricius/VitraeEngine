@@ -823,26 +823,30 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
     }
 
     // store uniform indices
-    for (auto [nameId, spec] : this->uniformSpecs) {
-        spec.location = glGetUniformLocation(programGLName, spec.srcSpec.name.c_str());
+    for (auto nameIdSpecPair : this->uniformSpecs) {
+        nameIdSpecPair.second.location = glGetUniformLocation(
+            programGLName, (uniVarPrefix + nameIdSpecPair.second.srcSpec.name).c_str());
     }
-    for (auto [nameId, spec] : this->opaqueBindingSpecs) {
-        spec.location = glGetUniformLocation(programGLName, spec.srcSpec.name.c_str());
-        spec.bindingIndex = namedBindings.at(nameId);
+    for (auto nameIdSpecPair : this->opaqueBindingSpecs) {
+        nameIdSpecPair.second.location = glGetUniformLocation(
+            programGLName, (bindingVarPrefix + nameIdSpecPair.second.srcSpec.name).c_str());
+        nameIdSpecPair.second.bindingIndex = namedBindings.at(nameIdSpecPair.first);
     }
-    for (auto [nameId, spec] : this->uboSpecs) {
-        spec.location = glGetUniformBlockIndex(programGLName, spec.srcSpec.name.c_str());
-        spec.bindingIndex = namedBindings.at(nameId);
+    for (auto nameIdSpecPair : this->uboSpecs) {
+        nameIdSpecPair.second.location = glGetUniformBlockIndex(
+            programGLName, (uboVarPrefix + nameIdSpecPair.second.srcSpec.name).c_str());
+        nameIdSpecPair.second.bindingIndex = namedBindings.at(nameIdSpecPair.first);
     }
-    for (auto [nameId, spec] : this->ssboSpecs) {
-        spec.location = glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
-                                                  spec.srcSpec.name.c_str());
-        spec.bindingIndex = namedBindings.at(nameId);
+    for (auto nameIdSpecPair : this->ssboSpecs) {
+        nameIdSpecPair.second.location =
+            glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
+                                      (ssboVarPrefix + nameIdSpecPair.second.srcSpec.name).c_str());
+        nameIdSpecPair.second.bindingIndex = namedBindings.at(nameIdSpecPair.first);
     }
 
     // combine the property specs
-    for (auto [nameId, spec] : desiredOutputs.getMappedSpecs()) {
-        this->outputSpecs.insert_back(spec);
+    for (auto nameIdSpecPair : desiredOutputs.getMappedSpecs()) {
+        this->outputSpecs.insert_back(nameIdSpecPair.second);
     }
     for (auto p_specs : {
              &helperOrder[0]->pipeline.inputSpecs,
