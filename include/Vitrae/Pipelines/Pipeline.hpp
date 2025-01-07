@@ -257,17 +257,14 @@ template <TaskChild BasicTask> class Pipeline
                                         const PropertyAliases &selection,
                                         std::map<StringId, String> &outUsedSelection)
     {
-        if (visitedOutputs.find(desiredOutputSpec.name) != visitedOutputs.end()) {
-            return true;
-        }
-
         String actualOutputName = selection.choiceStringFor(desiredOutputSpec.name);
 
         if (actualOutputName != desiredOutputSpec.name) {
             outUsedSelection[desiredOutputSpec.name] = actualOutputName;
         }
 
-        if (visitedOutputs.find(actualOutputName) != visitedOutputs.end()) {
+        if (visitedOutputs.find(desiredOutputSpec.name) != visitedOutputs.end() ||
+            visitedOutputs.find(actualOutputName) != visitedOutputs.end()) {
             return true;
         }
 
@@ -353,19 +350,22 @@ template <TaskChild BasicTask> class Pipeline
         };
 
         auto usingProperty = [&](const PropertySpec &propertySpec, const String &byWho) {
-            StringId actualName = selection.choiceFor(propertySpec.name);
+            String actualName = selection.choiceStringFor(propertySpec.name);
+            PropertySpec actualSpec = {
+                .name = actualName,
+                .typeInfo = propertySpec.typeInfo,
+            };
 
             auto it = everUsedProperties.find(actualName);
             if (it != everUsedProperties.end()) {
                 if ((*it).second.typeInfo != propertySpec.typeInfo) {
                     throw PipelineSetupException(
-                        String("Property '") + selection.choiceStringFor(propertySpec.name) +
-                        "' was first used as " + String((*it).second.typeInfo.getShortTypeName()) +
-                        " but late as " + String(propertySpec.typeInfo.getShortTypeName()) +
-                        " by " + byWho);
+                        String("Property '") + actualSpec.name + "' was first used as " +
+                        String((*it).second.typeInfo.getShortTypeName()) + " but late as " +
+                        String(propertySpec.typeInfo.getShortTypeName()) + " by " + byWho);
                 }
             } else {
-                everUsedProperties.emplace(actualName, propertySpec);
+                everUsedProperties.emplace(actualName, actualSpec);
             }
         };
 
