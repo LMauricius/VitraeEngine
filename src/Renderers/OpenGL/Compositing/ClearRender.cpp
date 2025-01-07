@@ -15,7 +15,7 @@ namespace Vitrae
 {
 
 OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
-    : m_root(params.root),
+    : m_root(params.root), m_color(params.backgroundColor),
       m_friendlyName(String("Clear to\n") + toHexString(255 * params.backgroundColor.r, 2) +
                      toHexString(255 * params.backgroundColor.g, 2) +
                      toHexString(255 * params.backgroundColor.b, 2) + "*" +
