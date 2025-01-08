@@ -4,7 +4,7 @@
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/TypeConversion/AssimpCvt.hpp"
 #include "Vitrae/TypeConversion/GLCvt.hpp"
-#include "Vitrae/TypeConversion/StringConvert.hpp"
+#include "Vitrae/TypeConversion/StringCvt.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
 
 #include <map>

@@ -2,7 +2,7 @@
 
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Pipelines/PipelineContainer.hpp"
-#include "Vitrae/TypeConversion/StringConvert.hpp"
+#include "Vitrae/TypeConversion/StringCvt.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 
 #include <filesystem>

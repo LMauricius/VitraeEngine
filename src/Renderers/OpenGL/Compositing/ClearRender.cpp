@@ -6,7 +6,7 @@
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
-#include "Vitrae/TypeConversion/StringConvert.hpp"
+#include "Vitrae/TypeConversion/StringCvt.hpp"
 #include "Vitrae/Util/Variant.hpp"
 
 #include "MMeter.h"

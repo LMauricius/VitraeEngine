@@ -2,7 +2,7 @@
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Mesh.hpp"
 #include "Vitrae/ComponentRoot.hpp"
-#include "Vitrae/TypeConversion/StringConvert.hpp"
+#include "Vitrae/TypeConversion/StringCvt.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 
