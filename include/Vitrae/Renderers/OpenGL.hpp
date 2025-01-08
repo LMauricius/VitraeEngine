@@ -3,7 +3,7 @@
 #include "Vitrae/Assets/SharedBuffer.hpp"
 #include "Vitrae/Pipelines/Task.hpp"
 #include "Vitrae/Renderer.hpp"
-#include "Vitrae/TypeConversion/AssimpTypeConvert.hpp"
+#include "Vitrae/TypeConversion/AssimpCvt.hpp"
 #include "Vitrae/TypeConversion/VectorTypeInfo.hpp"
 #include "Vitrae/Types/GraphicPrimitives.hpp"
 #include "Vitrae/Util/StringId.hpp"
