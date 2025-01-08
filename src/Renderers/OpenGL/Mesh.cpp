@@ -3,7 +3,7 @@
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/TypeConversion/AssimpCvt.hpp"
-#include "Vitrae/TypeConversion/GLTypeInfo.hpp"
+#include "Vitrae/TypeConversion/GLCvt.hpp"
 #include "Vitrae/TypeConversion/StringConvert.hpp"
 #include "Vitrae/Types/Typedefs.hpp"
 
