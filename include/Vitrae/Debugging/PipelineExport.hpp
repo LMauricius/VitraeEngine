@@ -348,11 +348,6 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     }
     out << "\t}\n";
 
-    out << "\tsubgraph cluster_" << prefix << "processing {\n";
-    out << "\t\tlabel=\"\";\n";
-    out << "\t\tcluster=true;\n";
-    out << "\t\tstyle=invis;\n";
-
     // tasks
     std::size_t ordinalI = 0;
     for (auto p_task : pipeline.items) {
@@ -397,8 +392,6 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
             addPropertyNodeBefore(spec);
         }
     }
-
-    out << "\t}\n";
 
     // outputs
     out << "\tsubgraph cluster_" << prefix << "outputs {\n";
