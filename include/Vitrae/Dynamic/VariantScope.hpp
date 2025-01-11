@@ -1,55 +1,55 @@
 #pragma once
 
+#include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
-#include "Vitrae/Util/Variant.hpp"
 
 #include <map>
 
 namespace Vitrae
 {
 /**
- * @brief ScopedDict class provides a dictionary-like data structure with a parent-child
+ * @brief VariantScope class provides a dictionary-like data structure with a parent-child
  * relationship.
  *
- * The ScopedDict class allows you to set key-value pairs and retrieve values using keys. It also
- * supports checking if a key exists in the dictionary. The dictionary can have a parent ScopedDict,
- * which allows for inheritance of values. If a key is not found in the current dictionary, the
- * search continues in the parent dictionary.
+ * The VariantScope class allows you to set key-value pairs and retrieve values using keys. It also
+ * supports checking if a key exists in the dictionary. The dictionary can have a parent
+ * VariantScope, which allows for inheritance of values. If a key is not found in the current
+ * dictionary, the search continues in the parent dictionary.
  */
-class ScopedDict
+class VariantScope
 {
-    const ScopedDict *m_parent;
+    const VariantScope *m_parent;
     StableMap<StringId, Variant> m_dict;
 
   public:
     /**
      * @brief Default constructor.
      *
-     * Creates an empty ScopedDict without a parent.
+     * Creates an empty VariantScope without a parent.
      */
-    ScopedDict();
+    VariantScope();
 
     /**
-     * @brief Constructor with a parent ScopedDict.
+     * @brief Constructor with a parent VariantScope.
      *
-     * Creates a ScopedDict with the specified parent.
+     * Creates a VariantScope with the specified parent.
      *
-     * @param parent Pointer to the parent ScopedDict.
+     * @param parent Pointer to the parent VariantScope.
      */
-    ScopedDict(const ScopedDict *parent);
+    VariantScope(const VariantScope *parent);
 
     /// @brief Copy constructor.
-    ScopedDict(const ScopedDict &) = default;
+    VariantScope(const VariantScope &) = default;
 
     /// @brief Move constructor.
-    ScopedDict(ScopedDict &&) = default;
+    VariantScope(VariantScope &&) = default;
 
     /// @brief copy assignment
-    ScopedDict &operator=(const ScopedDict &) = default;
+    VariantScope &operator=(const VariantScope &) = default;
 
     /// @brief move assignment
-    ScopedDict &operator=(ScopedDict &&) = default;
+    VariantScope &operator=(VariantScope &&) = default;
 
     /**
      * @brief Set a key-value pair in the dictionary.

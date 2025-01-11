@@ -4,7 +4,7 @@
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
-#include "Vitrae/Util/PropertyList.hpp"
+#include "Vitrae/Params/PropertyList.hpp"
 
 #include "MMeter.h"
 
@@ -883,10 +883,10 @@ CompiledGLSLShader::~CompiledGLSLShader()
     glDeleteProgram(programGLName);
 }
 
-void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &env) const
+void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env) const
 {
     MMETER_SCOPE_PROFILER(
-        "CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &env) const");
+        "CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env) const");
 
     for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
         rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
@@ -909,10 +909,10 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &env) 
     }
 }
 
-void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &envProperties,
+void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &envProperties,
                                          const Material &material) const
 {
-    MMETER_SCOPE_PROFILER("CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict "
+    MMETER_SCOPE_PROFILER("CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope "
                           "&envProperties, const Material &material) const");
 
     auto &matProperties = material.getProperties();
@@ -970,11 +970,11 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, ScopedDict &envPr
     }
 }
 
-void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, ScopedDict &envProperties,
+void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, VariantScope &envProperties,
                                                     const Material &firstMaterial) const
 {
     MMETER_SCOPE_PROFILER("CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, "
-                          "ScopedDict &envProperties, "
+                          "VariantScope &envProperties, "
                           "const Material &firstMaterial) const");
 
     auto &matProperties = firstMaterial.getProperties();

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Assets/FrameStore.hpp"
-#include "Vitrae/Util/ArgumentScope.hpp"
+#include "Vitrae/Dynamic/ArgumentScope.hpp"
 
 #include "glad/glad.h"
 // must be after glad.h

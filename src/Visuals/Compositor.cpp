@@ -48,7 +48,7 @@ void Compositor::compose()
 {
     MMETER_SCOPE_PROFILER("Compositor::compose");
 
-    // ScopedDict localVars(&parameters);
+    // VariantScope localVars(&parameters);
 
     // setup the rendering context
     ArgumentScope scope(&m_localProperties, &m_aliases);

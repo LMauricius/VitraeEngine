@@ -1,8 +1,8 @@
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Params/PropertyList.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
-#include "Vitrae/Util/PropertyList.hpp"
 
 #include "MMeter.h"
 

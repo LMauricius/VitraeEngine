@@ -2,12 +2,12 @@
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
-#include "Vitrae/Util/Variant.hpp"
 #include "Vitrae/Visuals/Scene.hpp"
 
 #include "MMeter.h"
@@ -284,7 +284,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
                         // Aliases should've already been taken into account, so use properties
                         // directly
-                        ScopedDict &directProperties = args.properties.getUnaliasedScope();
+                        VariantScope &directProperties = args.properties.getUnaliasedScope();
 
                         // set the 'environmental' uniforms
                         // skip those that will be set by the material

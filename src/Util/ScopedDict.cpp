@@ -1,24 +1,24 @@
-#include "Vitrae/Util/ScopedDict.hpp"
+#include "Vitrae/Dynamic/VariantScope.hpp"
 
 #include <stdexcept>
 
 namespace Vitrae
 {
 
-ScopedDict::ScopedDict() : m_parent{nullptr} {}
-ScopedDict::ScopedDict(const ScopedDict *parent) : m_parent{parent} {}
+VariantScope::VariantScope() : m_parent{nullptr} {}
+VariantScope::VariantScope(const VariantScope *parent) : m_parent{parent} {}
 
-void ScopedDict::set(StringId key, const Variant &value)
+void VariantScope::set(StringId key, const Variant &value)
 {
     m_dict[key] = value;
 }
 
-void ScopedDict::set(StringId key, Variant &&value)
+void VariantScope::set(StringId key, Variant &&value)
 {
     m_dict[key] = std::move(value);
 }
 
-const Variant &ScopedDict::get(StringId key) const
+const Variant &VariantScope::get(StringId key) const
 {
     auto it = m_dict.find(key);
     if (it != m_dict.end())
@@ -30,7 +30,7 @@ const Variant &ScopedDict::get(StringId key) const
     throw std::runtime_error{"Key not found"};
 }
 
-Variant ScopedDict::move(StringId key)
+Variant VariantScope::move(StringId key)
 {
     auto it = m_dict.find(key);
     if (it != m_dict.end())
@@ -44,7 +44,7 @@ Variant ScopedDict::move(StringId key)
     throw std::runtime_error{"Key not found"};
 }
 
-const Variant *ScopedDict::getPtr(StringId key) const
+const Variant *VariantScope::getPtr(StringId key) const
 {
     auto it = m_dict.find(key);
     if (it != m_dict.end())
@@ -56,12 +56,12 @@ const Variant *ScopedDict::getPtr(StringId key) const
     return nullptr;
 }
 
-bool ScopedDict::has(StringId key) const
+bool VariantScope::has(StringId key) const
 {
     return m_dict.find(key) != m_dict.end() || (m_parent && m_parent->has(key));
 }
 
-void ScopedDict::clear()
+void VariantScope::clear()
 {
     m_dict.clear();
 }

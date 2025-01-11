@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Vitrae/Params/PropertyList.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
-#include "Vitrae/Util/PropertyList.hpp"
 #include "Vitrae/Visuals/Scene.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
@@ -29,7 +29,7 @@ class Compositor : public dynasma::PolymorphicBase
 
     static const PropertySpec FRAME_STORE_TARGET_SPEC;
 
-    ScopedDict parameters;
+    VariantScope parameters;
 
   protected:
     ComponentRoot &m_root;
@@ -39,7 +39,7 @@ class Compositor : public dynasma::PolymorphicBase
     bool m_needsRebuild;
     bool m_needsFrameStoreRegeneration;
     Pipeline<ComposeTask> m_pipeline;
-    ScopedDict m_localProperties;
+    VariantScope m_localProperties;
 
     void rebuildPipeline();
     void regenerateFrameStores();

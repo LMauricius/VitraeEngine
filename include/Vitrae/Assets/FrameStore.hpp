@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Data/Typedefs.hpp"
-#include "Vitrae/Util/PropertySpec.hpp"
+#include "Vitrae/Params/PropertySpec.hpp"
 
 #include "dynasma/managers/abstract.hpp"
 #include "dynasma/pointer.hpp"

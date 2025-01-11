@@ -1,11 +1,11 @@
-#include "Vitrae/Util/ArgumentScope.hpp"
+#include "Vitrae/Dynamic/ArgumentScope.hpp"
 
 namespace Vitrae
 {
 
 ArgumentScope::ArgumentScope() : mp_scope(nullptr), mp_propertySelection(nullptr) {}
 
-ArgumentScope::ArgumentScope(ScopedDict *scope, const PropertyAliases *propertySelection)
+ArgumentScope::ArgumentScope(VariantScope *scope, const PropertyAliases *propertySelection)
     : mp_scope(scope), mp_propertySelection(propertySelection)
 {}
 

@@ -1,4 +1,4 @@
-#include "Vitrae/Util/PropertyAliases.hpp"
+#include "Vitrae/Params/PropertyAliases.hpp"
 
 #include "Vitrae/Util/Hashing.hpp"
 

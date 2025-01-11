@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Vitrae/Util/ArgumentScope.hpp"
+#include "Vitrae/Dynamic/ArgumentScope.hpp"
+#include "Vitrae/Dynamic/VariantScope.hpp"
+#include "Vitrae/Params/PropertySpec.hpp"
 #include "Vitrae/Util/Hashing.hpp"
-#include "Vitrae/Util/ScopedDict.hpp"
 
 #include <variant>
 
@@ -39,7 +40,7 @@ template <class T> class PropertyGetter
         return *this;
     }
 
-    T get(const ScopedDict &scope) const
+    T get(const VariantScope &scope) const
     {
         switch (m_nameOrValue.index()) {
         case 0:
@@ -50,7 +51,7 @@ template <class T> class PropertyGetter
         }
     }
 
-    T *getPtr(const ScopedDict &scope) const
+    T *getPtr(const VariantScope &scope) const
     {
         switch (m_nameOrValue.index()) {
         case 0:

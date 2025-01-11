@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Vitrae/Dynamic/VariantScope.hpp"
 #include "Vitrae/Pipelines/Task.hpp"
-#include "Vitrae/Util/ScopedDict.hpp"
 
 #include "glm/glm.hpp"
 

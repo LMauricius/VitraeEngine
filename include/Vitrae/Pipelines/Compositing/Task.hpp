@@ -1,10 +1,10 @@
 #pragma once
 
+#include "Vitrae/Dynamic/ArgumentScope.hpp"
+#include "Vitrae/Dynamic/VariantScope.hpp"
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Pipelines/Task.hpp"
-#include "Vitrae/Util/ArgumentScope.hpp"
-#include "Vitrae/Util/ScopedDict.hpp"
 
 namespace Vitrae
 {

@@ -1,18 +1,18 @@
 #pragma once
 
-#include "Vitrae/Util/PropertyAliases.hpp"
-#include "Vitrae/Util/ScopedDict.hpp"
+#include "Vitrae/Dynamic/VariantScope.hpp"
+#include "Vitrae/Params/PropertyAliases.hpp"
 
 namespace Vitrae
 {
 
 /**
- * @brief ArgumentScope provides access to named variants from a ScopedDict,
+ * @brief ArgumentScope provides access to named variants from a VariantScope,
  * but with support for PropertyAliases for aliased properties
  */
 class ArgumentScope
 {
-    ScopedDict *mp_scope;
+    VariantScope *mp_scope;
     const PropertyAliases *mp_propertySelection;
 
   public:
@@ -24,13 +24,13 @@ class ArgumentScope
     ArgumentScope();
 
     /**
-     * @brief Constructor with a ScopedDict.
+     * @brief Constructor with a VariantScope.
      *
      * Creates a ArgumentScope with the specified scope and aliases.
      *
-     * @param scope Pointer to the ScopedDict.
+     * @param scope Pointer to the VariantScope.
      */
-    ArgumentScope(ScopedDict *p_scope, const PropertyAliases *propertySelection = nullptr);
+    ArgumentScope(VariantScope *p_scope, const PropertyAliases *propertySelection = nullptr);
 
     /// @brief Copy constructor.
     ArgumentScope(const ArgumentScope &) = default;
@@ -102,9 +102,9 @@ class ArgumentScope
     bool has(StringId key) const;
 
     /**
-     * @return The underlying ScopedDict
+     * @return The underlying VariantScope
      */
-    inline ScopedDict &getUnaliasedScope() { return *mp_scope; }
-    inline const ScopedDict &getUnaliasedScope() const { return *mp_scope; }
+    inline VariantScope &getUnaliasedScope() { return *mp_scope; }
+    inline const VariantScope &getUnaliasedScope() const { return *mp_scope; }
 };
 } // namespace Vitrae

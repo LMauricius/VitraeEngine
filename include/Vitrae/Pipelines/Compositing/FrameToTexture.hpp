@@ -2,8 +2,8 @@
 
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Params/PropertyGetter.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
-#include "Vitrae/Util/PropertyGetter.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 

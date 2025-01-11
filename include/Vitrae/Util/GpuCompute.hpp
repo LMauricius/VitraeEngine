@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Util/PropertyGetter.hpp"
+#include "Vitrae/Params/PropertyGetter.hpp"
 
 namespace Vitrae
 {

@@ -1,13 +1,13 @@
 #include "Vitrae/Renderers/OpenGL/Compositing/ClearRender.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
 #include "Vitrae/TypeConversion/StringCvt.hpp"
-#include "Vitrae/Util/Variant.hpp"
 
 #include "MMeter.h"
 

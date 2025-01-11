@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Vitrae/Dynamic/VariantScope.hpp"
 #include "Vitrae/Pipelines/Compositing/SceneRender.hpp"
-#include "Vitrae/Util/ScopedDict.hpp"
 
 #include <functional>
 #include <vector>

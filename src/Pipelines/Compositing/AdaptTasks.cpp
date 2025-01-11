@@ -138,7 +138,7 @@ void ComposeAdaptTasks::run(RenderComposeContext ctx) const
 
     const AdaptorPerAliases &adaptor = *(*it).second;
 
-    // ScopedDict encapsulatedScope(&ctx.properties.getUnaliasedScope());
+    // VariantScope encapsulatedScope(&ctx.properties.getUnaliasedScope());
 
     // Note: we will use only the pipeline's usedSelection in the subpipeline,
     // because anything else is unused and potential performance hog
@@ -200,7 +200,7 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
 
     const AdaptorPerAliases &adaptor = *(*it).second;
 
-    // ScopedDict encapsulatedScope(&ctx.properties.getUnaliasedScope());
+    // VariantScope encapsulatedScope(&ctx.properties.getUnaliasedScope());
 
     // Note: we will use only the pipeline's usedSelection in the subpipeline,
     // because anything else is unused and potential performance hog

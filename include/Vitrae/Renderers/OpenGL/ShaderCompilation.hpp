@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Vitrae/Data/Typedefs.hpp"
+#include "Vitrae/Dynamic/Variant.hpp"
+#include "Vitrae/Params/PropertyGetter.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/MovableSpan.hpp"
-#include "Vitrae/Util/PropertyGetter.hpp"
-#include "Vitrae/Util/Variant.hpp"
 
 #include "dynasma/cachers/abstract.hpp"
 #include "dynasma/pointer.hpp"
@@ -138,10 +138,10 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     inline std::size_t memory_cost() const { return 1; }
 
-    void setupProperties(OpenGLRenderer &rend, ScopedDict &env) const;
+    void setupProperties(OpenGLRenderer &rend, VariantScope &env) const;
 
-    void setupProperties(OpenGLRenderer &rend, ScopedDict &env, const Material &material) const;
-    void setupNonMaterialProperties(OpenGLRenderer &rend, ScopedDict &env,
+    void setupProperties(OpenGLRenderer &rend, VariantScope &env, const Material &material) const;
+    void setupNonMaterialProperties(OpenGLRenderer &rend, VariantScope &env,
                                     const Material &firstMaterial) const;
     void setupMaterialProperties(OpenGLRenderer &rend, const Material &material) const;
 

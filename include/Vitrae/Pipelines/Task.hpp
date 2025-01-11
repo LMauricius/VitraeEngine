@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Vitrae/Util/PropertyAliases.hpp"
-#include "Vitrae/Util/PropertyList.hpp"
-#include "Vitrae/Util/PropertySpec.hpp"
+#include "Vitrae/Dynamic/Variant.hpp"
+#include "Vitrae/Params/PropertyAliases.hpp"
+#include "Vitrae/Params/PropertyList.hpp"
+#include "Vitrae/Params/PropertySpec.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
-#include "Vitrae/Util/Variant.hpp"
 
 #include "dynasma/pointer.hpp"
 #include "dynasma/util/dynamic_typing.hpp"
