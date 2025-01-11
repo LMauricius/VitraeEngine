@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Vitrae/Containers/StableMap.hpp"
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
-#include "Vitrae/Util/StableMap.hpp"
 
 #include "assimp/material.h"
 #include "dynasma/keepers/abstract.hpp"

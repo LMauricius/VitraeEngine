@@ -6,7 +6,7 @@
 
 #include "dynasma/pointer.hpp"
 
-#include "Vitrae/Util/StableMap.hpp"
+#include "Vitrae/Containers/StableMap.hpp"
 
 #include <cstdint>
 #include <span>

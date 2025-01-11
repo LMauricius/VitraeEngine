@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Vitrae/Containers/StableMap.hpp"
 #include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
-#include "Vitrae/Util/StableMap.hpp"
 
 #include <map>
 

@@ -1,11 +1,11 @@
 #pragma once
 
+#include "Vitrae/Containers/MovableSpan.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
-#include "Vitrae/Util/MovableSpan.hpp"
 
 #include "dynasma/cachers/abstract.hpp"
 #include "dynasma/pointer.hpp"
