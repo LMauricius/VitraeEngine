@@ -2,7 +2,7 @@
 
 #include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
-#include "Vitrae/Data/UniqueAnyPtr.hpp"
+#include "Vitrae/Dynamic/UniqueAnyPtr.hpp"
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/StableMap.hpp"
