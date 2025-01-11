@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
-#include "Vitrae/Util/Rasterizing.hpp"
+#include "Vitrae/Setup/Rasterizing.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 

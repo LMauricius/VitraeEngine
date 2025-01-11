@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
-#include "Vitrae/Util/GpuCompute.hpp"
+#include "Vitrae/Setup/GpuCompute.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 
