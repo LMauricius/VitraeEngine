@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Util/StableMap.hpp"
-#include "Vitrae/Util/StringId.hpp"
 
 #include <optional>
 #include <unordered_map>

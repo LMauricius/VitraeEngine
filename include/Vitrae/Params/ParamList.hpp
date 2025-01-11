@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Params/ParamSpec.hpp"
 #include "Vitrae/Util/Hashing.hpp"
 #include "Vitrae/Util/StableMap.hpp"
-#include "Vitrae/Util/StringId.hpp"
 
 #include "dynasma/util/dynamic_typing.hpp"
 

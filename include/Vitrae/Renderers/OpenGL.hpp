@@ -2,11 +2,11 @@
 
 #include "Vitrae/Assets/SharedBuffer.hpp"
 #include "Vitrae/Data/GraphicPrimitives.hpp"
+#include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Pipelines/Task.hpp"
 #include "Vitrae/Renderer.hpp"
 #include "Vitrae/TypeConversion/AssimpCvt.hpp"
 #include "Vitrae/TypeConversion/VectorCvt.hpp"
-#include "Vitrae/Util/StringId.hpp"
 #include "assimp/mesh.h"
 
 #include "glad/glad.h"

@@ -2,9 +2,9 @@
 
 #include "Vitrae/Data/BoundingBox.hpp"
 #include "Vitrae/Data/GraphicPrimitives.hpp"
+#include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
-#include "Vitrae/Util/StringId.hpp"
 
 #include "assimp/mesh.h"
 #include "assimp/scene.h"

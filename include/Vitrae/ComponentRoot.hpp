@@ -1,11 +1,11 @@
 #pragma once
 
+#include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Data/UniqueAnyPtr.hpp"
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/StableMap.hpp"
-#include "Vitrae/Util/StringId.hpp"
 #include "Vitrae/Util/UniqueId.hpp"
 
 #include "assimp/material.h"
