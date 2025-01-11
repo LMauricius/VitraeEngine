@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Params/ParamList.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
-#include "Vitrae/Visuals/Scene.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 #include "dynasma/managers/abstract.hpp"

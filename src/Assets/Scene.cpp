@@ -1,4 +1,4 @@
-#include "Vitrae/Visuals/Scene.hpp"
+#include "Vitrae/Assets/Scene.hpp"
 
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Mesh.hpp"

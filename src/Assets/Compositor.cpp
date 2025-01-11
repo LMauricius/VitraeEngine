@@ -1,4 +1,4 @@
-#include "Vitrae/Visuals/Compositor.hpp"
+#include "Vitrae/Assets/Compositor.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"

@@ -1,6 +1,7 @@
 #include "Vitrae/Renderers/OpenGL/Compositing/SceneRender.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
@@ -8,7 +9,6 @@
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
-#include "Vitrae/Visuals/Scene.hpp"
 
 #include "MMeter.h"
 
