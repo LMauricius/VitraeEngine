@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Params/PropertyList.hpp"
+#include "Vitrae/Params/ParamList.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Visuals/Scene.hpp"
@@ -22,19 +22,19 @@ class Compositor : public dynasma::PolymorphicBase
 
     std::size_t memory_cost() const;
 
-    void setPropertyAliases(const PropertyAliases &aliases);
-    void setDesiredProperties(const PropertyList &properties);
+    void setParamAliases(const ParamAliases &aliases);
+    void setDesiredProperties(const ParamList &properties);
 
     void compose();
 
-    static const PropertySpec FRAME_STORE_TARGET_SPEC;
+    static const ParamSpec FRAME_STORE_TARGET_SPEC;
 
     VariantScope parameters;
 
   protected:
     ComponentRoot &m_root;
-    PropertyList m_desiredProperties;
-    PropertyAliases m_aliases;
+    ParamList m_desiredProperties;
+    ParamAliases m_aliases;
 
     bool m_needsRebuild;
     bool m_needsFrameStoreRegeneration;

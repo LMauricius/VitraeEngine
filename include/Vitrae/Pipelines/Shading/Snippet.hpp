@@ -14,10 +14,10 @@ class ShaderSnippet : public ShaderTask {
   public:
     struct StringParams
     {
-        PropertyList inputSpecs;
-        PropertyList outputSpecs;
-        PropertyList filterSpecs;
-        PropertyList consumingSpecs;
+        ParamList inputSpecs;
+        ParamList outputSpecs;
+        ParamList filterSpecs;
+        ParamList consumingSpecs;
         String snippet;
     };
 };

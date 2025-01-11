@@ -14,7 +14,7 @@ class ShaderConstant : public ShaderTask
   public:
     struct SetupParams
     {
-        PropertySpec outputSpec;
+        ParamSpec outputSpec;
         Variant value;
     };
 };

@@ -26,8 +26,8 @@ def StringId_Printer_func(val):
 gdb.pretty_printers.append(StringId_Printer_func)
 
 
-# PropertySpec
-class PropertySpec_Printer:
+# ParamSpec
+class ParamSpec_Printer:
     def __init__(self, val):
         self.val = val
 
@@ -43,12 +43,12 @@ class PropertySpec_Printer:
         return f"{name}: {typeId}"
 
 
-def PropertySpec_Printer_func(val):
-    if val.type.name == "Vitrae::PropertySpec":
-        return PropertySpec_Printer(val)
+def ParamSpec_Printer_func(val):
+    if val.type.name == "Vitrae::ParamSpec":
+        return ParamSpec_Printer(val)
 
 
-gdb.pretty_printers.append(PropertySpec_Printer_func)
+gdb.pretty_printers.append(ParamSpec_Printer_func)
 
 
 # StableMap
@@ -88,7 +88,7 @@ def StableMap_Printer_func(val):
 gdb.pretty_printers.append(StableMap_Printer_func)
 
 
-class PropertyList_Printer:
+class ParamList_Printer:
     def __init__(self, val):
         self.val = val
 
@@ -107,9 +107,9 @@ class PropertyList_Printer:
             yield (str(i), gdb.parse_and_eval(f"{valRefName}[{i}]"))
 
 
-def PropertyList_Printer_func(val):
-    if val.type.name is not None and val.type.name.startswith("Vitrae::PropertyList"):
-        return PropertyList_Printer(val)
+def ParamList_Printer_func(val):
+    if val.type.name is not None and val.type.name.startswith("Vitrae::ParamList"):
+        return ParamList_Printer(val)
         # subval = val["m_specList"]
         # for ppf in gdb.current_progspace().pretty_printers:
         #    pp = ppf(subval)
@@ -117,4 +117,4 @@ def PropertyList_Printer_func(val):
         #        return pp
 
 
-gdb.pretty_printers.append(PropertyList_Printer_func)
+gdb.pretty_printers.append(ParamList_Printer_func)

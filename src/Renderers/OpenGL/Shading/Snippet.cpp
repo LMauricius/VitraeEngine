@@ -25,28 +25,28 @@ std::size_t OpenGLShaderSnippet::memory_cost() const
     return 1;
 }
 
-const PropertyList &OpenGLShaderSnippet::getInputSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderSnippet::getInputSpecs(const ParamAliases &) const
 {
     return m_inputSpecs;
 }
 
-const PropertyList &OpenGLShaderSnippet::getOutputSpecs() const
+const ParamList &OpenGLShaderSnippet::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &OpenGLShaderSnippet::getFilterSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderSnippet::getFilterSpecs(const ParamAliases &) const
 {
     return m_filterSpecs;
 }
 
-const PropertyList &OpenGLShaderSnippet::getConsumingSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderSnippet::getConsumingSpecs(const ParamAliases &) const
 {
     return m_consumingSpecs;
 }
 
 void OpenGLShaderSnippet::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                           const PropertyAliases &aliases) const
+                                           const ParamAliases &aliases) const
 {
     for (auto p_specs : {&m_inputSpecs, &m_outputSpecs, &m_filterSpecs, &m_consumingSpecs}) {
         for (auto spec : p_specs->getSpecList()) {
@@ -56,7 +56,7 @@ void OpenGLShaderSnippet::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
 }
 
 void OpenGLShaderSnippet::extractSubTasks(std::set<const Task *> &taskSet,
-                                          const PropertyAliases &aliases) const
+                                          const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }

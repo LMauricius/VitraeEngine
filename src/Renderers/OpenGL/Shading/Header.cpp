@@ -42,34 +42,34 @@ std::size_t OpenGLShaderHeader::memory_cost() const
     return 1;
 }
 
-const PropertyList &OpenGLShaderHeader::getInputSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderHeader::getInputSpecs(const ParamAliases &) const
 {
     return m_inputSpecs;
 }
 
-const PropertyList &OpenGLShaderHeader::getOutputSpecs() const
+const ParamList &OpenGLShaderHeader::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &OpenGLShaderHeader::getFilterSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderHeader::getFilterSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &OpenGLShaderHeader::getConsumingSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderHeader::getConsumingSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
 void OpenGLShaderHeader::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                          const PropertyAliases &aliases) const
+                                          const ParamAliases &aliases) const
 {
     typeSet.insert(&Variant::getTypeInfo<void>());
 }
 
 void OpenGLShaderHeader::extractSubTasks(std::set<const Task *> &taskSet,
-                                         const PropertyAliases &aliases) const
+                                         const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }

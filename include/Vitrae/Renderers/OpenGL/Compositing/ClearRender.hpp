@@ -14,15 +14,15 @@ class OpenGLComposeClearRender : public ComposeClearRender
 
     std::size_t memory_cost() const override;
 
-    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs() const override;
-    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
-    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+    const ParamList &getInputSpecs(const ParamAliases &) const override;
+    const ParamList &getOutputSpecs() const override;
+    const ParamList &getFilterSpecs(const ParamAliases &) const override;
+    const ParamList &getConsumingSpecs(const ParamAliases &) const override;
 
     void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                          const PropertyAliases &aliases) const override;
+                          const ParamAliases &aliases) const override;
     void extractSubTasks(std::set<const Task *> &taskSet,
-                         const PropertyAliases &aliases) const override;
+                         const ParamAliases &aliases) const override;
 
     void run(RenderComposeContext ctx) const override;
     void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
@@ -32,7 +32,7 @@ class OpenGLComposeClearRender : public ComposeClearRender
   protected:
     ComponentRoot &m_root;
     glm::vec4 m_color;
-    PropertyList m_outputSpecs;
+    ParamList m_outputSpecs;
     String m_friendlyName;
 };
 

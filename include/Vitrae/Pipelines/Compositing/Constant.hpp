@@ -14,17 +14,17 @@ class ComposeConstant : public ComposeTask
   public:
     struct SetupParams
     {
-        PropertySpec outputSpec;
+        ParamSpec outputSpec;
         Variant value;
     };
 
     ComposeConstant(const SetupParams &params);
     ~ComposeConstant() = default;
 
-    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs() const override;
-    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
-    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+    const ParamList &getInputSpecs(const ParamAliases &) const override;
+    const ParamList &getOutputSpecs() const override;
+    const ParamList &getFilterSpecs(const ParamAliases &) const override;
+    const ParamList &getConsumingSpecs(const ParamAliases &) const override;
 
     void run(RenderComposeContext ctx) const override;
     void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
@@ -32,7 +32,7 @@ class ComposeConstant : public ComposeTask
     StringView getFriendlyName() const override;
 
   protected:
-    PropertyList m_outputSpecs;
+    ParamList m_outputSpecs;
     Variant m_value;
     String m_friendlyName;
 };

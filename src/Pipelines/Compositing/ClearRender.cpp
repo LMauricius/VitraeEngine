@@ -3,10 +3,10 @@
 namespace Vitrae
 {
 
-const PropertySpec ComposeClearRender::FRAME_STORE_SPEC = {
+const ParamSpec ComposeClearRender::FRAME_STORE_SPEC = {
     .name = "fs_target",
     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>(),
 };
 
-const PropertyList ComposeClearRender::FILTER_SPECS = {FRAME_STORE_SPEC};
+const ParamList ComposeClearRender::FILTER_SPECS = {FRAME_STORE_SPEC};
 }

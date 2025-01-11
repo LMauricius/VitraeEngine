@@ -17,7 +17,7 @@ class ComposeCompute : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        PropertyList outputSpecs;
+        ParamList outputSpecs;
         GpuComputeSetupParams computeSetup;
         bool cacheResults;
     };

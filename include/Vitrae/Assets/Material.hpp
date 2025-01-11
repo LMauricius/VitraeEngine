@@ -33,15 +33,15 @@ class Material : public dynasma::PolymorphicBase
 
     std::size_t memory_cost() const;
 
-    void setPropertyAliases(const PropertyAliases &aliases);
+    void setParamAliases(const ParamAliases &aliases);
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
 
-    const PropertyAliases &getPropertyAliases() const;
+    const ParamAliases &getParamAliases() const;
     const StableMap<StringId, Variant> &getProperties() const;
 
   protected:
-    PropertyAliases m_aliases;
+    ParamAliases m_aliases;
     StableMap<StringId, Variant> m_properties;
 };
 

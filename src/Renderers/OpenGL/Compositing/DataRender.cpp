@@ -30,7 +30,7 @@ std::size_t OpenGLComposeDataRender::memory_cost() const
     return sizeof(OpenGLComposeDataRender);
 }
 
-const PropertyList &OpenGLComposeDataRender::getInputSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeDataRender::getInputSpecs(const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->inputSpecs;
@@ -39,12 +39,12 @@ const PropertyList &OpenGLComposeDataRender::getInputSpecs(const PropertyAliases
     }
 }
 
-const PropertyList &OpenGLComposeDataRender::getOutputSpecs() const
+const ParamList &OpenGLComposeDataRender::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &OpenGLComposeDataRender::getFilterSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeDataRender::getFilterSpecs(const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->filterSpecs;
@@ -53,7 +53,7 @@ const PropertyList &OpenGLComposeDataRender::getFilterSpecs(const PropertyAliase
     }
 }
 
-const PropertyList &OpenGLComposeDataRender::getConsumingSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeDataRender::getConsumingSpecs(const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->consumingSpecs;
@@ -63,15 +63,15 @@ const PropertyList &OpenGLComposeDataRender::getConsumingSpecs(const PropertyAli
 }
 
 void OpenGLComposeDataRender::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                               const PropertyAliases &aliases) const
+                                               const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         const SpecsPerAliases &specsPerAliases = *(*it).second;
 
-        for (const PropertyList *p_specs :
+        for (const ParamList *p_specs :
              {&specsPerAliases.inputSpecs, &m_outputSpecs, &specsPerAliases.filterSpecs,
               &specsPerAliases.consumingSpecs}) {
-            for (const PropertySpec &spec : p_specs->getSpecList()) {
+            for (const ParamSpec &spec : p_specs->getSpecList()) {
                 typeSet.insert(&spec.typeInfo);
             }
         }
@@ -79,7 +79,7 @@ void OpenGLComposeDataRender::extractUsedTypes(std::set<const TypeInfo *> &typeS
 }
 
 void OpenGLComposeDataRender::extractSubTasks(std::set<const Task *> &taskSet,
-                                              const PropertyAliases &aliases) const
+                                              const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }
@@ -115,8 +115,8 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
 
     auto p_mat = p_mesh->getMaterial().getLoaded();
 
-    const PropertyAliases *p_aliaseses[] = {&p_mat->getPropertyAliases(), &args.aliases};
-    PropertyAliases combinedAliases(p_aliaseses);
+    const ParamAliases *p_aliaseses[] = {&p_mat->getParamAliases(), &args.aliases};
+    ParamAliases combinedAliases(p_aliaseses);
 
     // Compile and setup the shader
     dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader;
@@ -302,7 +302,7 @@ StringView OpenGLComposeDataRender::getFriendlyName() const
     return m_friendlyName;
 }
 
-std::size_t OpenGLComposeDataRender::getSpecsKey(const PropertyAliases &aliases) const
+std::size_t OpenGLComposeDataRender::getSpecsKey(const ParamAliases &aliases) const
 {
     return combinedHashes<2>(
         {{std::hash<StringId>{}(m_params.vertexPositionOutputPropertyName), aliases.hash()}});

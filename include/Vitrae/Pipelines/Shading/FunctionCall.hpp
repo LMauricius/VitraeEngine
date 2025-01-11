@@ -13,10 +13,10 @@ class ShaderFunctionCall : public ShaderTask {
   public:
     struct StringParams
     {
-        PropertyList consumingSpecs;
-        PropertyList inputSpecs;
-        PropertyList filterSpecs;
-        PropertyList outputSpecs;
+        ParamList consumingSpecs;
+        ParamList inputSpecs;
+        ParamList filterSpecs;
+        ParamList outputSpecs;
         String functionName;
     };
 };

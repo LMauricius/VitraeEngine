@@ -2,7 +2,7 @@
 
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
-#include "Vitrae/Params/PropertyGetter.hpp"
+#include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/MovableSpan.hpp"
@@ -18,7 +18,7 @@ namespace Vitrae
 {
 class OpenGLRenderer;
 class ComponentRoot;
-class PropertyList;
+class ParamList;
 class Material;
 
 class CompiledGLSLShader : public dynasma::PolymorphicBase
@@ -26,16 +26,16 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
   public:
     struct ComputeCompilationSpec
     {
-        PropertyGetter<std::uint32_t> invocationCountX;
-        PropertyGetter<std::uint32_t> invocationCountY;
-        PropertyGetter<std::uint32_t> invocationCountZ;
+        ArgumentGetter<std::uint32_t> invocationCountX;
+        ArgumentGetter<std::uint32_t> invocationCountY;
+        ArgumentGetter<std::uint32_t> invocationCountZ;
         glm::uvec3 groupSize;
         bool allowOutOfBoundsCompute;
     };
 
     struct CompilationSpec
     {
-        PropertyAliases aliases;
+        ParamAliases aliases;
 
         // prefix for output variables
         String outVarPrefix;
@@ -49,22 +49,22 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     class SurfaceShaderParams
     {
-        const PropertyAliases &m_aliases;
+        const ParamAliases &m_aliases;
         String m_vertexPositionOutputName;
-        const PropertyList &m_fragmentOutputs;
+        const ParamList &m_fragmentOutputs;
         ComponentRoot *mp_root;
         std::size_t m_hash;
 
       public:
-        SurfaceShaderParams(const PropertyAliases &aliases, String vertexPositionOutputName,
-                            const PropertyList &fragmentOutputs, ComponentRoot &root);
+        SurfaceShaderParams(const ParamAliases &aliases, String vertexPositionOutputName,
+                            const ParamList &fragmentOutputs, ComponentRoot &root);
 
-        inline const PropertyAliases &getAliases() const { return m_aliases; }
+        inline const ParamAliases &getAliases() const { return m_aliases; }
         inline const String &getVertexPositionOutputName() const
         {
             return m_vertexPositionOutputName;
         }
-        inline const PropertyList &getFragmentOutputs() const { return m_fragmentOutputs; }
+        inline const ParamList &getFragmentOutputs() const { return m_fragmentOutputs; }
         inline ComponentRoot &getRoot() const { return *mp_root; }
 
         inline std::size_t getHash() const { return m_hash; }
@@ -75,36 +75,36 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     class ComputeShaderParams
     {
-        const PropertyAliases &m_aliases;
-        const PropertyList &m_desiredResults;
+        const ParamAliases &m_aliases;
+        const ParamList &m_desiredResults;
         ComponentRoot *mp_root;
-        PropertyGetter<std::uint32_t> m_invocationCountX;
-        PropertyGetter<std::uint32_t> m_invocationCountY;
-        PropertyGetter<std::uint32_t> m_invocationCountZ;
+        ArgumentGetter<std::uint32_t> m_invocationCountX;
+        ArgumentGetter<std::uint32_t> m_invocationCountY;
+        ArgumentGetter<std::uint32_t> m_invocationCountZ;
         glm::uvec3 m_groupSize;
         bool m_allowOutOfBoundsCompute;
         std::size_t m_hash;
 
       public:
-        ComputeShaderParams(ComponentRoot &root, const PropertyAliases &aliases,
-                            const PropertyList &desiredResults,
-                            PropertyGetter<std::uint32_t> invocationCountX,
-                            PropertyGetter<std::uint32_t> invocationCountY,
-                            PropertyGetter<std::uint32_t> invocationCountZ, glm::uvec3 groupSize,
+        ComputeShaderParams(ComponentRoot &root, const ParamAliases &aliases,
+                            const ParamList &desiredResults,
+                            ArgumentGetter<std::uint32_t> invocationCountX,
+                            ArgumentGetter<std::uint32_t> invocationCountY,
+                            ArgumentGetter<std::uint32_t> invocationCountZ, glm::uvec3 groupSize,
                             bool allowOutOfBoundsCompute);
 
         inline ComponentRoot &getRoot() const { return *mp_root; }
-        inline const PropertyAliases &getAliases() const { return m_aliases; }
-        inline const PropertyList &getDesiredResults() const { return m_desiredResults; }
-        inline PropertyGetter<std::uint32_t> getInvocationCountX() const
+        inline const ParamAliases &getAliases() const { return m_aliases; }
+        inline const ParamList &getDesiredResults() const { return m_desiredResults; }
+        inline ArgumentGetter<std::uint32_t> getInvocationCountX() const
         {
             return m_invocationCountX;
         }
-        inline PropertyGetter<std::uint32_t> getInvocationCountY() const
+        inline ArgumentGetter<std::uint32_t> getInvocationCountY() const
         {
             return m_invocationCountY;
         }
-        inline PropertyGetter<std::uint32_t> getInvocationCountZ() const
+        inline ArgumentGetter<std::uint32_t> getInvocationCountZ() const
         {
             return m_invocationCountZ;
         }
@@ -119,19 +119,19 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     struct LocationSpec
     {
-        PropertySpec srcSpec;
+        ParamSpec srcSpec;
         GLint location;
     };
 
     struct BindingSpec
     {
-        PropertySpec srcSpec;
+        ParamSpec srcSpec;
         GLint location;
         GLuint bindingIndex;
     };
 
     CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs, ComponentRoot &root,
-                       const PropertyList &desiredOutputs);
+                       const ParamList &desiredOutputs);
     CompiledGLSLShader(const SurfaceShaderParams &params);
     CompiledGLSLShader(const ComputeShaderParams &params);
     ~CompiledGLSLShader();
@@ -145,7 +145,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
                                     const Material &firstMaterial) const;
     void setupMaterialProperties(OpenGLRenderer &rend, const Material &material) const;
 
-    PropertyList inputSpecs, outputSpecs, filterSpecs, consumingSpecs;
+    ParamList inputSpecs, outputSpecs, filterSpecs, consumingSpecs;
     GLuint programGLName;
     StableMap<StringId, LocationSpec> uniformSpecs;
     StableMap<StringId, BindingSpec> opaqueBindingSpecs;

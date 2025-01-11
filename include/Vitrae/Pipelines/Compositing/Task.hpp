@@ -34,7 +34,7 @@ struct RenderComposeContext
 {
     ArgumentScope &properties;
     ComponentRoot &root;
-    const PropertyAliases &aliases;
+    const ParamAliases &aliases;
 };
 
 class ComposeTask : public Task
@@ -55,12 +55,12 @@ class ComposeTask : public Task
     /**
      * The spec for fs_target filter property
      */
-    static const PropertySpec FRAME_STORE_TARGET_SPEC;
+    static const ParamSpec FRAME_STORE_TARGET_SPEC;
 
     /**
      * The spec for scene filter property
      */
-    static const PropertySpec SCENE_SPEC;
+    static const ParamSpec SCENE_SPEC;
 };
 
 namespace StandardCompositorOutputNames

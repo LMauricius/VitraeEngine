@@ -10,7 +10,7 @@ namespace Vitrae
 {
 
 class OpenGLRenderer;
-class PropertyList;
+class ParamList;
 
 class OpenGLComposeCompute : public ComposeCompute {
   public:
@@ -18,15 +18,15 @@ class OpenGLComposeCompute : public ComposeCompute {
 
     std::size_t memory_cost() const override;
 
-    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs() const override;
-    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
-    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+    const ParamList &getInputSpecs(const ParamAliases &) const override;
+    const ParamList &getOutputSpecs() const override;
+    const ParamList &getFilterSpecs(const ParamAliases &) const override;
+    const ParamList &getConsumingSpecs(const ParamAliases &) const override;
 
     void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                          const PropertyAliases &aliases) const override;
+                          const ParamAliases &aliases) const override;
     void extractSubTasks(std::set<const Task *> &taskSet,
-                         const PropertyAliases &aliases) const override;
+                         const ParamAliases &aliases) const override;
 
     void run(RenderComposeContext ctx) const override;
     void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
@@ -39,14 +39,14 @@ class OpenGLComposeCompute : public ComposeCompute {
 
     struct ProgramPerAliases
     {
-        PropertyList inputSpecs, filterSpecs, consumeSpecs;
+        ParamList inputSpecs, filterSpecs, consumeSpecs;
 
         StableMap<StringId, Variant> cachedDependencies;
     };
 
     mutable StableMap<std::size_t, std::unique_ptr<ProgramPerAliases>> m_programPerAliasHash;
 
-    ProgramPerAliases &getProgramPerAliases(const PropertyAliases &aliases) const;
+    ProgramPerAliases &getProgramPerAliases(const ParamAliases &aliases) const;
 };
 
 } // namespace Vitrae

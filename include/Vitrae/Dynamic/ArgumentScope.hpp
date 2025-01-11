@@ -1,19 +1,19 @@
 #pragma once
 
 #include "Vitrae/Dynamic/VariantScope.hpp"
-#include "Vitrae/Params/PropertyAliases.hpp"
+#include "Vitrae/Params/ParamAliases.hpp"
 
 namespace Vitrae
 {
 
 /**
  * @brief ArgumentScope provides access to named variants from a VariantScope,
- * but with support for PropertyAliases for aliased properties
+ * but with support for ParamAliases for aliased properties
  */
 class ArgumentScope
 {
     VariantScope *mp_scope;
-    const PropertyAliases *mp_propertySelection;
+    const ParamAliases *mp_propertySelection;
 
   public:
     /**
@@ -30,7 +30,7 @@ class ArgumentScope
      *
      * @param scope Pointer to the VariantScope.
      */
-    ArgumentScope(VariantScope *p_scope, const PropertyAliases *propertySelection = nullptr);
+    ArgumentScope(VariantScope *p_scope, const ParamAliases *propertySelection = nullptr);
 
     /// @brief Copy constructor.
     ArgumentScope(const ArgumentScope &) = default;

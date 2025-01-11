@@ -15,39 +15,39 @@ std::size_t ComposeFunction::memory_cost() const
     return sizeof(ComposeFunction);
 }
 
-const PropertyList &ComposeFunction::getInputSpecs(const PropertyAliases &) const
+const ParamList &ComposeFunction::getInputSpecs(const ParamAliases &) const
 {
     return m_inputSpecs;
 }
 
-const PropertyList &ComposeFunction::getOutputSpecs() const
+const ParamList &ComposeFunction::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &ComposeFunction::getFilterSpecs(const PropertyAliases &) const
+const ParamList &ComposeFunction::getFilterSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &ComposeFunction::getConsumingSpecs(const PropertyAliases &) const
+const ParamList &ComposeFunction::getConsumingSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
 void ComposeFunction::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                       const PropertyAliases &aliases) const
+                                       const ParamAliases &aliases) const
 {
-    for (const PropertyList *p_specs :
+    for (const ParamList *p_specs :
          {&m_inputSpecs, &m_outputSpecs, &m_filterSpecs, &m_consumingSpecs}) {
-        for (const PropertySpec &spec : p_specs->getSpecList()) {
+        for (const ParamSpec &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
     }
 }
 
 void ComposeFunction::extractSubTasks(std::set<const Task *> &taskSet,
-                                      const PropertyAliases &aliases) const
+                                      const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }

@@ -14,7 +14,7 @@ class OpenGLShaderHeader : public ShaderHeader
 {
     String m_friendlyName;
     String m_fileSnippet;
-    PropertyList m_inputSpecs, m_outputSpecs;
+    ParamList m_inputSpecs, m_outputSpecs;
 
   public:
     OpenGLShaderHeader(const FileLoadParams &params);
@@ -23,15 +23,15 @@ class OpenGLShaderHeader : public ShaderHeader
 
     std::size_t memory_cost() const override;
 
-    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs() const override;
-    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
-    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+    const ParamList &getInputSpecs(const ParamAliases &) const override;
+    const ParamList &getOutputSpecs() const override;
+    const ParamList &getFilterSpecs(const ParamAliases &) const override;
+    const ParamList &getConsumingSpecs(const ParamAliases &) const override;
 
     void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                          const PropertyAliases &aliases) const override;
+                          const ParamAliases &aliases) const override;
     void extractSubTasks(std::set<const Task *> &taskSet,
-                         const PropertyAliases &aliases) const override;
+                         const ParamAliases &aliases) const override;
 
     void outputDeclarationCode(BuildContext args) const override;
     void outputDefinitionCode(BuildContext args) const override;

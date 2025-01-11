@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Params/PropertySpec.hpp"
+#include "Vitrae/Params/ParamSpec.hpp"
 #include "Vitrae/Util/Hashing.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
@@ -14,22 +14,22 @@
 namespace Vitrae
 {
 
-class PropertyList : public dynasma::PolymorphicBase
+class ParamList : public dynasma::PolymorphicBase
 {
-    friend struct std::hash<PropertyList>;
+    friend struct std::hash<ParamList>;
 
-    StableMap<StringId, PropertySpec> m_mappedSpecs;
+    StableMap<StringId, ParamSpec> m_mappedSpecs;
     std::vector<StringId> m_specNameIds;
-    std::vector<PropertySpec> m_specList;
+    std::vector<ParamSpec> m_specList;
 
     std::size_t m_hash;
 
   public:
-    inline PropertyList() : m_hash(0) {}
-    PropertyList(PropertyList const &) = default;
-    PropertyList(PropertyList &&) = default;
+    inline ParamList() : m_hash(0) {}
+    ParamList(ParamList const &) = default;
+    ParamList(ParamList &&) = default;
 
-    inline PropertyList(std::initializer_list<const PropertySpec> specs)
+    inline ParamList(std::initializer_list<const ParamSpec> specs)
     {
         for (const auto &spec : specs) {
             m_mappedSpecs.emplace(spec.name, spec);
@@ -44,9 +44,9 @@ class PropertyList : public dynasma::PolymorphicBase
     }
 
     template <class ContainerT>
-    PropertyList(const ContainerT &specs)
+    ParamList(const ContainerT &specs)
         requires(std::ranges::range<ContainerT> &&
-                 std::convertible_to<std::ranges::range_value_t<ContainerT>, const PropertySpec &>)
+                 std::convertible_to<std::ranges::range_value_t<ContainerT>, const ParamSpec &>)
     {
         for (const auto &spec : specs) {
             m_mappedSpecs.emplace(spec.name, spec);
@@ -60,8 +60,7 @@ class PropertyList : public dynasma::PolymorphicBase
         recalculateHash();
     }
 
-    inline PropertyList(const StableMap<StringId, PropertySpec> &mappedSpecs)
-        : m_mappedSpecs(mappedSpecs)
+    inline ParamList(const StableMap<StringId, ParamSpec> &mappedSpecs) : m_mappedSpecs(mappedSpecs)
     {
         for (auto [nameId, spec] : m_mappedSpecs) {
             m_specNameIds.push_back(nameId);
@@ -71,7 +70,7 @@ class PropertyList : public dynasma::PolymorphicBase
         recalculateHash();
     }
 
-    inline PropertyList(StableMap<StringId, PropertySpec> &&mappedSpecs)
+    inline ParamList(StableMap<StringId, ParamSpec> &&mappedSpecs)
         : m_mappedSpecs(std::move(mappedSpecs))
     {
         for (auto [nameId, spec] : m_mappedSpecs) {
@@ -82,22 +81,22 @@ class PropertyList : public dynasma::PolymorphicBase
         recalculateHash();
     }
 
-    virtual ~PropertyList() = default;
+    virtual ~ParamList() = default;
 
-    PropertyList &operator=(const PropertyList &other)
+    ParamList &operator=(const ParamList &other)
     {
         m_mappedSpecs = other.m_mappedSpecs;
         m_specNameIds = other.m_specNameIds;
-        m_specList = std::vector<PropertySpec>(other.m_specList.begin(), other.m_specList.end());
+        m_specList = std::vector<ParamSpec>(other.m_specList.begin(), other.m_specList.end());
         m_hash = other.m_hash;
         return *this;
     }
-    PropertyList &operator=(PropertyList &&other) = default;
+    ParamList &operator=(ParamList &&other) = default;
 
     /**
      * Inserts specs from other at the end of this list, if they are not already in the list
      */
-    std::size_t merge(const PropertyList &other)
+    std::size_t merge(const ParamList &other)
     {
         std::size_t count = 0;
         for (const auto &spec : other.m_specList) {
@@ -117,7 +116,7 @@ class PropertyList : public dynasma::PolymorphicBase
     /**
      * Inserts a spec at the end of the list if it is not already in the list
      */
-    void insert_back(const PropertySpec &spec)
+    void insert_back(const ParamSpec &spec)
     {
         if (m_mappedSpecs.find(spec.name) == m_mappedSpecs.end()) {
             m_mappedSpecs.emplace(spec.name, spec);
@@ -131,7 +130,7 @@ class PropertyList : public dynasma::PolymorphicBase
     /**
      * Erases the spec from the list if it exists
      */
-    void erase(const PropertySpec &spec) { erase(spec.name); }
+    void erase(const ParamSpec &spec) { erase(spec.name); }
 
     /**
      * Erases the spec with the given name if it exists
@@ -144,9 +143,9 @@ class PropertyList : public dynasma::PolymorphicBase
                               m_specNameIds.begin();
             m_specNameIds.erase(m_specNameIds.begin() + ind);
 
-            // we need a new vector to avoid calling std::vector::erase (PropertySpec is not
+            // we need a new vector to avoid calling std::vector::erase (ParamSpec is not
             // move-assignable)
-            std::vector<PropertySpec> newSpecList;
+            std::vector<ParamSpec> newSpecList;
             newSpecList.reserve(m_specList.size() - 1);
             for (int i = 0; i < m_specList.size(); i++) {
                 if (i != ind) {
@@ -163,11 +162,11 @@ class PropertyList : public dynasma::PolymorphicBase
     Getters
     */
 
-    inline const StableMap<StringId, PropertySpec> &getMappedSpecs() const { return m_mappedSpecs; }
+    inline const StableMap<StringId, ParamSpec> &getMappedSpecs() const { return m_mappedSpecs; }
 
     inline std::span<const StringId> getSpecNameIds() const { return m_specNameIds; }
 
-    inline std::span<const PropertySpec> getSpecList() const { return m_specList; }
+    inline std::span<const ParamSpec> getSpecList() const { return m_specList; }
 
     inline std::size_t getHash() const { return m_hash; }
 
@@ -186,8 +185,8 @@ class PropertyList : public dynasma::PolymorphicBase
     Comparisons
     */
 
-    bool operator==(const PropertyList &other) const { return m_hash == other.m_hash; }
-    auto operator<=>(const PropertyList &other) const { return m_hash <=> other.m_hash; }
+    bool operator==(const ParamList &other) const { return m_hash == other.m_hash; }
+    auto operator<=>(const ParamList &other) const { return m_hash <=> other.m_hash; }
 
   private:
     void recalculateHash()
@@ -203,15 +202,15 @@ class PropertyList : public dynasma::PolymorphicBase
     }
 };
 
-inline const PropertyList EMPTY_PROPERTY_LIST{};
+inline const ParamList EMPTY_PROPERTY_LIST{};
 
 } // namespace Vitrae
 
 namespace std
 {
 
-template <> struct hash<Vitrae::PropertyList>
+template <> struct hash<Vitrae::ParamList>
 {
-    std::size_t operator()(const Vitrae::PropertyList &pl) const { return pl.m_hash; }
+    std::size_t operator()(const Vitrae::ParamList &pl) const { return pl.m_hash; }
 };
 } // namespace std

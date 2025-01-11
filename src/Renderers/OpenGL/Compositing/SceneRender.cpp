@@ -15,9 +15,8 @@
 namespace Vitrae
 {
 
-const PropertyList OpenGLComposeSceneRender::SHARED_INPUT_PROPERTY_LIST = {SCENE_SPEC};
-const PropertyList OpenGLComposeSceneRender::SHARED_FILTER_PROPERTY_LIST = {
-    FRAME_STORE_TARGET_SPEC};
+const ParamList OpenGLComposeSceneRender::SHARED_INPUT_PROPERTY_LIST = {SCENE_SPEC};
+const ParamList OpenGLComposeSceneRender::SHARED_FILTER_PROPERTY_LIST = {FRAME_STORE_TARGET_SPEC};
 
 OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     : m_root(params.root), m_params(params)
@@ -72,7 +71,7 @@ std::size_t OpenGLComposeSceneRender::memory_cost() const
     return sizeof(*this);
 }
 
-const PropertyList &OpenGLComposeSceneRender::getInputSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeSceneRender::getInputSpecs(const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->inputSpecs;
@@ -81,12 +80,12 @@ const PropertyList &OpenGLComposeSceneRender::getInputSpecs(const PropertyAliase
     }
 }
 
-const PropertyList &OpenGLComposeSceneRender::getOutputSpecs() const
+const ParamList &OpenGLComposeSceneRender::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &OpenGLComposeSceneRender::getFilterSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeSceneRender::getFilterSpecs(const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->filterSpecs;
@@ -95,8 +94,7 @@ const PropertyList &OpenGLComposeSceneRender::getFilterSpecs(const PropertyAlias
     }
 }
 
-const PropertyList &OpenGLComposeSceneRender::getConsumingSpecs(
-    const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeSceneRender::getConsumingSpecs(const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->consumingSpecs;
@@ -106,15 +104,15 @@ const PropertyList &OpenGLComposeSceneRender::getConsumingSpecs(
 }
 
 void OpenGLComposeSceneRender::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                                const PropertyAliases &aliases) const
+                                                const ParamAliases &aliases) const
 {
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         const SpecsPerAliases &specsPerAliases = *(*it).second;
 
-        for (const PropertyList *p_specs :
+        for (const ParamList *p_specs :
              {&specsPerAliases.inputSpecs, &m_outputSpecs, &specsPerAliases.filterSpecs,
               &specsPerAliases.consumingSpecs}) {
-            for (const PropertySpec &spec : p_specs->getSpecList()) {
+            for (const ParamSpec &spec : p_specs->getSpecList()) {
                 typeSet.insert(&spec.typeInfo);
             }
         }
@@ -122,7 +120,7 @@ void OpenGLComposeSceneRender::extractUsedTypes(std::set<const TypeInfo *> &type
 }
 
 void OpenGLComposeSceneRender::extractSubTasks(std::set<const Task *> &taskSet,
-                                               const PropertyAliases &aliases) const
+                                               const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }
@@ -160,11 +158,11 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
 
     // build map of shaders to materials to mesh props
-    std::map<PropertyAliases,
+    std::map<ParamAliases,
              std::map<dynasma::FirmPtr<const Material>, std::vector<const MeshProp *>>,
-             bool (*)(const PropertyAliases &, const PropertyAliases &)>
+             bool (*)(const ParamAliases &, const ParamAliases &)>
         aliases2materials2props(
-            [](const PropertyAliases &l, const PropertyAliases &r) { return l.hash() < r.hash(); });
+            [](const ParamAliases &l, const ParamAliases &r) { return l.hash() < r.hash(); });
 
     {
 
@@ -175,9 +173,9 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
             OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
             mesh.loadToGPU(rend);
 
-            const PropertyAliases *p_aliaseses[] = {&mat->getPropertyAliases(), &args.aliases};
+            const ParamAliases *p_aliaseses[] = {&mat->getParamAliases(), &args.aliases};
 
-            aliases2materials2props[PropertyAliases(p_aliaseses)][mat].push_back(&meshProp);
+            aliases2materials2props[ParamAliases(p_aliaseses)][mat].push_back(&meshProp);
         }
     }
 
@@ -256,7 +254,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
                         // Store pipeline property specs
 
-                        using ListConvPair = std::pair<const PropertyList *, PropertyList *>;
+                        using ListConvPair = std::pair<const ParamList *, ParamList *>;
 
                         for (auto [p_specs, p_targetSpecs] :
                              {ListConvPair{&p_compiledShader->inputSpecs,
@@ -404,7 +402,7 @@ StringView OpenGLComposeSceneRender::getFriendlyName() const
     return m_friendlyName;
 }
 
-std::size_t OpenGLComposeSceneRender::getSpecsKey(const PropertyAliases &aliases) const
+std::size_t OpenGLComposeSceneRender::getSpecsKey(const ParamAliases &aliases) const
 {
     return combinedHashes<2>(
         {{std::hash<StringId>{}(m_params.vertexPositionOutputPropertyName), aliases.hash()}});

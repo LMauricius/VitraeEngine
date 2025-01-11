@@ -261,7 +261,7 @@ const GLConversionSpec &OpenGLRenderer::getTypeConversion(const TypeInfo &type) 
     return *m_glConversionsByHostType.at(std::type_index(*type.p_id));
 }
 
-void OpenGLRenderer::specifyVertexBuffer(const PropertySpec &newElSpec)
+void OpenGLRenderer::specifyVertexBuffer(const ParamSpec &newElSpec)
 {
     const GLTypeSpec &glTypeSpec = getTypeConversion(newElSpec.typeInfo).glTypeSpec;
 

@@ -113,7 +113,7 @@ class OpenGLRenderer : public Renderer
      */
     template <SharedBufferPtrInst SharedBufferT> void specifyBufferTypeAndConversionAuto();
 
-    void specifyVertexBuffer(const PropertySpec &newElSpec);
+    void specifyVertexBuffer(const ParamSpec &newElSpec);
     template <class T> void specifyVertexBufferAuto()
     {
         specifyVertexBuffer(getTypeConversion(Variant::getTypeInfo<T>().p_id->name()));
@@ -135,8 +135,7 @@ class OpenGLRenderer : public Renderer
     std::size_t m_vertexBufferFreeIndex;
     StableMap<StringId, const GLTypeSpec *> m_vertexBufferSpecs;
 
-    mutable StableMap<std::size_t, StableMap<StringId, PropertySpec>>
-        m_sceneRenderInputDependencies;
+    mutable StableMap<std::size_t, StableMap<StringId, ParamSpec>> m_sceneRenderInputDependencies;
 
     // utility
     static void setRawBufferBinding(const RawSharedBuffer &buf, int bindingIndex);

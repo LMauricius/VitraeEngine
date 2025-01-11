@@ -9,22 +9,22 @@ ComposeConstant::ComposeConstant(const SetupParams &params)
       m_friendlyName(String("Const ") + params.value.toString())
 {}
 
-const PropertyList &ComposeConstant::getInputSpecs(const PropertyAliases &) const
+const ParamList &ComposeConstant::getInputSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &ComposeConstant::getOutputSpecs() const
+const ParamList &ComposeConstant::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &ComposeConstant::getFilterSpecs(const PropertyAliases &) const
+const ParamList &ComposeConstant::getFilterSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &ComposeConstant::getConsumingSpecs(const PropertyAliases &) const
+const ParamList &ComposeConstant::getConsumingSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }

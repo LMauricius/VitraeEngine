@@ -139,8 +139,8 @@ class ComponentRoot
         this->getMeshBufferInfoList<aiType>().push_back(newInfo);
     }
 
-    void addAiMaterialPropertyAliases(aiShadingMode aiMode, const PropertyAliases &newInfo);
-    const PropertyAliases &getAiMaterialPropertyAliases(aiShadingMode aiMode) const;
+    void addAiMaterialParamAliases(aiShadingMode aiMode, const ParamAliases &newInfo);
+    const ParamAliases &getAiMaterialParamAliases(aiShadingMode aiMode) const;
 
     struct AiMaterialTextureInfo
     {
@@ -228,7 +228,7 @@ class ComponentRoot
     StableMap<size_t, UniqueAnyPtr> mCustomComponents;
     std::vector<dynasma::AbstractPool *> m_memoryPools;
     mutable StableMap<size_t, UniqueAnyPtr> m_aiMeshInfoLists;
-    StableMap<aiShadingMode, PropertyAliases> mAiMaterialAliases;
+    StableMap<aiShadingMode, ParamAliases> mAiMaterialAliases;
     std::vector<AiMaterialTextureInfo> mAiMaterialTextureInfos;
     std::vector<AiMaterialPropertyInfo> mMaterialPropertyInfos;
 

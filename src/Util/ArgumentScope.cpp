@@ -5,7 +5,7 @@ namespace Vitrae
 
 ArgumentScope::ArgumentScope() : mp_scope(nullptr), mp_propertySelection(nullptr) {}
 
-ArgumentScope::ArgumentScope(VariantScope *scope, const PropertyAliases *propertySelection)
+ArgumentScope::ArgumentScope(VariantScope *scope, const ParamAliases *propertySelection)
     : mp_scope(scope), mp_propertySelection(propertySelection)
 {}
 

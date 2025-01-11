@@ -20,63 +20,63 @@ namespace Vitrae {
  * Providers can also be proxies to other providers
  * No cycles are allowed
  */
-class PropertyAliases
+class ParamAliases
 {
   public:
     /**
      * Default constructor
      */
-    PropertyAliases();
+    ParamAliases();
 
     /**
      * Copy constructor
      */
-    PropertyAliases(const PropertyAliases &other) = default;
+    ParamAliases(const ParamAliases &other) = default;
 
     /**
      * Move constructor
      */
-    PropertyAliases(PropertyAliases &&other) = default;
+    ParamAliases(ParamAliases &&other) = default;
 
     /**
      * Constructor for parentless alias mapping
      * @param aliases A map of aliases; key = proxy, value = provider
      * (choice)
      */
-    PropertyAliases(const StableMap<StringId, String> &aliases);
-    PropertyAliases(std::initializer_list<std::pair<StringId, String>> aliases);
+    ParamAliases(const StableMap<StringId, String> &aliases);
+    ParamAliases(std::initializer_list<std::pair<StringId, String>> aliases);
 
-    PropertyAliases(StableMap<StringId, String> &&aliases);
+    ParamAliases(StableMap<StringId, String> &&aliases);
 
     /**
      * Constructor for alias mapping with inheritance
-     * @param parent The parent PropertyAliases
+     * @param parent The parent ParamAliases
      * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
-    PropertyAliases(std::span<const PropertyAliases *const> parentPtrs);
+    ParamAliases(std::span<const ParamAliases *const> parentPtrs);
 
     /**
      * Constructor for alias mapping with inheritance
-     * @param parent The parent PropertyAliases
+     * @param parent The parent ParamAliases
      * @param aliases A map of aliases; key = proxy, value = provider
      * (choice)
      * @warning The parent pointers are non-owning, and MUST exist until this object's destruction
      */
-    PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
-                    const StableMap<StringId, String> &aliases);
+    ParamAliases(std::span<const ParamAliases *const> parentPtrs,
+                 const StableMap<StringId, String> &aliases);
 
-    PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
-                    StableMap<StringId, String> &&aliases);
+    ParamAliases(std::span<const ParamAliases *const> parentPtrs,
+                 StableMap<StringId, String> &&aliases);
 
     /**
      * Copy assignment
      */
-    PropertyAliases &operator=(const PropertyAliases &other) = default;
+    ParamAliases &operator=(const ParamAliases &other) = default;
 
     /**
      * Move assignment
      */
-    PropertyAliases &operator=(PropertyAliases &&other) = default;
+    ParamAliases &operator=(ParamAliases &&other) = default;
 
     /**
      * @returns The provider for the specified proxy, or proxy if not found
@@ -129,7 +129,7 @@ class PropertyAliases
     void extractAliasProxyIds(std::unordered_set<StringId> &proxys) const;
 
   private:
-    std::vector<const PropertyAliases *> m_parentPtrs;
+    std::vector<const ParamAliases *> m_parentPtrs;
     StableMap<StringId, std::pair<StringId, String>> m_localAliases;
     std::size_t m_hash;
 };
@@ -138,11 +138,8 @@ class PropertyAliases
 
 namespace std {
 
-template <> struct hash<Vitrae::PropertyAliases>
+template <> struct hash<Vitrae::ParamAliases>
 {
-    std::size_t operator()(const Vitrae::PropertyAliases &selection) const
-    {
-        return selection.hash();
-    }
+    std::size_t operator()(const Vitrae::ParamAliases &selection) const { return selection.hash(); }
 };
 }

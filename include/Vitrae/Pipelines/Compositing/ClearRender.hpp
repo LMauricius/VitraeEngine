@@ -26,12 +26,12 @@ class ComposeClearRender : public ComposeTask
     /**
      * The spec for frame_store filter property
      */
-    static const PropertySpec FRAME_STORE_SPEC;
+    static const ParamSpec FRAME_STORE_SPEC;
 
     /**
      * The constant filter specs of ComposeClearRender
      */
-    static const PropertyList FILTER_SPECS;
+    static const ParamList FILTER_SPECS;
 };
 
 struct ComposeClearRenderKeeperSeed

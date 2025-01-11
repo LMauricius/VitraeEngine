@@ -2,7 +2,7 @@
 
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/ComponentRoot.hpp"
-#include "Vitrae/Params/PropertyGetter.hpp"
+#include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
@@ -17,10 +17,10 @@ namespace Vitrae
 class ComposeFrameToTexture : public ComposeTask
 {
   public:
-    struct OutputTexturePropertySpec
+    struct OutputTextureParamSpec
     {
         String textureName;
-        PropertySpec fragmentSpec;
+        ParamSpec fragmentSpec;
     };
 
     struct SetupParams
@@ -29,8 +29,8 @@ class ComposeFrameToTexture : public ComposeTask
         std::vector<String> inputTokenNames;
         String outputColorTextureName;
         String outputDepthTextureName;
-        std::vector<OutputTexturePropertySpec> outputs;
-        PropertyGetter<glm::vec2> size;
+        std::vector<OutputTextureParamSpec> outputs;
+        ArgumentGetter<glm::vec2> size;
         Texture::ChannelType channelType = Texture::ChannelType::RGB;
         Texture::WrappingType horWrap = Texture::WrappingType::REPEAT;
         Texture::WrappingType verWrap = Texture::WrappingType::REPEAT;
@@ -45,15 +45,15 @@ class ComposeFrameToTexture : public ComposeTask
 
     std::size_t memory_cost() const override;
 
-    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs() const override;
-    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
-    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+    const ParamList &getInputSpecs(const ParamAliases &) const override;
+    const ParamList &getOutputSpecs() const override;
+    const ParamList &getFilterSpecs(const ParamAliases &) const override;
+    const ParamList &getConsumingSpecs(const ParamAliases &) const override;
 
     void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                          const PropertyAliases &aliases) const override;
+                          const ParamAliases &aliases) const override;
     void extractSubTasks(std::set<const Task *> &taskSet,
-                         const PropertyAliases &aliases) const override;
+                         const ParamAliases &aliases) const override;
 
     void run(RenderComposeContext args) const override;
     void prepareRequiredLocalAssets(RenderComposeContext args) const override;
@@ -62,14 +62,14 @@ class ComposeFrameToTexture : public ComposeTask
 
   protected:
     ComponentRoot &m_root;
-    PropertyList m_inputSpecs;
-    PropertyList m_consumeSpecs;
-    PropertyList m_outputSpecs;
+    ParamList m_inputSpecs;
+    ParamList m_consumeSpecs;
+    ParamList m_outputSpecs;
 
     String m_outputColorTextureName, m_outputDepthTextureName;
     StringId m_outputColorTextureNameId, m_outputDepthTextureNameId;
-    std::vector<OutputTexturePropertySpec> m_outputTexturePropertySpecs;
-    PropertyGetter<glm::vec2> m_size;
+    std::vector<OutputTextureParamSpec> m_outputTextureParamSpecs;
+    ArgumentGetter<glm::vec2> m_size;
     Texture::ChannelType m_channelType;
     Texture::WrappingType m_horWrap;
     Texture::WrappingType m_verWrap;

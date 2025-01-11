@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Vitrae/Dynamic/Variant.hpp"
-#include "Vitrae/Params/PropertyAliases.hpp"
-#include "Vitrae/Params/PropertyList.hpp"
-#include "Vitrae/Params/PropertySpec.hpp"
+#include "Vitrae/Params/ParamAliases.hpp"
+#include "Vitrae/Params/ParamList.hpp"
+#include "Vitrae/Params/ParamSpec.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 #include "Vitrae/Util/StringId.hpp"
 
@@ -28,38 +28,38 @@ class Task : public dynasma::PolymorphicBase
      * @returns A specification of input properties of this task. Those properties are never
      * modified by the task and can be inputs for following tasks
      */
-    virtual const PropertyList &getInputSpecs(const PropertyAliases &propMapping) const = 0;
+    virtual const ParamList &getInputSpecs(const ParamAliases &propMapping) const = 0;
 
     /**
      * @returns A specification of consuming properties of this task. These properties might be
      * modified by the task and don't exist after the task execution
      */
-    virtual const PropertyList &getConsumingSpecs(const PropertyAliases &propMapping) const = 0;
+    virtual const ParamList &getConsumingSpecs(const ParamAliases &propMapping) const = 0;
 
     /**
      * @returns A specification of output properties of this task. Those usually don't exist before
      * running the task (although there can be collisions) and are set by the task
      */
-    virtual const PropertyList &getOutputSpecs() const = 0;
+    virtual const ParamList &getOutputSpecs() const = 0;
 
     /**
      * @returns A specification of filter properties of this task. Those properties exist both
      * before and after running the task and are usually modified by it.
      */
-    virtual const PropertyList &getFilterSpecs(const PropertyAliases &propMapping) const = 0;
+    virtual const ParamList &getFilterSpecs(const ParamAliases &propMapping) const = 0;
 
     /**
      * Adds all types used by this task (its properties and internal execution) to the typeSet
      * @param typeSet The output set to add types to
      */
     virtual void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                  const PropertyAliases &propMapping) const = 0;
+                                  const ParamAliases &propMapping) const = 0;
 
     /**
      * Adds all subtasks used by this task to the taskSet
      */
     virtual void extractSubTasks(std::set<const Task *> &taskSet,
-                                 const PropertyAliases &propMapping) const = 0;
+                                 const ParamAliases &propMapping) const = 0;
 
     /**
      * @returns The user-friendly name of the task

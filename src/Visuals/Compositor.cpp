@@ -14,7 +14,7 @@ namespace Vitrae
 {
 class Renderer;
 
-const PropertySpec Compositor::FRAME_STORE_TARGET_SPEC = {
+const ParamSpec Compositor::FRAME_STORE_TARGET_SPEC = {
     .name = "fs_display",
     .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>(),
 
@@ -30,14 +30,14 @@ std::size_t Compositor::memory_cost() const
     return sizeof(Compositor);
 }
 
-void Compositor::setPropertyAliases(const PropertyAliases &aliases)
+void Compositor::setParamAliases(const ParamAliases &aliases)
 {
     m_aliases = aliases;
 
     m_needsRebuild = true;
 }
 
-void Compositor::setDesiredProperties(const PropertyList &properties)
+void Compositor::setDesiredProperties(const ParamList &properties)
 {
     m_desiredProperties = properties;
 

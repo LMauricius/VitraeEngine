@@ -19,7 +19,7 @@ class ShaderTask : public Task
         std::stringstream &output;
         ComponentRoot &root;
         Renderer &renderer;
-        PropertyAliases &aliases;
+        ParamAliases &aliases;
     };
 
     virtual void outputDeclarationCode(BuildContext args) const = 0;

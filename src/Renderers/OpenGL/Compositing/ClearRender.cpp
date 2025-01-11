@@ -32,38 +32,38 @@ std::size_t OpenGLComposeClearRender::memory_cost() const
     return sizeof(*this);
 }
 
-const PropertyList &OpenGLComposeClearRender::getInputSpecs(const PropertyAliases &) const
+const ParamList &OpenGLComposeClearRender::getInputSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &OpenGLComposeClearRender::getOutputSpecs() const
+const ParamList &OpenGLComposeClearRender::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &OpenGLComposeClearRender::getFilterSpecs(const PropertyAliases &) const
+const ParamList &OpenGLComposeClearRender::getFilterSpecs(const ParamAliases &) const
 {
     return FILTER_SPECS;
 }
 
-const PropertyList &OpenGLComposeClearRender::getConsumingSpecs(const PropertyAliases &) const
+const ParamList &OpenGLComposeClearRender::getConsumingSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
 void OpenGLComposeClearRender::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                                const PropertyAliases &aliases) const
+                                                const ParamAliases &aliases) const
 {
-    for (const PropertyList *p_specs : {&m_outputSpecs, &FILTER_SPECS}) {
-        for (const PropertySpec &spec : p_specs->getSpecList()) {
+    for (const ParamList *p_specs : {&m_outputSpecs, &FILTER_SPECS}) {
+        for (const ParamSpec &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
     }
 }
 
 void OpenGLComposeClearRender::extractSubTasks(std::set<const Task *> &taskSet,
-                                               const PropertyAliases &aliases) const
+                                               const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }

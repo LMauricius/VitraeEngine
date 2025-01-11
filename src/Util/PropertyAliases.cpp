@@ -1,10 +1,10 @@
-#include "Vitrae/Params/PropertyAliases.hpp"
+#include "Vitrae/Params/ParamAliases.hpp"
 
 #include "Vitrae/Util/Hashing.hpp"
 
 namespace Vitrae {
 
-PropertyAliases::PropertyAliases() : m_parentPtrs{}, m_hash(0) {}
+ParamAliases::ParamAliases() : m_parentPtrs{}, m_hash(0) {}
 
 namespace
 {
@@ -21,7 +21,7 @@ StableMap<StringId, std::pair<StringId, String>> convertAliases(
 
 } // namespace
 
-PropertyAliases::PropertyAliases(const StableMap<StringId, String> &aliases)
+ParamAliases::ParamAliases(const StableMap<StringId, String> &aliases)
     : m_parentPtrs{}, m_localAliases(convertAliases(aliases)), m_hash(0)
 {
     for (const auto &[key, value] : m_localAliases) {
@@ -30,11 +30,11 @@ PropertyAliases::PropertyAliases(const StableMap<StringId, String> &aliases)
     }
 }
 
-PropertyAliases::PropertyAliases(std::initializer_list<std::pair<StringId, String>> aliases)
-    : PropertyAliases(StableMap<StringId, String>(aliases))
+ParamAliases::ParamAliases(std::initializer_list<std::pair<StringId, String>> aliases)
+    : ParamAliases(StableMap<StringId, String>(aliases))
 {}
 
-PropertyAliases::PropertyAliases(StableMap<StringId, String> &&aliases)
+ParamAliases::ParamAliases(StableMap<StringId, String> &&aliases)
     : m_parentPtrs{}, m_localAliases(convertAliases(aliases)), m_hash(0)
 {
     for (const auto &[key, value] : m_localAliases) {
@@ -43,7 +43,7 @@ PropertyAliases::PropertyAliases(StableMap<StringId, String> &&aliases)
     }
 }
 
-PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentPtrs)
+ParamAliases::ParamAliases(std::span<const ParamAliases *const> parentPtrs)
     : m_parentPtrs(parentPtrs.begin(), parentPtrs.end()), m_hash(0)
 {
     for (const auto *p_parent : parentPtrs) {
@@ -51,8 +51,8 @@ PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentP
     }
 }
 
-PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
-                                 const StableMap<StringId, String> &aliases)
+ParamAliases::ParamAliases(std::span<const ParamAliases *const> parentPtrs,
+                           const StableMap<StringId, String> &aliases)
     : m_parentPtrs(parentPtrs.begin(), parentPtrs.end()), m_localAliases(convertAliases(aliases)),
       m_hash(0)
 {
@@ -66,8 +66,8 @@ PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentP
     }
 }
 
-PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentPtrs,
-                                 StableMap<StringId, String> &&aliases)
+ParamAliases::ParamAliases(std::span<const ParamAliases *const> parentPtrs,
+                           StableMap<StringId, String> &&aliases)
     : m_parentPtrs(parentPtrs.begin(), parentPtrs.end()), m_localAliases(convertAliases(aliases)),
       m_hash(0)
 {
@@ -81,7 +81,7 @@ PropertyAliases::PropertyAliases(std::span<const PropertyAliases *const> parentP
     }
 }
 
-StringId PropertyAliases::choiceFor(StringId target) const
+StringId ParamAliases::choiceFor(StringId target) const
 {
     StringId choice = target;
 
@@ -93,7 +93,7 @@ StringId PropertyAliases::choiceFor(StringId target) const
     return choice;
 }
 
-String PropertyAliases::choiceStringFor(String target) const
+String ParamAliases::choiceStringFor(String target) const
 {
     String choice = target;
 
@@ -105,7 +105,7 @@ String PropertyAliases::choiceStringFor(String target) const
     return choice;
 }
 
-std::optional<StringId> PropertyAliases::directChoiceFor(StringId key) const
+std::optional<StringId> ParamAliases::directChoiceFor(StringId key) const
 {
     auto it = m_localAliases.find(key);
     if (it != m_localAliases.end()) {
@@ -121,7 +121,7 @@ std::optional<StringId> PropertyAliases::directChoiceFor(StringId key) const
     }
 }
 
-std::optional<String> PropertyAliases::directChoiceStringFor(StringId key) const
+std::optional<String> ParamAliases::directChoiceStringFor(StringId key) const
 {
     auto it = m_localAliases.find(key);
     if (it != m_localAliases.end()) {
@@ -137,7 +137,7 @@ std::optional<String> PropertyAliases::directChoiceStringFor(StringId key) const
     }
 }
 
-void PropertyAliases::extractAliasStrings(std::unordered_map<StringId, String> &aliases) const
+void ParamAliases::extractAliasStrings(std::unordered_map<StringId, String> &aliases) const
 {
     std::unordered_set<StringId> targets;
     extractAliasProxyIds(targets);
@@ -154,7 +154,7 @@ void PropertyAliases::extractAliasStrings(std::unordered_map<StringId, String> &
     }
 }
 
-void PropertyAliases::extractAliasNameIds(std::unordered_map<StringId, StringId> &aliases) const
+void ParamAliases::extractAliasNameIds(std::unordered_map<StringId, StringId> &aliases) const
 {
     std::unordered_set<StringId> targets;
     extractAliasProxyIds(targets);
@@ -171,7 +171,7 @@ void PropertyAliases::extractAliasNameIds(std::unordered_map<StringId, StringId>
     }
 }
 
-void PropertyAliases::extractAliasProxyIds(std::unordered_set<StringId> &targets) const
+void ParamAliases::extractAliasProxyIds(std::unordered_set<StringId> &targets) const
 {
     for (const auto &[key, value] : m_localAliases) {
         targets.insert(key);

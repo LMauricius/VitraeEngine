@@ -2,7 +2,7 @@
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
-#include "Vitrae/Params/PropertyList.hpp"
+#include "Vitrae/Params/ParamList.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
@@ -53,41 +53,41 @@ std::size_t OpenGLComposeCompute::memory_cost() const
     return sizeof(*this);
 }
 
-const PropertyList &OpenGLComposeCompute::getInputSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeCompute::getInputSpecs(const ParamAliases &aliases) const
 {
     return getProgramPerAliases(aliases).inputSpecs;
 }
 
-const PropertyList &OpenGLComposeCompute::getOutputSpecs() const
+const ParamList &OpenGLComposeCompute::getOutputSpecs() const
 {
     return m_params.outputSpecs;
 }
 
-const PropertyList &OpenGLComposeCompute::getFilterSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeCompute::getFilterSpecs(const ParamAliases &aliases) const
 {
     return getProgramPerAliases(aliases).filterSpecs;
 }
 
-const PropertyList &OpenGLComposeCompute::getConsumingSpecs(const PropertyAliases &aliases) const
+const ParamList &OpenGLComposeCompute::getConsumingSpecs(const ParamAliases &aliases) const
 {
     return getProgramPerAliases(aliases).consumeSpecs;
 }
 
 void OpenGLComposeCompute::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                            const PropertyAliases &aliases) const
+                                            const ParamAliases &aliases) const
 {
     const auto &specs = getProgramPerAliases(aliases);
 
-    for (const PropertyList *p_specs :
+    for (const ParamList *p_specs :
          {&specs.inputSpecs, &m_params.outputSpecs, &specs.filterSpecs, &specs.consumeSpecs}) {
-        for (const PropertySpec &spec : p_specs->getSpecList()) {
+        for (const ParamSpec &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
     }
 }
 
 void OpenGLComposeCompute::extractSubTasks(std::set<const Task *> &taskSet,
-                                           const PropertyAliases &aliases) const
+                                           const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }
@@ -119,7 +119,7 @@ void OpenGLComposeCompute::run(RenderComposeContext args) const
         }
 
         for (auto p_specs :
-             {&m_params.outputSpecs, (const PropertyList *)&programPerAliases.filterSpecs}) {
+             {&m_params.outputSpecs, (const ParamList *)&programPerAliases.filterSpecs}) {
             for (auto nameId : p_specs->getSpecNameIds()) {
                 if (!args.properties.has(nameId)) {
                     needsToRun = true;
@@ -194,7 +194,7 @@ StringView OpenGLComposeCompute::getFriendlyName() const
 }
 
 OpenGLComposeCompute::ProgramPerAliases &OpenGLComposeCompute::getProgramPerAliases(
-    const PropertyAliases &aliases) const
+    const ParamAliases &aliases) const
 {
     if (auto it = m_programPerAliasHash.find(aliases.hash()); it != m_programPerAliasHash.end()) {
         return *(*it).second;

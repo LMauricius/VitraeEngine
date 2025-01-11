@@ -12,7 +12,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
       m_outputDepthTextureName(params.outputDepthTextureName),
       m_outputColorTextureNameId(params.outputColorTextureName),
       m_outputDepthTextureNameId(params.outputDepthTextureName),
-      m_outputTexturePropertySpecs(params.outputs), m_size(params.size),
+      m_outputTextureParamSpecs(params.outputs), m_size(params.size),
       m_channelType(params.channelType), m_horWrap(params.horWrap), m_verWrap(params.verWrap),
       m_minFilter(params.minFilter), m_magFilter(params.magFilter), m_useMipMaps(params.useMipMaps),
       m_borderColor(params.borderColor)
@@ -33,7 +33,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
         });
         m_friendlyName += String("\n- depth");
     }
-    for (auto &spec : m_outputTexturePropertySpecs) {
+    for (auto &spec : m_outputTextureParamSpecs) {
         m_outputSpecs.insert_back({
             spec.textureName,
             Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
@@ -58,38 +58,38 @@ std::size_t ComposeFrameToTexture::memory_cost() const
     return sizeof(ComposeFrameToTexture);
 }
 
-const PropertyList &ComposeFrameToTexture::getInputSpecs(const PropertyAliases &) const
+const ParamList &ComposeFrameToTexture::getInputSpecs(const ParamAliases &) const
 {
     return m_inputSpecs;
 }
 
-const PropertyList &ComposeFrameToTexture::getOutputSpecs() const
+const ParamList &ComposeFrameToTexture::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &ComposeFrameToTexture::getFilterSpecs(const PropertyAliases &) const
+const ParamList &ComposeFrameToTexture::getFilterSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &ComposeFrameToTexture::getConsumingSpecs(const PropertyAliases &) const
+const ParamList &ComposeFrameToTexture::getConsumingSpecs(const ParamAliases &) const
 {
     return m_consumeSpecs;
 }
 
 void ComposeFrameToTexture::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                             const PropertyAliases &aliases) const
+                                             const ParamAliases &aliases) const
 {
-    for (const PropertyList *p_specs : {&m_inputSpecs, &m_outputSpecs, &m_consumeSpecs}) {
-        for (const PropertySpec &spec : p_specs->getSpecList()) {
+    for (const ParamList *p_specs : {&m_inputSpecs, &m_outputSpecs, &m_consumeSpecs}) {
+        for (const ParamSpec &spec : p_specs->getSpecList()) {
             typeSet.insert(&spec.typeInfo);
         }
     }
 }
 
 void ComposeFrameToTexture::extractSubTasks(std::set<const Task *> &taskSet,
-                                            const PropertyAliases &aliases) const
+                                            const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }
@@ -149,7 +149,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
         frameParams.p_depthTexture = p_texture;
         ctx.properties.set(m_outputDepthTextureNameId, p_texture);
     }
-    for (auto &spec : m_outputTexturePropertySpecs) {
+    for (auto &spec : m_outputTextureParamSpecs) {
         auto p_texture =
             textureManager
                 .register_asset({Texture::EmptyParams{.root = m_root,

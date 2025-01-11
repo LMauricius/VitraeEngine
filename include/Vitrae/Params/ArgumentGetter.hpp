@@ -2,7 +2,7 @@
 
 #include "Vitrae/Dynamic/ArgumentScope.hpp"
 #include "Vitrae/Dynamic/VariantScope.hpp"
-#include "Vitrae/Params/PropertySpec.hpp"
+#include "Vitrae/Params/ParamSpec.hpp"
 #include "Vitrae/Util/Hashing.hpp"
 
 #include <variant>
@@ -14,7 +14,7 @@ namespace Vitrae
  * Object that either contains a fixed value, or references a property by its nameid.
  * It can dynamically retrieve the value if referenced by the name from the surrounding scope.
  */
-template <class T> class PropertyGetter
+template <class T> class ArgumentGetter
 {
     struct DynamicSpec
     {
@@ -25,16 +25,16 @@ template <class T> class PropertyGetter
     std::variant<DynamicSpec, T> m_nameOrValue;
 
   public:
-    PropertyGetter(String name) : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name, name}) {}
-    PropertyGetter(const T &value) : m_nameOrValue(std::in_place_index<1>, value) {}
-    PropertyGetter(T &&value) : m_nameOrValue(std::in_place_index<1>, std::move(value)) {}
+    ArgumentGetter(String name) : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name, name}) {}
+    ArgumentGetter(const T &value) : m_nameOrValue(std::in_place_index<1>, value) {}
+    ArgumentGetter(T &&value) : m_nameOrValue(std::in_place_index<1>, std::move(value)) {}
 
-    PropertyGetter &operator=(String name)
+    ArgumentGetter &operator=(String name)
     {
         m_nameOrValue.template emplace<0>(DynamicSpec{name, name});
         return *this;
     }
-    PropertyGetter &operator=(const T &value)
+    ArgumentGetter &operator=(const T &value)
     {
         m_nameOrValue.template emplace<1>(value);
         return *this;
@@ -83,17 +83,17 @@ template <class T> class PropertyGetter
     bool isFixed() const { return m_nameOrValue.index() == 1; }
 
     /**
-     * @returns PropertySpec for a dynamic property
+     * @returns ParamSpec for a dynamic property
      * @note throws std::bad_variant_access if isFixed()
      */
-    PropertySpec getSpec() const
+    ParamSpec getSpec() const
     {
-        return PropertySpec{.name = std::get<0>(m_nameOrValue).name,
-                            .typeInfo = Variant::getTypeInfo<T>()};
+        return ParamSpec{.name = std::get<0>(m_nameOrValue).name,
+                         .typeInfo = Variant::getTypeInfo<T>()};
     }
 
     /**
-     * @returns PropertySpec for a dynamic property
+     * @returns ParamSpec for a dynamic property
      * @note throws std::bad_variant_access if not isFixed()
      */
     const T &getFixedValue() const { return std::get<1>(m_nameOrValue); }
@@ -103,9 +103,9 @@ template <class T> class PropertyGetter
 
 namespace std
 {
-template <class T> struct hash<Vitrae::PropertyGetter<T>>
+template <class T> struct hash<Vitrae::ArgumentGetter<T>>
 {
-    size_t operator()(const Vitrae::PropertyGetter<T> &p) const
+    size_t operator()(const Vitrae::ArgumentGetter<T> &p) const
     {
         if (p.isFixed())
             return Vitrae::combinedHashes<2>({{0, hash<T>()(p.getFixedValue())}});

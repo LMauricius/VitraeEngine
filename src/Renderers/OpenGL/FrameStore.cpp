@@ -1,6 +1,6 @@
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/ComponentRoot.hpp"
-#include "Vitrae/Params/PropertyList.hpp"
+#include "Vitrae/Params/ParamList.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
 
@@ -25,7 +25,7 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
     glBindFramebuffer(GL_FRAMEBUFFER, glFramebufferId);
 
     int width, height;
-    std::vector<PropertySpec> renderComponents;
+    std::vector<ParamSpec> renderComponents;
     std::size_t colorAttachmentUnusedIndex = 0;
 
     if (params.p_depthTexture.has_value()) {
@@ -46,8 +46,8 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
         height = p_texture->getSize().y;
 
         renderComponents.emplace_back(
-            PropertySpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
-                         .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT});
+            ParamSpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
+                      .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT});
 
         colorAttachmentUnusedIndex++;
     }
@@ -72,9 +72,8 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
     glObjectLabel(GL_FRAMEBUFFER, glFramebufferId, glLabel.size(), glLabel.data());
 
     m_contextSwitcher = FramebufferContextSwitcher{width, height, glFramebufferId};
-    mp_renderComponents =
-        dynasma::makeStandalone<PropertyList, std::vector<Vitrae::PropertySpec> &&>(
-            std::move(renderComponents));
+    mp_renderComponents = dynasma::makeStandalone<ParamList, std::vector<Vitrae::ParamSpec> &&>(
+        std::move(renderComponents));
 }
 
 OpenGLFrameStore::OpenGLFrameStore(const WindowDisplayParams &params)
@@ -88,10 +87,9 @@ OpenGLFrameStore::OpenGLFrameStore(const WindowDisplayParams &params)
     glfwSetWindowTitle(window, params.title.c_str());
 
     // setup members
-    mp_renderComponents =
-        dynasma::makeStandalone<PropertyList, std::span<const Vitrae::PropertySpec>>(
-            {{PropertySpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
-                           .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT}}});
+    mp_renderComponents = dynasma::makeStandalone<ParamList, std::span<const Vitrae::ParamSpec>>(
+        {{ParamSpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
+                    .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT}}});
     m_contextSwitcher = WindowContextSwitcher{window, params.onClose, params.onDrag};
 
     // register callbacks
@@ -144,7 +142,7 @@ glm::vec2 OpenGLFrameStore::getSize() const
                       m_contextSwitcher);
 }
 
-dynasma::FirmPtr<const PropertyList> OpenGLFrameStore::getRenderComponents() const
+dynasma::FirmPtr<const ParamList> OpenGLFrameStore::getRenderComponents() const
 {
     return mp_renderComponents;
 }

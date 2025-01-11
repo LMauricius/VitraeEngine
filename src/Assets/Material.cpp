@@ -18,7 +18,7 @@ Material::Material(const AssimpLoadParams &params)
         aiMode = aiShadingMode_Phong;
     }
 
-    m_aliases = params.root.getAiMaterialPropertyAliases(aiMode);
+    m_aliases = params.root.getAiMaterialParamAliases(aiMode);
 
     // Get all textures
     for (auto &textureInfo : params.root.getAiMaterialTextureInfos()) {
@@ -60,7 +60,7 @@ std::size_t Material::memory_cost() const
     return sizeof(Material);
 }
 
-void Material::setPropertyAliases(const PropertyAliases &aliases)
+void Material::setParamAliases(const ParamAliases &aliases)
 {
     m_aliases = aliases;
 }
@@ -74,7 +74,7 @@ void Material::setProperty(StringId key, Variant &&value)
 {
     m_properties[key] = std::move(value);
 }
-const PropertyAliases &Material::getPropertyAliases() const
+const ParamAliases &Material::getParamAliases() const
 {
     return m_aliases;
 }

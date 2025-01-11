@@ -131,13 +131,12 @@ std::size_t ComponentRoot::cleanMemoryPools(std::size_t bytenum)
     return totalFreed;
 }
 
-void ComponentRoot::addAiMaterialPropertyAliases(aiShadingMode aiMode,
-                                                 const PropertyAliases &aliases)
+void ComponentRoot::addAiMaterialParamAliases(aiShadingMode aiMode, const ParamAliases &aliases)
 {
     mAiMaterialAliases[aiMode] = aliases;
 }
 
-const PropertyAliases &ComponentRoot::getAiMaterialPropertyAliases(aiShadingMode aiMode) const
+const ParamAliases &ComponentRoot::getAiMaterialParamAliases(aiShadingMode aiMode) const
 {
     return mAiMaterialAliases.at(aiMode);
 }

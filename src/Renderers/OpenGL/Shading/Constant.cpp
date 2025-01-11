@@ -14,36 +14,36 @@ std::size_t OpenGLShaderConstant::memory_cost() const
     return 1;
 }
 
-const PropertyList &OpenGLShaderConstant::getInputSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderConstant::getInputSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &OpenGLShaderConstant::getOutputSpecs() const
+const ParamList &OpenGLShaderConstant::getOutputSpecs() const
 {
     return m_outputSpecs;
 }
 
-const PropertyList &OpenGLShaderConstant::getFilterSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderConstant::getFilterSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
-const PropertyList &OpenGLShaderConstant::getConsumingSpecs(const PropertyAliases &) const
+const ParamList &OpenGLShaderConstant::getConsumingSpecs(const ParamAliases &) const
 {
     return EMPTY_PROPERTY_LIST;
 }
 
 void OpenGLShaderConstant::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                            const PropertyAliases &aliases) const
+                                            const ParamAliases &aliases) const
 {
     // We have only one output spec
-    const PropertySpec &outputSpec = m_outputSpecs.getSpecList().front();
+    const ParamSpec &outputSpec = m_outputSpecs.getSpecList().front();
 
     typeSet.insert(&outputSpec.typeInfo);
 }
 void OpenGLShaderConstant::extractSubTasks(std::set<const Task *> &taskSet,
-                                           const PropertyAliases &aliases) const
+                                           const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }
@@ -54,7 +54,7 @@ void OpenGLShaderConstant::outputDefinitionCode(BuildContext args) const {}
 void OpenGLShaderConstant::outputUsageCode(BuildContext args) const
 {
     // We have only one output spec
-    const PropertySpec &outputSpec = m_outputSpecs.getSpecList().front();
+    const ParamSpec &outputSpec = m_outputSpecs.getSpecList().front();
 
     OpenGLRenderer &renderer = static_cast<OpenGLRenderer &>(args.renderer);
     const GLTypeSpec &glTypeSpec = renderer.getTypeConversion(outputSpec.typeInfo).glTypeSpec;

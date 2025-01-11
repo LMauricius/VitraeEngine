@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Data/Typedefs.hpp"
-#include "Vitrae/Params/PropertySpec.hpp"
+#include "Vitrae/Params/ParamSpec.hpp"
 
 #include "dynasma/managers/abstract.hpp"
 #include "dynasma/pointer.hpp"
@@ -14,7 +14,7 @@ namespace Vitrae
 {
 class ComponentRoot;
 class Texture;
-class PropertyList;
+class ParamList;
 
 /**
  * A FrameStore is a single image-like resource
@@ -24,7 +24,7 @@ class FrameStore : public dynasma::PolymorphicBase
   public:
     struct OutputTextureSpec
     {
-        PropertySpec fragmentSpec;
+        ParamSpec fragmentSpec;
         dynasma::FirmPtr<Texture> p_texture;
     };
 
@@ -53,7 +53,7 @@ class FrameStore : public dynasma::PolymorphicBase
     virtual void resize(glm::vec2 size) = 0;
 
     virtual glm::vec2 getSize() const = 0;
-    virtual dynasma::FirmPtr<const PropertyList> getRenderComponents() const = 0;
+    virtual dynasma::FirmPtr<const ParamList> getRenderComponents() const = 0;
 
     virtual void sync() = 0;
 };

@@ -29,12 +29,12 @@ class ComposeAdaptTasks : public ComposeTask, public PipelineContainer<ComposeTa
         /**
          * Aliases specific for this adaptor
          */
-        PropertyAliases adaptorAliases;
+        ParamAliases adaptorAliases;
 
         /**
          * Outputs we desire. Some outputs could become filter properties with a different name
          */
-        PropertyList desiredOutputs;
+        ParamList desiredOutputs;
 
         /**
          * Human readable name
@@ -47,23 +47,21 @@ class ComposeAdaptTasks : public ComposeTask, public PipelineContainer<ComposeTa
 
     std::size_t memory_cost() const override;
 
-    const PropertyList &getInputSpecs(const PropertyAliases &) const override;
-    const PropertyList &getOutputSpecs() const override;
-    const PropertyList &getFilterSpecs(const PropertyAliases &) const override;
-    const PropertyList &getConsumingSpecs(const PropertyAliases &) const override;
+    const ParamList &getInputSpecs(const ParamAliases &) const override;
+    const ParamList &getOutputSpecs() const override;
+    const ParamList &getFilterSpecs(const ParamAliases &) const override;
+    const ParamList &getConsumingSpecs(const ParamAliases &) const override;
 
     void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                          const PropertyAliases &aliases) const override;
+                          const ParamAliases &aliases) const override;
     void extractSubTasks(std::set<const Task *> &taskSet,
-                         const PropertyAliases &aliases) const override;
+                         const ParamAliases &aliases) const override;
 
-    const Pipeline<ComposeTask> &getContainedPipeline(
-        const PropertyAliases &aliases) const override;
+    const Pipeline<ComposeTask> &getContainedPipeline(const ParamAliases &aliases) const override;
 
-    PropertyAliases constructContainedPipelineAliases(
-        const PropertyAliases &aliases) const override;
+    ParamAliases constructContainedPipelineAliases(const ParamAliases &aliases) const override;
 
-    void rebuildContainedPipeline(const PropertyAliases &aliases) const override;
+    void rebuildContainedPipeline(const ParamAliases &aliases) const override;
 
     void run(RenderComposeContext ctx) const override;
     void prepareRequiredLocalAssets(RenderComposeContext ctx) const override;
@@ -82,7 +80,7 @@ class ComposeAdaptTasks : public ComposeTask, public PipelineContainer<ComposeTa
 
         Pipeline<ComposeTask> pipeline;
 
-        PropertyList inputSpecs, filterSpecs, consumeSpecs;
+        ParamList inputSpecs, filterSpecs, consumeSpecs;
 
         AdaptorPerAliases() = delete;
         AdaptorPerAliases(AdaptorPerAliases &&) = default;
@@ -90,16 +88,16 @@ class ComposeAdaptTasks : public ComposeTask, public PipelineContainer<ComposeTa
         AdaptorPerAliases &operator=(AdaptorPerAliases &&) = default;
         AdaptorPerAliases &operator=(const AdaptorPerAliases &) = default;
 
-        AdaptorPerAliases(const PropertyAliases &adaptorAliases, const PropertyList &desiredOutputs,
-                          const PropertyAliases &externalAliases,
+        AdaptorPerAliases(const ParamAliases &adaptorAliases, const ParamList &desiredOutputs,
+                          const ParamAliases &externalAliases,
                           const MethodCollection &methodCollection, StringView friendlyName);
     };
 
     mutable StableMap<std::size_t, std::unique_ptr<AdaptorPerAliases>> m_adaptorPerSelectionHash;
 
-    const AdaptorPerAliases &getAdaptorPerAliases(const PropertyAliases &externalAliases,
+    const AdaptorPerAliases &getAdaptorPerAliases(const ParamAliases &externalAliases,
                                                   const MethodCollection &methodCollection) const;
-    void forgetAdaptorPerAliases(const PropertyAliases &externalAliases) const;
+    void forgetAdaptorPerAliases(const ParamAliases &externalAliases) const;
 };
 
 struct ComposeAdaptTasksKeeperSeed {

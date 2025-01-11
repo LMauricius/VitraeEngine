@@ -4,7 +4,7 @@
 #include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
-#include "Vitrae/Params/PropertyList.hpp"
+#include "Vitrae/Params/ParamList.hpp"
 
 #include "MMeter.h"
 
@@ -13,9 +13,9 @@
 namespace Vitrae
 {
 
-CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(const PropertyAliases &aliases,
+CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(const ParamAliases &aliases,
                                                              String vertexPositionOutputName,
-                                                             const PropertyList &fragmentOutputs,
+                                                             const ParamList &fragmentOutputs,
                                                              ComponentRoot &root)
     : m_aliases(aliases), m_vertexPositionOutputName(vertexPositionOutputName),
       m_fragmentOutputs(fragmentOutputs), mp_root(&root),
@@ -24,9 +24,9 @@ CompiledGLSLShader::SurfaceShaderParams::SurfaceShaderParams(const PropertyAlias
 {}
 
 CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
-    ComponentRoot &root, const PropertyAliases &aliases, const PropertyList &desiredResults,
-    PropertyGetter<std::uint32_t> invocationCountX, PropertyGetter<std::uint32_t> invocationCountY,
-    PropertyGetter<std::uint32_t> invocationCountZ, glm::uvec3 groupSize,
+    ComponentRoot &root, const ParamAliases &aliases, const ParamList &desiredResults,
+    ArgumentGetter<std::uint32_t> invocationCountX, ArgumentGetter<std::uint32_t> invocationCountY,
+    ArgumentGetter<std::uint32_t> invocationCountZ, glm::uvec3 groupSize,
     bool allowOutOfBoundsCompute)
     : mp_root(&root), m_aliases(aliases), m_desiredResults(desiredResults),
       m_invocationCountX(invocationCountX), m_invocationCountY(invocationCountY),
@@ -35,9 +35,9 @@ CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
       m_hash(combinedHashes<9>({{
           aliases.hash(),
           desiredResults.getHash(),
-          std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountX),
-          std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountY),
-          std::hash<PropertyGetter<std::uint32_t>>{}(invocationCountZ),
+          std::hash<ArgumentGetter<std::uint32_t>>{}(invocationCountX),
+          std::hash<ArgumentGetter<std::uint32_t>>{}(invocationCountY),
+          std::hash<ArgumentGetter<std::uint32_t>>{}(invocationCountZ),
           groupSize.x,
           groupSize.y,
           groupSize.z,
@@ -48,7 +48,7 @@ CompiledGLSLShader::ComputeShaderParams::ComputeShaderParams(
 CompiledGLSLShader::CompiledGLSLShader(const SurfaceShaderParams &params)
     : CompiledGLSLShader(
           {{
-              CompilationSpec{.aliases = PropertyAliases(
+              CompilationSpec{.aliases = ParamAliases(
                                   std::initializer_list{
                                       &params.getAliases(),
                                   },
@@ -57,7 +57,7 @@ CompiledGLSLShader::CompiledGLSLShader(const SurfaceShaderParams &params)
                                   }),
                               .outVarPrefix = "vert_",
                               .shaderType = GL_VERTEX_SHADER},
-              CompilationSpec{.aliases = PropertyAliases(std::initializer_list{
+              CompilationSpec{.aliases = ParamAliases(std::initializer_list{
                                   &params.getAliases(),
                               }),
                               .outVarPrefix = "frag_",
@@ -70,7 +70,7 @@ CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
     : CompiledGLSLShader(
           {{
               CompilationSpec{
-                  .aliases = PropertyAliases(std::initializer_list{
+                  .aliases = ParamAliases(std::initializer_list{
                       &params.getAliases(),
                   }),
                   .outVarPrefix = "comp_",
@@ -89,7 +89,7 @@ CompiledGLSLShader::CompiledGLSLShader(const ComputeShaderParams &params)
 {}
 
 CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationSpecs,
-                                       ComponentRoot &root, const PropertyList &desiredOutputs)
+                                       ComponentRoot &root, const ParamList &desiredOutputs)
 {
     MMETER_SCOPE_PROFILER("CompiledGLSLShader");
 
@@ -132,7 +132,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
     // generate pipelines, from the end result to the first pipeline
     {
-        PropertyList passedVarSpecs = desiredOutputs;
+        ParamList passedVarSpecs = desiredOutputs;
 
         for (auto p_helper : invHelperOrder) {
             // stage-specific required outputs
@@ -218,7 +218,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         }
 
         // Input & consuming specs
-        for (const PropertyList *p_specs : {
+        for (const ParamList *p_specs : {
                  &p_helper->pipeline.inputSpecs,
                  &p_helper->pipeline.consumingSpecs,
                  &p_helper->pipeline.filterSpecs,
@@ -278,13 +278,13 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         for (auto p_helper : helperOrder) {
 
             // Property storage choosing
-            PropertyList stageUniformList;
-            PropertyList stageOpaqueBindingList;
-            PropertyList stageUBOList;
-            PropertyList stageSSBOList;
-            PropertyList stageInputList;
-            PropertyList stageOutputList;
-            PropertyList stageLocalList;
+            ParamList stageUniformList;
+            ParamList stageOpaqueBindingList;
+            ParamList stageUBOList;
+            ParamList stageSSBOList;
+            ParamList stageInputList;
+            ParamList stageOutputList;
+            ParamList stageLocalList;
             std::map<StringId, String> tobeStageAliases;
             std::vector<std::pair<String, String>> initialPipethroughList;
 
@@ -292,7 +292,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 MMETER_SCOPE_PROFILER("Property storage choosing");
 
                 // Separate source values - Input & consuming & filter & pipethrough specs
-                for (const PropertyList *p_specs : {
+                for (const ParamList *p_specs : {
                          &p_helper->pipeline.inputSpecs,
                          &p_helper->pipeline.consumingSpecs,
                          &p_helper->pipeline.filterSpecs,
@@ -466,7 +466,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             // === code output ===
 
             std::stringstream ss;
-            PropertyAliases stageAliases({{&p_helper->p_compSpec->aliases}},
+            ParamAliases stageAliases({{&p_helper->p_compSpec->aliases}},
                                          StableMap<StringId, String>(std::move(tobeStageAliases)));
             ShaderTask::BuildContext context{
                 .output = ss,

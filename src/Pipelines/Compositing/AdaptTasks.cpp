@@ -17,7 +17,7 @@ std::size_t ComposeAdaptTasks::memory_cost() const
     return sizeof(ComposeAdaptTasks);
 }
 
-const PropertyList &ComposeAdaptTasks::getInputSpecs(const PropertyAliases &externalAliases) const
+const ParamList &ComposeAdaptTasks::getInputSpecs(const ParamAliases &externalAliases) const
 {
     if (auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
@@ -27,12 +27,12 @@ const PropertyList &ComposeAdaptTasks::getInputSpecs(const PropertyAliases &exte
     }
 }
 
-const PropertyList &ComposeAdaptTasks::getOutputSpecs() const
+const ParamList &ComposeAdaptTasks::getOutputSpecs() const
 {
     return m_params.desiredOutputs;
 }
 
-const PropertyList &ComposeAdaptTasks::getFilterSpecs(const PropertyAliases &externalAliases) const
+const ParamList &ComposeAdaptTasks::getFilterSpecs(const ParamAliases &externalAliases) const
 {
     if (auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
@@ -42,8 +42,7 @@ const PropertyList &ComposeAdaptTasks::getFilterSpecs(const PropertyAliases &ext
     }
 }
 
-const PropertyList &ComposeAdaptTasks::getConsumingSpecs(
-    const PropertyAliases &externalAliases) const
+const ParamList &ComposeAdaptTasks::getConsumingSpecs(const ParamAliases &externalAliases) const
 {
     if (auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
@@ -54,15 +53,15 @@ const PropertyList &ComposeAdaptTasks::getConsumingSpecs(
 }
 
 void ComposeAdaptTasks::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                                         const PropertyAliases &aliases) const
+                                         const ParamAliases &aliases) const
 {
     if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
         const auto &specs = *(*it).second;
 
-        for (const PropertyList *p_specs : {&specs.inputSpecs, &m_params.desiredOutputs,
-                                            &specs.filterSpecs, &specs.consumeSpecs}) {
-            for (const PropertySpec &spec : p_specs->getSpecList()) {
+        for (const ParamList *p_specs : {&specs.inputSpecs, &m_params.desiredOutputs,
+                                         &specs.filterSpecs, &specs.consumeSpecs}) {
+            for (const ParamSpec &spec : p_specs->getSpecList()) {
                 typeSet.insert(&spec.typeInfo);
             }
         }
@@ -70,13 +69,13 @@ void ComposeAdaptTasks::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
 }
 
 void ComposeAdaptTasks::extractSubTasks(std::set<const Task *> &taskSet,
-                                        const PropertyAliases &aliases) const
+                                        const ParamAliases &aliases) const
 {
     taskSet.insert(this);
 }
 
 const Pipeline<ComposeTask> &ComposeAdaptTasks::getContainedPipeline(
-    const PropertyAliases &aliases) const
+    const ParamAliases &aliases) const
 {
     if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
@@ -86,25 +85,24 @@ const Pipeline<ComposeTask> &ComposeAdaptTasks::getContainedPipeline(
     throw std::runtime_error{"Adaptor not found"};
 }
 
-PropertyAliases ComposeAdaptTasks::constructContainedPipelineAliases(
-    const PropertyAliases &aliases) const
+ParamAliases ComposeAdaptTasks::constructContainedPipelineAliases(const ParamAliases &aliases) const
 {
     if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
-        return PropertyAliases({{&m_params.adaptorAliases, &aliases}});
+        return ParamAliases({{&m_params.adaptorAliases, &aliases}});
     }
 
     throw std::runtime_error{"Adaptor not found"};
 }
 
-void ComposeAdaptTasks::rebuildContainedPipeline(const PropertyAliases &aliases) const
+void ComposeAdaptTasks::rebuildContainedPipeline(const ParamAliases &aliases) const
 {
     if (auto it = m_adaptorPerSelectionHash.find(aliases.hash());
         it != m_adaptorPerSelectionHash.end()) {
 
         std::unique_ptr<AdaptorPerAliases> p_adaptor = std::move((*it).second);
         m_adaptorPerSelectionHash.erase(it);
-        PropertyAliases subAliases({{&m_params.adaptorAliases, &aliases}});
+        ParamAliases subAliases({{&m_params.adaptorAliases, &aliases}});
 
         for (auto p_pipeitem : p_adaptor->pipeline.items) {
             if (auto p_container = dynamic_cast<const PipelineContainer *>(&*p_pipeitem);
@@ -146,8 +144,8 @@ void ComposeAdaptTasks::run(RenderComposeContext ctx) const
                                             &adaptor.pipeline.usedSelection);
 
     // construct the encapsulated context
-    const PropertyAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
-    PropertyAliases subAliases(aliasArray);
+    const ParamAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
+    ParamAliases subAliases(aliasArray);
     RenderComposeContext subCtx{
         .properties = encapsulatedArgumentScope,
         .root = ctx.root,
@@ -208,8 +206,8 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
                                             &adaptor.pipeline.usedSelection);
 
     // construct the encapsulated context
-    const PropertyAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
-    PropertyAliases subAliases(aliasArray);
+    const ParamAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
+    ParamAliases subAliases(aliasArray);
     RenderComposeContext subCtx{
         .properties = encapsulatedArgumentScope,
         .root = ctx.root,
@@ -266,7 +264,7 @@ StringView ComposeAdaptTasks::getFriendlyName() const
 }
 
 const ComposeAdaptTasks::AdaptorPerAliases &ComposeAdaptTasks::getAdaptorPerAliases(
-    const PropertyAliases &externalAliases, const MethodCollection &methodCollection) const
+    const ParamAliases &externalAliases, const MethodCollection &methodCollection) const
 {
     auto it = m_adaptorPerSelectionHash.find(externalAliases.hash());
     if (it == m_adaptorPerSelectionHash.end()) {
@@ -282,18 +280,18 @@ const ComposeAdaptTasks::AdaptorPerAliases &ComposeAdaptTasks::getAdaptorPerAlia
     return *(*it).second;
 }
 
-void ComposeAdaptTasks::forgetAdaptorPerAliases(const PropertyAliases &externalAliases) const
+void ComposeAdaptTasks::forgetAdaptorPerAliases(const ParamAliases &externalAliases) const
 {
     m_adaptorPerSelectionHash.erase(externalAliases.hash());
 }
 
-ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &adaptorAliases,
-                                                        const PropertyList &desiredOutputs,
-                                                        const PropertyAliases &externalAliases,
+ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adaptorAliases,
+                                                        const ParamList &desiredOutputs,
+                                                        const ParamAliases &externalAliases,
                                                         const MethodCollection &methodCollection,
                                                         StringView friendlyName)
 {
-    PropertyAliases subAliases({{&adaptorAliases, &externalAliases}});
+    ParamAliases subAliases({{&adaptorAliases, &externalAliases}});
 
     // All desired outputs must be aliased
     for (auto desiredSpec : desiredOutputs.getSpecList()) {
@@ -338,13 +336,13 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const PropertyAliases &a
         file.close();
     }
 
-    using ListConvPair = std::pair<const PropertyList *, PropertyList *>;
+    using ListConvPair = std::pair<const ParamList *, ParamList *>;
 
     for (auto [p_specs, p_targetSpecs] : {ListConvPair{&pipeline.inputSpecs, &inputSpecs},
                                           ListConvPair{&pipeline.filterSpecs, &filterSpecs},
                                           ListConvPair{&pipeline.consumingSpecs, &consumeSpecs}}) {
         for (auto &spec : p_specs->getSpecList()) {
-            p_targetSpecs->insert_back(PropertySpec{
+            p_targetSpecs->insert_back(ParamSpec{
                 .name = subAliases.choiceStringFor(spec.name),
                 .typeInfo = spec.typeInfo,
             });

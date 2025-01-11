@@ -22,7 +22,7 @@ template <TaskChild BasicTask> inline String getPipelineId(const Pipeline<BasicT
     String ret;
 
     // List of outputs
-    for (const PropertyList &specs : {pipeline.outputSpecs, pipeline.filterSpecs}) {
+    for (const ParamList &specs : {pipeline.outputSpecs, pipeline.filterSpecs}) {
         for (auto &spec : specs.getSpecList()) {
             String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
             ret += "_";
@@ -46,7 +46,7 @@ template <TaskChild BasicTask> inline String getPipelineId(const Pipeline<BasicT
  * @param out The output stream to which to write
  */
 template <TaskChild BasicTask>
-void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &aliases,
+void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &aliases,
                     std::ostream &out, StringView prefix = "", bool isMainGraph = true,
                     bool expandSubGraphs = false)
 {
@@ -79,7 +79,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         ret = searchAndReplace(ret, "\n", "\\n");
         return ret;
     };
-    auto getPropId = [&](const PropertySpec &spec) -> String {
+    auto getPropId = [&](const ParamSpec &spec) -> String {
         String realName = aliases.choiceStringFor(spec.name);
         return String("Prop_") + realName;
     };
@@ -106,7 +106,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         }
         out << "];\n";
     };
-    auto outputPropNode = [&](StringView id, const PropertySpec &spec, bool horizontal) {
+    auto outputPropNode = [&](StringView id, const ParamSpec &spec, bool horizontal) {
         out << prefix << id << " [";
         if (aliases.choiceStringFor(spec.name) != spec.name)
             out << "label=\"" << spec.name << "\n("
@@ -239,7 +239,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     bool horizontalInputsOutputs = pipeline.inputSpecs.count() > pipeline.items.size() ||
                                    pipeline.outputSpecs.count() > pipeline.items.size();
 
-    auto currentPropertyNodeReference = [&](const PropertySpec &spec) {
+    auto currentPropertyNodeReference = [&](const ParamSpec &spec) {
         String realName = aliases.choiceStringFor(spec.name);
 
         if (auto it = activeNodeIdsPerNameId.find(realName); it != activeNodeIdsPerNameId.end()) {
@@ -262,7 +262,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         }
     };
 
-    auto consumePropertyNode = [&](const PropertySpec &spec) {
+    auto consumePropertyNode = [&](const ParamSpec &spec) {
         String realName = aliases.choiceStringFor(spec.name);
 
         if (auto it = activeNodeIdsPerNameId.find(realName); it != activeNodeIdsPerNameId.end()) {
@@ -275,7 +275,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         }
     };
 
-    auto addPropertyNodeBefore = [&](const PropertySpec &spec) {
+    auto addPropertyNodeBefore = [&](const ParamSpec &spec) {
         String realName = aliases.choiceStringFor(spec.name);
 
         if (auto it = activeNodeIdsPerNameId.find(realName); it == activeNodeIdsPerNameId.end()) {
@@ -293,7 +293,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
         }
     };
 
-    auto addPropertyNodeHere = [&](const PropertySpec &spec) {
+    auto addPropertyNodeHere = [&](const ParamSpec &spec) {
         String realName = aliases.choiceStringFor(spec.name);
 
         if (auto it = activeNodeIdsPerNameId.find(realName); it != activeNodeIdsPerNameId.end()) {
@@ -339,8 +339,8 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     out << "\t\tstyle=dashed;\n";
     out << "\t\tcolor=\"black\";\n";
 
-    for (const PropertyList *p_specs : {&pipeline.inputSpecs, &pipeline.filterSpecs,
-                                        &pipeline.consumingSpecs, &pipeline.pipethroughSpecs}) {
+    for (const ParamList *p_specs : {&pipeline.inputSpecs, &pipeline.filterSpecs,
+                                     &pipeline.consumingSpecs, &pipeline.pipethroughSpecs}) {
         for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
             out << "\t\t";
             addPropertyNodeHere(spec);
@@ -400,7 +400,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const PropertyAliases &
     out << "\t\tstyle=dashed;\n";
     out << "\t\tcolor=\"black\";\n";
 
-    for (const PropertyList *p_specs :
+    for (const ParamList *p_specs :
          {&pipeline.outputSpecs, &pipeline.filterSpecs, &pipeline.pipethroughSpecs}) {
         for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
             out << "\t\t";
