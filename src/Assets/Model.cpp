@@ -1,7 +1,7 @@
 #include "Vitrae/Assets/Model.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Mesh.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/TypeConversion/StringCvt.hpp"
 
 #include "dynasma/keepers/abstract.hpp"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
 
 #include "dynasma/keepers/abstract.hpp"

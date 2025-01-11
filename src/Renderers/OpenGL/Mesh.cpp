@@ -1,6 +1,6 @@
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Assets/Material.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/TypeConversion/AssimpCvt.hpp"

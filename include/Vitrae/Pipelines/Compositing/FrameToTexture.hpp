@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Assets/Texture.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 

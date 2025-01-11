@@ -1,7 +1,7 @@
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Params/ParamList.hpp"

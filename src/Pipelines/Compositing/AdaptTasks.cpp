@@ -1,6 +1,6 @@
 #include "Vitrae/Pipelines/Compositing/AdaptTasks.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
-#include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
 
 #include "MMeter.h"

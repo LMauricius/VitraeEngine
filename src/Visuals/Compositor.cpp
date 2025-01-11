@@ -1,7 +1,7 @@
 #include "Vitrae/Visuals/Compositor.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
-#include "Vitrae/ComponentRoot.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
 #include "Vitrae/Pipelines/PipelineContainer.hpp"
 

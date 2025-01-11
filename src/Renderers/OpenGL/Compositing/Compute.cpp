@@ -1,6 +1,6 @@
 #include "Vitrae/Renderers/OpenGL/Compositing/Compute.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Params/ParamList.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"

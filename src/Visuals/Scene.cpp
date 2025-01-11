@@ -2,7 +2,7 @@
 
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Mesh.hpp"
-#include "Vitrae/ComponentRoot.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
