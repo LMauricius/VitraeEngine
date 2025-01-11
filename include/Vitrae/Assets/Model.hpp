@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Types/Typedefs.hpp"
+#include "Vitrae/Data/Typedefs.hpp"
 
 #include "assimp/mesh.h"
 #include "assimp/scene.h"

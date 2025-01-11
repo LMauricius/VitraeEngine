@@ -1,7 +1,7 @@
 #pragma once
 
+#include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Util/Variant.hpp"
-#include "Vitrae/Types/Typedefs.hpp"
 
 namespace Vitrae {
     

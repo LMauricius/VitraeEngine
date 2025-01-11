@@ -1,4 +1,4 @@
-#include "Vitrae/Types/BoundingBox.hpp"
+#include "Vitrae/Data/BoundingBox.hpp"
 
 namespace Vitrae
 {

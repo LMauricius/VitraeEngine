@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
-#include "Vitrae/Types/Typedefs.hpp"
 
 #include "dynasma/pointer.hpp"
 

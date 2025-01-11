@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
-#include "Vitrae/Types/Typedefs.hpp"
 #include "Vitrae/Util/MovableSpan.hpp"
 #include "Vitrae/Util/PropertyGetter.hpp"
 #include "Vitrae/Util/Variant.hpp"

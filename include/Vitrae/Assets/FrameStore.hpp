@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Types/Typedefs.hpp"
+#include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Util/PropertySpec.hpp"
 
 #include "dynasma/managers/abstract.hpp"

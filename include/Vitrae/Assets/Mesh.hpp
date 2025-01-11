@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vitrae/Types/BoundingBox.hpp"
-#include "Vitrae/Types/GraphicPrimitives.hpp"
+#include "Vitrae/Data/BoundingBox.hpp"
+#include "Vitrae/Data/GraphicPrimitives.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
 #include "Vitrae/Util/StringId.hpp"
 #include "Vitrae/Util/Variant.hpp"

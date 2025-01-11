@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Types/Transformation.hpp"
+#include "Vitrae/Data/Transformation.hpp"
 
 #include "assimp/scene.h"
 #include "dynasma/keepers/abstract.hpp"

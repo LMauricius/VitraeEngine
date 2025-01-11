@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Assets/Mesh.hpp"
-#include "Vitrae/Types/Typedefs.hpp"
+#include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Util/StableMap.hpp"
 
 #include "glad/glad.h"
