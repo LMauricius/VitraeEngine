@@ -2,7 +2,6 @@
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
-#include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Params/ParamList.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"

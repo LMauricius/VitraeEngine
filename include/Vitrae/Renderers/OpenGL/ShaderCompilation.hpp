@@ -2,7 +2,7 @@
 
 #include "Vitrae/Containers/MovableSpan.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
-#include "Vitrae/Dynamic/Variant.hpp"
+#include "Vitrae/Dynamic/VariantScope.hpp"
 #include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"

@@ -2,7 +2,7 @@
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
-#include "Vitrae/Dynamic/Variant.hpp"
+#include "Vitrae/Dynamic/VariantScope.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
