@@ -220,16 +220,6 @@ class Variant
     template <class T> static constexpr VariantVTable V_TABLE = makeVTable<T>();
 
   public:
-    // static functions
-
-    /**
-     * @returns a compile-time reference to the PropertyFuncTable for the specified type.
-     */
-    template <class T> static constexpr const TypeInfo &getTypeInfo()
-    {
-        return TYPE_INFO<std::decay_t<T>>;
-    }
-
     // constructors
 
     /// @brief default constructor
