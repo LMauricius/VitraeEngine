@@ -16,7 +16,7 @@ class Renderer;
 
 const ParamSpec Compositor::FRAME_STORE_TARGET_SPEC = {
     .name = "fs_display",
-    .typeInfo = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>(),
+    .typeInfo = TYPE_INFO<dynasma::FirmPtr<FrameStore>>,
 
 };
 

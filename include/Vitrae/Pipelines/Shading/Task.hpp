@@ -39,12 +39,12 @@ static constexpr const char COMPUTE_OUTPUT[] = "data_computed";
 
 namespace StandardShaderPropertyTypes
 {
-static constexpr const TypeInfo &INPUT_VIEW = Variant::getTypeInfo<glm::mat4>();
-static constexpr const TypeInfo &INPUT_PROJECTION = Variant::getTypeInfo<glm::mat4>();
-static constexpr const TypeInfo &INPUT_MODEL = Variant::getTypeInfo<glm::mat4>();
+static constexpr const TypeInfo &INPUT_VIEW = TYPE_INFO<glm::mat4>;
+static constexpr const TypeInfo &INPUT_PROJECTION = TYPE_INFO<glm::mat4>;
+static constexpr const TypeInfo &INPUT_MODEL = TYPE_INFO<glm::mat4>;
 
-static constexpr const TypeInfo &FRAGMENT_OUTPUT = Variant::getTypeInfo<glm::vec4>();
-static constexpr const TypeInfo &VERTEX_OUTPUT = Variant::getTypeInfo<glm::vec4>();
+static constexpr const TypeInfo &FRAGMENT_OUTPUT = TYPE_INFO<glm::vec4>;
+static constexpr const TypeInfo &VERTEX_OUTPUT = TYPE_INFO<glm::vec4>;
 }
 
 } // namespace Vitrae

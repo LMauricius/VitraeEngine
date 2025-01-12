@@ -242,7 +242,7 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
     /*for (auto p_specs : {&adaptor.pipeline.inputSpecs, &adaptor.pipeline.filterSpecs,
                          &adaptor.pipeline.pipethroughSpecs}) {
         for (const auto &[specNameId, spec] : p_specs->getMappedSpecs()) {
-            if (spec.typeInfo != Variant::getTypeInfo<void>() &&
+            if (spec.typeInfo != TYPE_INFO<void> &&
                 encapsulatedArgumentScope.has(specNameId)) {
                 ctx.properties.set(subAliases.choiceFor(specNameId),
                                    encapsulatedArgumentScope.move(specNameId));
@@ -358,7 +358,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adap
         for (auto [nameId, spec] : pipeline.outputSpecs.getMappedSpecs()) {
             auto innerChoice = subAliases.choiceFor(nameId);
             if (outerChoice == innerChoice) {
-                if (spec.typeInfo != Variant::getTypeInfo<void>()) {
+                if (spec.typeInfo != TYPE_INFO<void>) {
                     finishingMapping.emplace(innerChoice, desiredId);
                 }
                 found = true;
@@ -371,7 +371,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adap
             auto innerChoice = subAliases.choiceFor(nameId);
             if (outerChoice == innerChoice) {
                 if (desiredId != innerChoice) {
-                    if (spec.typeInfo != Variant::getTypeInfo<void>()) {
+                    if (spec.typeInfo != TYPE_INFO<void>) {
                         finishingMapping.emplace(innerChoice, desiredId);
                     }
                 } else {
@@ -387,7 +387,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adap
             auto innerChoice = subAliases.choiceFor(nameId);
             if (outerChoice == innerChoice) {
                 if (desiredId != innerChoice) {
-                    if (spec.typeInfo != Variant::getTypeInfo<void>()) {
+                    if (spec.typeInfo != TYPE_INFO<void>) {
                         finishingMapping.emplace(innerChoice, desiredId);
                     }
                 } else {

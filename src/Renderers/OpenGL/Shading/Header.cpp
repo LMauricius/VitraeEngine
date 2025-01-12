@@ -10,10 +10,10 @@ namespace Vitrae
 OpenGLShaderHeader::OpenGLShaderHeader(const FileLoadParams &params)
 {
     for (auto &name : params.inputTokenNames) {
-        m_inputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_inputSpecs.insert_back({.name = name, .typeInfo = TYPE_INFO<void>});
     }
     for (auto &name : params.outputTokenNames) {
-        m_outputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_outputSpecs.insert_back({.name = name, .typeInfo = TYPE_INFO<void>});
     }
 
     std::ifstream stream(params.filepath);
@@ -26,10 +26,10 @@ OpenGLShaderHeader::OpenGLShaderHeader(const FileLoadParams &params)
 OpenGLShaderHeader::OpenGLShaderHeader(const StringParams &params)
 {
     for (auto &name : params.inputTokenNames) {
-        m_inputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_inputSpecs.insert_back({.name = name, .typeInfo = TYPE_INFO<void>});
     }
     for (auto &name : params.outputTokenNames) {
-        m_outputSpecs.insert_back({.name = name, .typeInfo = Variant::getTypeInfo<void>()});
+        m_outputSpecs.insert_back({.name = name, .typeInfo = TYPE_INFO<void>});
     }
 
     m_fileSnippet = clearIndents(params.snippet);
@@ -65,7 +65,7 @@ const ParamList &OpenGLShaderHeader::getConsumingSpecs(const ParamAliases &) con
 void OpenGLShaderHeader::extractUsedTypes(std::set<const TypeInfo *> &typeSet,
                                           const ParamAliases &aliases) const
 {
-    typeSet.insert(&Variant::getTypeInfo<void>());
+    typeSet.insert(&TYPE_INFO<void>);
 }
 
 void OpenGLShaderHeader::extractSubTasks(std::set<const Task *> &taskSet,

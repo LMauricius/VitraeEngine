@@ -113,7 +113,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
                 << escapedLabel(aliases.choiceStringFor(spec.name)) << ")";
         else
             out << "label=\"" << escapedLabel(spec.name);
-        if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+        if (spec.typeInfo == TYPE_INFO<void>) {
             out << "\", ";
             out << "shape=octagon, ";
             out << "style=\"rounded,filled\", ";

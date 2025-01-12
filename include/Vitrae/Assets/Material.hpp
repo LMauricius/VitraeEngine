@@ -77,10 +77,10 @@ static constexpr const char SHININESS[] = "shininess";
 
 namespace StandardMaterialPropertyTypes
 {
-static constexpr const TypeInfo &COL_DIFFUSE = Variant::getTypeInfo<glm::vec4>();
-static constexpr const TypeInfo &COL_SPECULAR = Variant::getTypeInfo<glm::vec4>();
-static constexpr const TypeInfo &COL_EMISSIVE = Variant::getTypeInfo<glm::vec4>();
-static constexpr const TypeInfo &SHININESS = Variant::getTypeInfo<float>();
+static constexpr const TypeInfo &COL_DIFFUSE = TYPE_INFO<glm::vec4>;
+static constexpr const TypeInfo &COL_SPECULAR = TYPE_INFO<glm::vec4>;
+static constexpr const TypeInfo &COL_EMISSIVE = TYPE_INFO<glm::vec4>;
+static constexpr const TypeInfo &SHININESS = TYPE_INFO<float>;
 } // namespace StandardMaterialPropertyTypes
 
 } // namespace Vitrae

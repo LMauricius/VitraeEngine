@@ -22,7 +22,7 @@ OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
                      std::to_string(params.backgroundColor.a))
 {
     for (auto &tokenName : params.outputTokenNames) {
-        m_outputSpecs.insert_back({.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
+        m_outputSpecs.insert_back({.name = tokenName, .typeInfo = TYPE_INFO<void>});
     }
 }
 

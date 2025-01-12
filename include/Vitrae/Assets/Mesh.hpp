@@ -51,8 +51,8 @@ class Mesh : public dynasma::PolymorphicBase
     template <class ElementT>
     std::span<const ElementT> getVertexElements(StringId elementName) const
     {
-        Variant anyArray = getVertexData(elementName, Variant::getTypeInfo<ElementT>());
-        assert(anyArray.getAssignedTypeInfo() == Variant::getTypeInfo<std::span<const ElementT>>());
+        Variant anyArray = getVertexData(elementName, TYPE_INFO<ElementT>);
+        assert(anyArray.getAssignedTypeInfo() == TYPE_INFO<std::span<const ElementT>>);
         return anyArray.get<std::span<const ElementT>>();
     }
 

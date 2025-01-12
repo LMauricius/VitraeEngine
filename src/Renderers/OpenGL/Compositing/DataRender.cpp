@@ -20,7 +20,7 @@ OpenGLComposeDataRender::OpenGLComposeDataRender(const SetupParams &params)
     m_friendlyName = "Render data:";
     for (const auto &spec : params.outputTokenNames) {
         m_friendlyName += "\n- " + spec;
-        m_outputSpecs.insert_back({.name = spec, .typeInfo = Variant::getTypeInfo<void>()});
+        m_outputSpecs.insert_back({.name = spec, .typeInfo = TYPE_INFO<void>});
     }
 }
 
@@ -99,8 +99,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
         SpecsPerAliases &specsContainer = *(*specsIt).second;
 
         for (auto &tokenName : m_params.inputTokenNames) {
-            specsContainer.inputSpecs.insert_back(
-                {.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
+            specsContainer.inputSpecs.insert_back({.name = tokenName, .typeInfo = TYPE_INFO<void>});
         }
     }
 

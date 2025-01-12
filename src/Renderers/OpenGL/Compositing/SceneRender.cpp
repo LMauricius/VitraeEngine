@@ -62,7 +62,7 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     }
 
     for (const auto &spec : params.outputTokenNames) {
-        m_outputSpecs.insert_back({.name = spec, .typeInfo = Variant::getTypeInfo<void>()});
+        m_outputSpecs.insert_back({.name = spec, .typeInfo = TYPE_INFO<void>});
     }
 }
 
@@ -140,8 +140,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
         SpecsPerAliases &specsContainer = *(*specsIt).second;
 
         for (auto &tokenName : m_params.inputTokenNames) {
-            specsContainer.inputSpecs.insert_back(
-                {.name = tokenName, .typeInfo = Variant::getTypeInfo<void>()});
+            specsContainer.inputSpecs.insert_back({.name = tokenName, .typeInfo = TYPE_INFO<void>});
         }
 
         specsContainer.inputSpecs.insert_back(SCENE_SPEC);

@@ -225,7 +225,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                  &p_helper->pipeline.pipethroughSpecs,
              }) {
             for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
-                if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                if (spec.typeInfo == TYPE_INFO<void>) {
                     // just a token, skip
                 } else if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER &&
                            rend.getAllVertexBufferSpecs().find(nameId) !=
@@ -299,7 +299,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                          &p_helper->pipeline.pipethroughSpecs,
                      }) {
                     for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
-                        if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                        if (spec.typeInfo == TYPE_INFO<void>) {
                             // just a token, skip
                         } else if (prevStageOutputs.find(nameId) != prevStageOutputs.end()) {
                             // normal input
@@ -328,7 +328,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                 // filter specs
                 for (auto [nameId, spec] : p_helper->pipeline.filterSpecs.getMappedSpecs()) {
-                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                    if (spec.typeInfo == TYPE_INFO<void>) {
                         // just a token, skip
                     } else if ((stageOpaqueBindingList.getMappedSpecs().find(nameId) !=
                                 stageOpaqueBindingList.getMappedSpecs().end()) ||
@@ -361,7 +361,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                 // pipethrough specs
                 for (auto [nameId, spec] : p_helper->pipeline.pipethroughSpecs.getMappedSpecs()) {
-                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                    if (spec.typeInfo == TYPE_INFO<void>) {
                         // just a token, skip
                     } else if (stageInputList.getMappedSpecs().find(nameId) !=
                                stageInputList.getMappedSpecs().end()) {
@@ -387,7 +387,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                 // output specs
                 for (auto [nameId, spec] : p_helper->pipeline.outputSpecs.getMappedSpecs()) {
-                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                    if (spec.typeInfo == TYPE_INFO<void>) {
                         // just a token, skip
                     } else {
                         // Check if we can store it as output
@@ -410,7 +410,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
                 // Local specs
                 for (auto [nameId, spec] : p_helper->pipeline.localSpecs.getMappedSpecs()) {
-                    if (spec.typeInfo == Variant::getTypeInfo<void>()) {
+                    if (spec.typeInfo == TYPE_INFO<void>) {
                         // just a token, skip
                     } else {
                         // Check if we can store it as a local variable
@@ -457,7 +457,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 };
 
                 for (auto p_type : usedTypeSet) {
-                    if (*p_type != Variant::getTypeInfo<void>()) {
+                    if (*p_type != TYPE_INFO<void>) {
                         processTypeNameId(rend.getTypeConversion(*p_type).glTypeSpec);
                     }
                 }

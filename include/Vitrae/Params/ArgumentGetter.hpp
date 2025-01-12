@@ -88,8 +88,7 @@ template <class T> class ArgumentGetter
      */
     ParamSpec getSpec() const
     {
-        return ParamSpec{.name = std::get<0>(m_nameOrValue).name,
-                         .typeInfo = Variant::getTypeInfo<T>()};
+        return ParamSpec{.name = std::get<0>(m_nameOrValue).name, .typeInfo = TYPE_INFO<T>};
     }
 
     /**

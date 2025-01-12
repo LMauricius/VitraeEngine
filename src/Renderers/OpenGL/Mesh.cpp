@@ -161,16 +161,16 @@ BoundingBox OpenGLMesh::getBoundingBox() const
 
 Variant OpenGLMesh::getVertexData(StringId bufferName, const TypeInfo &type) const
 {
-    if (type == Variant::getTypeInfo<glm::vec1>()) {
+    if (type == TYPE_INFO<glm::vec1>) {
         auto &buf = namedVec1Buffers.at(bufferName);
         return std::span<const glm::vec1>(buf);
-    } else if (type == Variant::getTypeInfo<glm::vec2>()) {
+    } else if (type == TYPE_INFO<glm::vec2>) {
         auto &buf = namedVec2Buffers.at(bufferName);
         return std::span<const glm::vec2>(buf);
-    } else if (type == Variant::getTypeInfo<glm::vec3>()) {
+    } else if (type == TYPE_INFO<glm::vec3>) {
         auto &buf = namedVec3Buffers.at(bufferName);
         return std::span<const glm::vec3>(buf);
-    } else if (type == Variant::getTypeInfo<glm::vec4>()) {
+    } else if (type == TYPE_INFO<glm::vec4>) {
         auto &buf = namedVec4Buffers.at(bufferName);
         return std::span<const glm::vec4>(buf);
     } else {

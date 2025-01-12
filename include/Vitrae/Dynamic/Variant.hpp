@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Vitrae/Data/Typedefs.hpp"
+#include "Vitrae/Dynamic/TypeInfo.hpp"
 
 #include <any>
 #include <cstdlib>
@@ -26,26 +27,16 @@ class VariantVTable
     bool hasShortObjectOptimization; // prefer first place in memory
 
   public:
-    const std::type_info *p_id;
+    const TypeInfo *p_typeinfo;
     std::size_t size;
     std::size_t alignment;
 
-    inline StringView getShortTypeName() const { return shortTypeNameGetter(); }
-
     constexpr VariantVTable()
-        : p_id(nullptr), size(0), alignment(0), hasShortObjectOptimization(false),
-          shortTypeNameGetter(nullptr), emptyConstructor(nullptr), copyConstructor(nullptr),
-          moveConstructor(nullptr), destructor(nullptr), isEqual(nullptr), isLessThan(nullptr),
-          toBool(nullptr), toString(nullptr), hash(nullptr) {};
+        : p_typeinfo(nullptr), size(0), alignment(0), hasShortObjectOptimization(false),
+          emptyConstructor(nullptr), copyConstructor(nullptr), moveConstructor(nullptr),
+          destructor(nullptr), isEqual(nullptr), isLessThan(nullptr), toBool(nullptr),
+          toString(nullptr), hash(nullptr) {};
     ~VariantVTable() = default;
-
-    // comparisons (just compare type_info)
-    inline bool operator==(const VariantVTable &o) const { return *p_id == *o.p_id; }
-    inline bool operator!=(const VariantVTable &o) const { return *p_id != *o.p_id; }
-    inline bool operator<(const VariantVTable &o) const { return p_id->before(*o.p_id); }
-    inline bool operator>(const VariantVTable &o) const { return !operator<=(o); }
-    inline bool operator<=(const VariantVTable &o) const { return operator<(o) || operator==(o); }
-    inline bool operator>=(const VariantVTable &o) const { return !operator<(o); }
 
   protected:
     constexpr VariantVTable(const VariantVTable &) = default;
@@ -53,8 +44,12 @@ class VariantVTable
     VariantVTable &operator=(const VariantVTable &) = default;
     VariantVTable &operator=(VariantVTable &&) = default;
 
-    // meta
-    StringView (*shortTypeNameGetter)();
+    bool operator==(const VariantVTable &o) const { return *p_typeinfo == *o.p_typeinfo; }
+    bool operator!=(const VariantVTable &o) const { return *p_typeinfo != *o.p_typeinfo; }
+    bool operator<(const VariantVTable &o) const { return *p_typeinfo < *o.p_typeinfo; }
+    bool operator>(const VariantVTable &o) const { return *p_typeinfo > *o.p_typeinfo; }
+    bool operator<=(const VariantVTable &o) const { return *p_typeinfo <= *o.p_typeinfo; }
+    bool operator>=(const VariantVTable &o) const { return *p_typeinfo >= *o.p_typeinfo; }
 
     // memory management
     void (*emptyConstructor)(Variant &self);
@@ -70,17 +65,7 @@ class VariantVTable
     bool (*toBool)(const Variant &p);
     std::string (*toString)(const Variant &p);
     std::size_t (*hash)(const Variant &p);
-
-    // utilities
-    static String constructShortTypeName(const std::type_info *p_id);
-    template <class T> static StringView getShortTypeName()
-    {
-        static String name = constructShortTypeName(&typeid(T));
-        return name;
-    }
 };
-
-using TypeInfo = VariantVTable;
 
 /**
  * @brief A class that allows you to store and retrieve properties of any type.
@@ -115,10 +100,7 @@ class Variant
         }
 
         // public info
-        table.p_id = &typeid(T);
-
-        // getters
-        table.shortTypeNameGetter = VariantVTable::getShortTypeName<T>;
+        table.p_typeinfo = &TYPE_INFO<T>;
 
         // memory management
 
@@ -245,7 +227,7 @@ class Variant
      */
     template <class T> static constexpr const TypeInfo &getTypeInfo()
     {
-        return V_TABLE<std::decay_t<T>>;
+        return TYPE_INFO<std::decay_t<T>>;
     }
 
     // constructors
@@ -318,7 +300,7 @@ class Variant
         return *this;
     }
 
-    inline const TypeInfo &getAssignedTypeInfo() const { return *m_table; }
+    inline const TypeInfo &getAssignedTypeInfo() const { return *m_table->p_typeinfo; }
 
     // getter
 

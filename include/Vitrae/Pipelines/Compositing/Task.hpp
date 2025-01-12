@@ -70,7 +70,7 @@ static constexpr const char OUTPUT[] = "rendered_scene";
 
 namespace StandardCompositorOutputTypes
 {
-static constexpr const TypeInfo &OUTPUT_TYPE = Variant::getTypeInfo<dynasma::FirmPtr<FrameStore>>();
+static constexpr const TypeInfo &OUTPUT_TYPE = TYPE_INFO<dynasma::FirmPtr<FrameStore>>;
 }
 
 } // namespace Vitrae

@@ -116,7 +116,7 @@ class OpenGLRenderer : public Renderer
     void specifyVertexBuffer(const ParamSpec &newElSpec);
     template <class T> void specifyVertexBufferAuto()
     {
-        specifyVertexBuffer(getTypeConversion(Variant::getTypeInfo<T>().p_id->name()));
+        specifyVertexBuffer(getTypeConversion(TYPE_INFO<T>.p_id->name()));
     }
     std::size_t getNumVertexBuffers() const;
     std::size_t getVertexBufferLayoutIndex(StringId name) const;
@@ -160,7 +160,7 @@ void OpenGLRenderer::specifyBufferTypeAndConversionAuto()
     };
 
     if constexpr (SharedBufferT::HAS_HEADER) {
-        auto &headerConv = getTypeConversion(Variant::getTypeInfo<HeaderT>());
+        auto &headerConv = getTypeConversion(TYPE_INFO<HeaderT>);
         auto &headerGlTypeSpec = headerConv.glTypeSpec;
 
         if (!headerGlTypeSpec.structBodySnippet.empty()) {
@@ -180,7 +180,7 @@ void OpenGLRenderer::specifyBufferTypeAndConversionAuto()
     }
 
     if constexpr (SharedBufferT::HAS_FAM_ELEMENTS) {
-        auto &elementConv = getTypeConversion(Variant::getTypeInfo<ElementT>());
+        auto &elementConv = getTypeConversion(TYPE_INFO<ElementT>);
         auto &elementGlTypeSpec = elementConv.glTypeSpec;
 
         if constexpr (SharedBufferT::HAS_HEADER) {
@@ -229,7 +229,7 @@ void OpenGLRenderer::specifyBufferTypeAndConversionAuto()
             setRawBufferBinding(*hostValue.get<SharedBufferT>().getRawBuffer(), bindingIndex);
         }};
 
-    specifyTypeConversion(Variant::getTypeInfo<SharedBufferT>(), convSpec);
+    specifyTypeConversion(TYPE_INFO<SharedBufferT>, convSpec);
 }
 
 } // namespace Vitrae

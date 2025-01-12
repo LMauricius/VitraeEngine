@@ -1,4 +1,4 @@
-#include "Vitrae/Dynamic/Variant.hpp"
+#include "Vitrae/Dynamic/TypeInfo.hpp"
 #include "glm/glm.hpp"
 
 #include <regex>
@@ -10,9 +10,9 @@
 
 namespace Vitrae
 {
-String VariantVTable::constructShortTypeName(const std::type_info *p_id)
+std::string TypeInfo::constructShortTypeName(const std::type_info *p_id)
 {
-    String ret;
+    std::string ret;
 
     if (p_id == &typeid(void))
         ret = "void";

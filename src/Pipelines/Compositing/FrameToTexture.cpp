@@ -22,21 +22,21 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
     if (params.outputColorTextureName != "") {
         m_outputSpecs.insert_back({
             params.outputColorTextureName,
-            Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
+            TYPE_INFO<dynasma::FirmPtr<Texture>>,
         });
         m_friendlyName += String("\n- shade");
     }
     if (params.outputDepthTextureName != "") {
         m_outputSpecs.insert_back({
             params.outputDepthTextureName,
-            Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
+            TYPE_INFO<dynasma::FirmPtr<Texture>>,
         });
         m_friendlyName += String("\n- depth");
     }
     for (auto &spec : m_outputTextureParamSpecs) {
         m_outputSpecs.insert_back({
             spec.textureName,
-            Variant::getTypeInfo<dynasma::FirmPtr<Texture>>(),
+            TYPE_INFO<dynasma::FirmPtr<Texture>>,
         });
         m_friendlyName += String("\n- ");
         m_friendlyName += spec.fragmentSpec.name;
@@ -45,7 +45,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
     m_consumeSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
 
     for (auto &tokenName : params.inputTokenNames) {
-        m_inputSpecs.insert_back({tokenName, Variant::getTypeInfo<void>()});
+        m_inputSpecs.insert_back({tokenName, TYPE_INFO<void>});
     }
 
     if (!m_size.isFixed()) {
