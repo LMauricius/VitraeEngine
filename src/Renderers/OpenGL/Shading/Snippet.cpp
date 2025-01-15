@@ -1,5 +1,4 @@
 #include "Vitrae/Renderers/OpenGL/Shading/Snippet.hpp"
-#include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/ConstantDefs.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 

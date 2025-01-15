@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Vitrae/Assets/SharedBuffer.hpp"
-#include "Vitrae/Renderers/OpenGL.hpp"
+
+#include "glad/glad.h"
 
 namespace Vitrae
 {

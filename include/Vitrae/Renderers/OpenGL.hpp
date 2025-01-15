@@ -2,14 +2,13 @@
 
 #include "Vitrae/Assets/SharedBuffer.hpp"
 #include "Vitrae/Data/StringId.hpp"
-#include "Vitrae/Pipelines/Task.hpp"
 #include "Vitrae/Renderer.hpp"
-#include "assimp/mesh.h"
 
 #include "glad/glad.h"
 // must be after glad.h
 #include "GLFW/glfw3.h"
 
+#include <cstddef>
 #include <deque>
 #include <functional>
 #include <map>
