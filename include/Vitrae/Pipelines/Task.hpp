@@ -1,11 +1,7 @@
 #pragma once
 
-#include "Vitrae/Containers/StableMap.hpp"
-#include "Vitrae/Data/StringId.hpp"
-#include "Vitrae/Dynamic/Variant.hpp"
 #include "Vitrae/Params/ParamAliases.hpp"
 #include "Vitrae/Params/ParamList.hpp"
-#include "Vitrae/Params/ParamSpec.hpp"
 
 #include "dynasma/pointer.hpp"
 #include "dynasma/util/dynamic_typing.hpp"

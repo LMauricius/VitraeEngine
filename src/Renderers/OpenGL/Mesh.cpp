@@ -6,6 +6,7 @@
 #include "Vitrae/TypeConversion/AssimpCvt.hpp"
 #include "Vitrae/TypeConversion/GLCvt.hpp"
 #include "Vitrae/TypeConversion/StringCvt.hpp"
+#include "Vitrae/TypeConversion/VectorCvt.hpp"
 
 #include <map>
 #include <vector>

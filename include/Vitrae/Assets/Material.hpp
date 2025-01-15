@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Vitrae/Containers/StableMap.hpp"
-#include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/NonCopyable.hpp"
 
