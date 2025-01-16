@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Setup/Rasterizing.hpp"
 
@@ -13,17 +14,23 @@ namespace Vitrae
 class ComposeSceneRender : public ComposeTask
 {
   public:
+    using FilterFunc = std::function<bool(const MeshProp &prop)>;
+    using SortFunc = std::function<bool(const MeshProp &l, const MeshProp &r)>;
     struct SetupParams
     {
         ComponentRoot &root;
         std::vector<String> inputTokenNames;
         std::vector<String> outputTokenNames;
-        String vertexPositionOutputPropertyName;
-        CullingMode cullingMode = CullingMode::Backface;
-        RasterizingMode rasterizingMode = RasterizingMode::DerivationalFillCenters;
-        bool smoothFilling : 1 = false;
-        bool smoothTracing : 1 = false;
-        bool smoothDotting : 1 = false;
+        RasterizingSetupParams rasterizing;
+        struct
+        {
+            ParamList inputSpecs;
+            ParamList filterSpecs;
+            ParamList consumingSpecs;
+            std::function<std::pair<FilterFunc, SortFunc>(const Scene &scene,
+                                                          const RenderComposeContext &ctx)>
+                generateFilterAndSort;
+        } ordering;
     };
 };
 

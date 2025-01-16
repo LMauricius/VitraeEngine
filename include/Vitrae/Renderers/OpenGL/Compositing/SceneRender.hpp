@@ -34,9 +34,6 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
     StringView getFriendlyName() const override;
 
   protected:
-    static const ParamList SHARED_INPUT_PROPERTY_LIST;
-    static const ParamList SHARED_FILTER_PROPERTY_LIST;
-
     ComponentRoot &m_root;
 
     SetupParams m_params;
@@ -49,6 +46,7 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
     };
 
     mutable StableMap<std::size_t, std::unique_ptr<SpecsPerAliases>> m_specsPerKey;
+    mutable std::vector<const MeshProp *> m_sortedMeshProps;
 
     std::size_t getSpecsKey(const ParamAliases &aliases) const;
 };

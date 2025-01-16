@@ -15,15 +15,12 @@
 namespace Vitrae
 {
 
-const ParamList OpenGLComposeSceneRender::SHARED_INPUT_PROPERTY_LIST = {SCENE_SPEC};
-const ParamList OpenGLComposeSceneRender::SHARED_FILTER_PROPERTY_LIST = {FRAME_STORE_TARGET_SPEC};
-
 OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     : m_root(params.root), m_params(params)
 {
     m_friendlyName = "Render scene:\n";
-    m_friendlyName += params.vertexPositionOutputPropertyName;
-    switch (params.cullingMode) {
+    m_friendlyName += params.rasterizing.vertexPositionOutputPropertyName;
+    switch (params.rasterizing.cullingMode) {
     case CullingMode::None:
         m_friendlyName += "\n- all faces";
         break;
@@ -34,7 +31,7 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
         m_friendlyName += "\n- back faces";
         break;
     }
-    switch (params.rasterizingMode) {
+    switch (params.rasterizing.rasterizingMode) {
     case RasterizingMode::DerivationalFillCenters:
     case RasterizingMode::DerivationalFillEdges:
     case RasterizingMode::DerivationalFillVertices:
@@ -48,22 +45,29 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
         m_friendlyName += "\n- dots";
         break;
     }
-    if (params.smoothFilling || params.smoothTracing || params.smoothDotting) {
+    if (params.rasterizing.smoothFilling || params.rasterizing.smoothTracing ||
+        params.rasterizing.smoothDotting) {
         m_friendlyName += "\n- smooth";
-        if (params.smoothFilling) {
+        if (params.rasterizing.smoothFilling) {
             m_friendlyName += " filling";
         }
-        if (params.smoothTracing) {
+        if (params.rasterizing.smoothTracing) {
             m_friendlyName += " tracing";
         }
-        if (params.smoothDotting) {
+        if (params.rasterizing.smoothDotting) {
             m_friendlyName += " dotting";
         }
     }
 
+    for (const auto &spec : params.inputTokenNames) {
+        m_params.ordering.inputSpecs.insert_back({.name = spec, .typeInfo = TYPE_INFO<void>});
+    }
     for (const auto &spec : params.outputTokenNames) {
         m_outputSpecs.insert_back({.name = spec, .typeInfo = TYPE_INFO<void>});
     }
+
+    m_params.ordering.inputSpecs.insert_back(SCENE_SPEC);
+    m_params.ordering.filterSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
 }
 
 std::size_t OpenGLComposeSceneRender::memory_cost() const
@@ -76,7 +80,7 @@ const ParamList &OpenGLComposeSceneRender::getInputSpecs(const ParamAliases &ali
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->inputSpecs;
     } else {
-        return SHARED_INPUT_PROPERTY_LIST;
+        return m_params.ordering.inputSpecs;
     }
 }
 
@@ -90,7 +94,7 @@ const ParamList &OpenGLComposeSceneRender::getFilterSpecs(const ParamAliases &al
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->filterSpecs;
     } else {
-        return SHARED_FILTER_PROPERTY_LIST;
+        return m_params.ordering.filterSpecs;
     }
 }
 
@@ -99,7 +103,7 @@ const ParamList &OpenGLComposeSceneRender::getConsumingSpecs(const ParamAliases 
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->consumingSpecs;
     } else {
-        return EMPTY_PROPERTY_LIST;
+        return m_params.ordering.consumingSpecs;
     }
 }
 
@@ -145,6 +149,10 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
         specsContainer.inputSpecs.insert_back(SCENE_SPEC);
         specsContainer.filterSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
+
+        specsContainer.inputSpecs.merge(m_params.ordering.inputSpecs);
+        specsContainer.consumingSpecs.merge(m_params.ordering.consumingSpecs);
+        specsContainer.filterSpecs.merge(m_params.ordering.filterSpecs);
     }
 
     SpecsPerAliases &specsContainer = *(*specsIt).second;
@@ -157,13 +165,13 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
 
     // build map of shaders to materials to mesh props
-    std::map<ParamAliases,
+    /*std::map<ParamAliases,
              std::map<dynasma::FirmPtr<const Material>, std::vector<const MeshProp *>>,
              bool (*)(const ParamAliases &, const ParamAliases &)>
         aliases2materials2props(
             [](const ParamAliases &l, const ParamAliases &r) { return l.hash() < r.hash(); });
-
-    {
+*/
+    /*{
 
         MMETER_SCOPE_PROFILER("Scene struct gen");
 
@@ -176,7 +184,24 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
             aliases2materials2props[ParamAliases(p_aliaseses)][mat].push_back(&meshProp);
         }
+    }*/
+
+    auto [meshFilter, meshComparator] = m_params.ordering.generateFilterAndSort(scene, args);
+
+    m_sortedMeshProps.clear();
+    m_sortedMeshProps.reserve(scene.meshProps.size());
+
+    for (auto &meshProp : scene.meshProps) {
+        if (meshFilter(meshProp)) {
+            OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
+            mesh.loadToGPU(rend);
+
+            m_sortedMeshProps.push_back(&meshProp);
+        }
     }
+
+    std::sort(m_sortedMeshProps.begin(), m_sortedMeshProps.end(),
+              [&](const MeshProp *l, const MeshProp *r) { return meshComparator(*l, *r); });
 
     // check for whether we have all input deps or whether we need to update the pipeline
     bool needsRebuild = false;
@@ -184,7 +209,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     {
         MMETER_SCOPE_PROFILER("Rendering (multipass)");
 
-        switch (m_params.rasterizingMode) {
+        switch (m_params.rasterizing.rasterizingMode) {
         // derivational methods (all methods for now)
         case RasterizingMode::DerivationalFillCenters:
         case RasterizingMode::DerivationalFillEdges:
@@ -200,7 +225,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                 glEnable(GL_DEPTH_TEST);
                 glDepthFunc(GL_LESS);
 
-                switch (m_params.cullingMode) {
+                switch (m_params.rasterizing.cullingMode) {
                 case CullingMode::None:
                     glDisable(GL_CULL_FACE);
                     break;
@@ -215,13 +240,13 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                 }
 
                 // smoothing
-                if (m_params.smoothFilling) {
+                if (m_params.rasterizing.smoothFilling) {
                     glEnable(GL_POLYGON_SMOOTH);
                     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
                 } else {
                     glDisable(GL_POLYGON_SMOOTH);
                 }
-                if (m_params.smoothTracing) {
+                if (m_params.rasterizing.smoothTracing) {
                     glEnable(GL_LINE_SMOOTH);
                     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
                 } else {
@@ -235,93 +260,106 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
                 // render the scene
                 // iterate over shaders
-                for (auto &[aliases, materials2props] : aliases2materials2props) {
-                    MMETER_SCOPE_PROFILER("Shader iteration");
+                dynasma::FirmPtr<const Material> p_currentMaterial;
+                dynasma::FirmPtr<CompiledGLSLShader> p_currentShader;
+                std::size_t currentShaderHash = 0;
+                GLint glModelMatrixUniformLocation;
 
-                    auto p_firstMat = materials2props.begin()->first;
+                for (auto p_meshProp : m_sortedMeshProps) {
+                    dynasma::FirmPtr<const Material> p_nextMaterial =
+                        p_meshProp->p_mesh->getMaterial();
 
-                    // compile shader for this material
-                    dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader;
+                    if (p_nextMaterial != p_currentMaterial) {
+                        MMETER_SCOPE_PROFILER("Material iteration");
 
-                    {
-                        MMETER_SCOPE_PROFILER("Shader loading");
+                        p_currentMaterial = p_nextMaterial;
 
-                        p_compiledShader =
-                            shaderCacher.retrieve_asset({CompiledGLSLShader::SurfaceShaderParams(
-                                aliases, m_params.vertexPositionOutputPropertyName,
-                                *frame.getRenderComponents(), m_root)});
+                        if (p_currentMaterial->getParamAliases().hash() != currentShaderHash) {
+                            MMETER_SCOPE_PROFILER("Shader change");
 
-                        // Store pipeline property specs
+                            {
+                                MMETER_SCOPE_PROFILER("Shader loading");
 
-                        using ListConvPair = std::pair<const ParamList *, ParamList *>;
+                                currentShaderHash = p_currentMaterial->getParamAliases().hash();
 
-                        for (auto [p_specs, p_targetSpecs] :
-                             {ListConvPair{&p_compiledShader->inputSpecs,
-                                           &specsContainer.inputSpecs},
-                              ListConvPair{&p_compiledShader->filterSpecs,
-                                           &specsContainer.filterSpecs},
-                              ListConvPair{&p_compiledShader->consumingSpecs,
-                                           &specsContainer.consumingSpecs}}) {
-                            for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
-                                if (p_firstMat->getProperties().find(nameId) ==
-                                        p_firstMat->getProperties().end() &&
-                                    nameId != StandardShaderPropertyNames::INPUT_MODEL &&
-                                    p_targetSpecs->getMappedSpecs().find(nameId) ==
-                                        p_targetSpecs->getMappedSpecs().end()) {
-                                    p_targetSpecs->insert_back(spec);
-                                    needsRebuild = true;
+                                const ParamAliases *p_aliaseses[] = {
+                                    &p_currentMaterial->getParamAliases(), &args.aliases};
+
+                                ParamAliases aliases(p_aliaseses);
+
+                                p_currentShader = shaderCacher.retrieve_asset(
+                                    {CompiledGLSLShader::SurfaceShaderParams(
+                                        aliases,
+                                        m_params.rasterizing.vertexPositionOutputPropertyName,
+                                        *frame.getRenderComponents(), m_root)});
+
+                                // Store pipeline property specs
+
+                                using ListConvPair = std::pair<const ParamList *, ParamList *>;
+
+                                for (auto [p_specs, p_targetSpecs] :
+                                     {ListConvPair{&p_currentShader->inputSpecs,
+                                                   &specsContainer.inputSpecs},
+                                      ListConvPair{&p_currentShader->filterSpecs,
+                                                   &specsContainer.filterSpecs},
+                                      ListConvPair{&p_currentShader->consumingSpecs,
+                                                   &specsContainer.consumingSpecs}}) {
+                                    for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
+                                        if (p_currentMaterial->getProperties().find(nameId) ==
+                                                p_currentMaterial->getProperties().end() &&
+                                            nameId != StandardShaderPropertyNames::INPUT_MODEL &&
+                                            p_targetSpecs->getMappedSpecs().find(nameId) ==
+                                                p_targetSpecs->getMappedSpecs().end()) {
+                                            p_targetSpecs->insert_back(spec);
+                                            needsRebuild = true;
+                                        }
+                                    }
                                 }
                             }
+
+                            if (!needsRebuild) {
+                                MMETER_SCOPE_PROFILER("Shader setup");
+
+                                // OpenGL - use the program
+                                glUseProgram(p_currentShader->programGLName);
+
+                                // Aliases should've already been taken into account, so use
+                                // properties directly
+                                VariantScope &directProperties =
+                                    args.properties.getUnaliasedScope();
+
+                                // set the 'environmental' uniforms
+                                // skip those that will be set by the material
+                                if (auto it = p_currentShader->uniformSpecs.find(
+                                        StandardShaderPropertyNames::INPUT_MODEL);
+                                    it != p_currentShader->uniformSpecs.end()) {
+                                    glModelMatrixUniformLocation = (*it).second.location;
+                                } else {
+                                    glModelMatrixUniformLocation = -1;
+                                }
+
+                                p_currentShader->setupNonMaterialProperties(rend, directProperties,
+                                                                            *p_currentMaterial);
+                            }
+                        }
+
+                        if (!needsRebuild) {
+                            p_currentShader->setupMaterialProperties(rend, *p_currentMaterial);
                         }
                     }
 
                     if (!needsRebuild) {
-                        // OpenGL - use the program
-                        glUseProgram(p_compiledShader->programGLName);
+                        MMETER_SCOPE_PROFILER("Mesh draw");
 
-                        // Aliases should've already been taken into account, so use properties
-                        // directly
-                        VariantScope &directProperties = args.properties.getUnaliasedScope();
+                        OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
 
-                        // set the 'environmental' uniforms
-                        // skip those that will be set by the material
-                        GLint glModelMatrixUniformLocation;
-                        if (auto it = p_compiledShader->uniformSpecs.find(
-                                StandardShaderPropertyNames::INPUT_MODEL);
-                            it != p_compiledShader->uniformSpecs.end()) {
-                            glModelMatrixUniformLocation = (*it).second.location;
-                        } else {
-                            glModelMatrixUniformLocation = -1;
+                        glBindVertexArray(mesh.VAO);
+                        if (glModelMatrixUniformLocation != -1) {
+                            glUniformMatrix4fv(glModelMatrixUniformLocation, 1, GL_FALSE,
+                                               &(p_meshProp->transform.getModelMatrix()[0][0]));
                         }
-
-                        p_compiledShader->setupNonMaterialProperties(rend, directProperties,
-                                                                     *p_firstMat);
-
-                        // iterate over materials
-                        for (auto [material, props] : materials2props) {
-                            MMETER_SCOPE_PROFILER("Material iteration");
-
-                            p_compiledShader->setupMaterialProperties(rend, *material);
-
-                            // iterate over meshes
-                            {
-                                MMETER_SCOPE_PROFILER("Prop loop");
-
-                                for (auto p_meshProp : props) {
-                                    OpenGLMesh &mesh =
-                                        static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
-
-                                    glBindVertexArray(mesh.VAO);
-                                    if (glModelMatrixUniformLocation != -1) {
-                                        glUniformMatrix4fv(
-                                            glModelMatrixUniformLocation, 1, GL_FALSE,
-                                            &(p_meshProp->transform.getModelMatrix()[0][0]));
-                                    }
-                                    glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
-                                                   GL_UNSIGNED_INT, 0);
-                                }
-                            }
-                        }
+                        glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
+                                       GL_UNSIGNED_INT, 0);
                     }
                 }
 
@@ -329,7 +367,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
             };
 
             // render filled polygons
-            switch (m_params.rasterizingMode) {
+            switch (m_params.rasterizing.rasterizingMode) {
             case RasterizingMode::DerivationalFillCenters:
             case RasterizingMode::DerivationalFillEdges:
             case RasterizingMode::DerivationalFillVertices:
@@ -341,11 +379,11 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
             }
 
             // render edges
-            switch (m_params.rasterizingMode) {
+            switch (m_params.rasterizing.rasterizingMode) {
             case RasterizingMode::DerivationalFillEdges:
             case RasterizingMode::DerivationalTraceEdges:
             case RasterizingMode::DerivationalTraceVertices:
-                if (m_params.smoothTracing) {
+                if (m_params.rasterizing.smoothTracing) {
                     glDepthMask(GL_FALSE);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glEnable(GL_BLEND);
@@ -361,7 +399,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
             }
 
             // render vertices
-            switch (m_params.rasterizingMode) {
+            switch (m_params.rasterizing.rasterizingMode) {
             case RasterizingMode::DerivationalFillVertices:
             case RasterizingMode::DerivationalTraceVertices:
             case RasterizingMode::DerivationalDotVertices:
@@ -404,7 +442,8 @@ StringView OpenGLComposeSceneRender::getFriendlyName() const
 std::size_t OpenGLComposeSceneRender::getSpecsKey(const ParamAliases &aliases) const
 {
     return combinedHashes<2>(
-        {{std::hash<StringId>{}(m_params.vertexPositionOutputPropertyName), aliases.hash()}});
+        {{std::hash<StringId>{}(m_params.rasterizing.vertexPositionOutputPropertyName),
+          aliases.hash()}});
 }
 
 } // namespace Vitrae

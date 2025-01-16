@@ -42,4 +42,14 @@ enum class RasterizingMode {
     DerivationalDotVertices,
 };
 
+struct RasterizingSetupParams
+{
+    String vertexPositionOutputPropertyName;
+    CullingMode cullingMode = CullingMode::Backface;
+    RasterizingMode rasterizingMode = RasterizingMode::DerivationalFillCenters;
+    bool smoothFilling : 1 = false;
+    bool smoothTracing : 1 = false;
+    bool smoothDotting : 1 = false;
+};
+
 } // namespace Vitrae
