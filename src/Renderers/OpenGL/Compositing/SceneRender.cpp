@@ -163,45 +163,26 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     dynasma::FirmPtr<FrameStore> p_frame =
         args.properties.get(FRAME_STORE_TARGET_SPEC.name).get<dynasma::FirmPtr<FrameStore>>();
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
+    {
+        MMETER_SCOPE_PROFILER("Sorting meshes");
 
-    // build map of shaders to materials to mesh props
-    /*std::map<ParamAliases,
-             std::map<dynasma::FirmPtr<const Material>, std::vector<const MeshProp *>>,
-             bool (*)(const ParamAliases &, const ParamAliases &)>
-        aliases2materials2props(
-            [](const ParamAliases &l, const ParamAliases &r) { return l.hash() < r.hash(); });
-*/
-    /*{
+        auto [meshFilter, meshComparator] = m_params.ordering.generateFilterAndSort(scene, args);
 
-        MMETER_SCOPE_PROFILER("Scene struct gen");
+        m_sortedMeshProps.clear();
+        m_sortedMeshProps.reserve(scene.meshProps.size());
 
         for (auto &meshProp : scene.meshProps) {
-            auto mat = meshProp.p_mesh->getMaterial().getLoaded();
-            OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
-            mesh.loadToGPU(rend);
+            if (meshFilter(meshProp)) {
+                OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
+                mesh.loadToGPU(rend);
 
-            const ParamAliases *p_aliaseses[] = {&mat->getParamAliases(), &args.aliases};
-
-            aliases2materials2props[ParamAliases(p_aliaseses)][mat].push_back(&meshProp);
+                m_sortedMeshProps.push_back(&meshProp);
+            }
         }
-    }*/
 
-    auto [meshFilter, meshComparator] = m_params.ordering.generateFilterAndSort(scene, args);
-
-    m_sortedMeshProps.clear();
-    m_sortedMeshProps.reserve(scene.meshProps.size());
-
-    for (auto &meshProp : scene.meshProps) {
-        if (meshFilter(meshProp)) {
-            OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
-            mesh.loadToGPU(rend);
-
-            m_sortedMeshProps.push_back(&meshProp);
-        }
+        std::sort(m_sortedMeshProps.begin(), m_sortedMeshProps.end(),
+                  [&](const MeshProp *l, const MeshProp *r) { return meshComparator(*l, *r); });
     }
-
-    std::sort(m_sortedMeshProps.begin(), m_sortedMeshProps.end(),
-              [&](const MeshProp *l, const MeshProp *r) { return meshComparator(*l, *r); });
 
     // check for whether we have all input deps or whether we need to update the pipeline
     bool needsRebuild = false;
