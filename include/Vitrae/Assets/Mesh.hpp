@@ -32,7 +32,6 @@ class Mesh : public dynasma::PolymorphicBase
     {
         ComponentRoot &root;
         const aiMesh *p_extMesh;
-        std::filesystem::path sceneFilepath;
     };
 
     virtual ~Mesh() = default;
