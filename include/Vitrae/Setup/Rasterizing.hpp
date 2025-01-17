@@ -9,6 +9,24 @@ enum class CullingMode {
     Frontface
 };
 
+enum class BlendingFunction {
+    Zero,
+    One,
+    SourceColor,
+    OneMinusSourceColor,
+    DestinationColor,
+    OneMinusDestinationColor,
+    SourceAlpha,
+    OneMinusSourceAlpha,
+    DestinationAlpha,
+    OneMinusDestinationAlpha,
+    ConstantColor,
+    OneMinusConstantColor,
+    ConstantAlpha,
+    OneMinusConstantAlpha,
+    SourceAlphaSaturated,
+};
+
 /**
  * @enum RasterizingMode
  * @brief Different rasterization modes
@@ -46,7 +64,10 @@ struct RasterizingSetupParams
 {
     String vertexPositionOutputPropertyName;
     CullingMode cullingMode = CullingMode::Backface;
+    BlendingFunction sourceBlending = BlendingFunction::One;
+    BlendingFunction destinationBlending = BlendingFunction::Zero;
     RasterizingMode rasterizingMode = RasterizingMode::DerivationalFillCenters;
+    bool writeDepth : 1 = true;
     bool smoothFilling : 1 = false;
     bool smoothTracing : 1 = false;
     bool smoothDotting : 1 = false;

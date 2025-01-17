@@ -366,13 +366,59 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                 glUseProgram(0);
             };
 
+            auto getBlending = [](BlendingFunction blending) {
+                switch (blending) {
+                case BlendingFunction::Zero:
+                    return GL_ZERO;
+                case BlendingFunction::One:
+                    return GL_ONE;
+                case BlendingFunction::SourceColor:
+                    return GL_SRC_COLOR;
+                case BlendingFunction::OneMinusSourceColor:
+                    return GL_ONE_MINUS_SRC_COLOR;
+                case BlendingFunction::DestinationColor:
+                    return GL_DST_COLOR;
+                case BlendingFunction::OneMinusDestinationColor:
+                    return GL_ONE_MINUS_DST_COLOR;
+                case BlendingFunction::SourceAlpha:
+                    return GL_SRC_ALPHA;
+                case BlendingFunction::OneMinusSourceAlpha:
+                    return GL_ONE_MINUS_SRC_ALPHA;
+                case BlendingFunction::DestinationAlpha:
+                    return GL_DST_ALPHA;
+                case BlendingFunction::OneMinusDestinationAlpha:
+                    return GL_ONE_MINUS_DST_ALPHA;
+                case BlendingFunction::ConstantColor:
+                    return GL_CONSTANT_COLOR;
+                case BlendingFunction::OneMinusConstantColor:
+                    return GL_ONE_MINUS_CONSTANT_COLOR;
+                case BlendingFunction::ConstantAlpha:
+                    return GL_CONSTANT_ALPHA;
+                case BlendingFunction::OneMinusConstantAlpha:
+                    return GL_ONE_MINUS_CONSTANT_ALPHA;
+                case BlendingFunction::SourceAlphaSaturated:
+                    return GL_SRC_ALPHA_SATURATE;
+                }
+                return GL_ZERO;
+            };
+            auto setBlending = [&](const RasterizingSetupParams &params) {
+                glDepthMask(params.writeDepth);
+                glBlendFunc(getBlending(params.sourceBlending),
+                            getBlending(params.destinationBlending));
+                if (params.sourceBlending == BlendingFunction::One &&
+                    params.destinationBlending == BlendingFunction::Zero) {
+                    glDisable(GL_BLEND);
+                } else {
+                    glEnable(GL_BLEND);
+                }
+            };
+
             // render filled polygons
             switch (m_params.rasterizing.rasterizingMode) {
             case RasterizingMode::DerivationalFillCenters:
             case RasterizingMode::DerivationalFillEdges:
             case RasterizingMode::DerivationalFillVertices:
-                glDepthMask(GL_TRUE);
-                glDisable(GL_BLEND);
+                setBlending(m_params.rasterizing);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 runDerivationalPass();
                 break;
@@ -389,8 +435,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                     glEnable(GL_BLEND);
                     glLineWidth(1.5);
                 } else {
-                    glDepthMask(GL_TRUE);
-                    glDisable(GL_BLEND);
+                    setBlending(m_params.rasterizing);
                     glLineWidth(1.0);
                 }
                 glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -403,8 +448,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
             case RasterizingMode::DerivationalFillVertices:
             case RasterizingMode::DerivationalTraceVertices:
             case RasterizingMode::DerivationalDotVertices:
-                glDepthMask(GL_TRUE);
-                glDisable(GL_BLEND);
+                setBlending(m_params.rasterizing);
                 glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
                 runDerivationalPass();
                 break;

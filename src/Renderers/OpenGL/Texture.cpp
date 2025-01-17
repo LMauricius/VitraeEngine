@@ -107,7 +107,7 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
         mSwizzle = {GL_RED, GL_RED, GL_RED, GL_GREEN};
         mUseSwizzle = true;
 
-        for (int i = 0; i < mWidth * mHeight; i += 2) {
+        for (int i = 0; i < mWidth * mHeight * 2; i += 2) {
             m_stats.value().averageColor += glm::vec4(data[i] / 255.0f, data[i] / 255.0f,
                                                       data[i] / 255.0f, data[i + 1] / 255.0f);
         }
@@ -118,7 +118,7 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
         mGLInternalFormat = GL_RGB;
         mGLChannelFormat = GL_RGB;
 
-        for (int i = 0; i < mWidth * mHeight; i += 3) {
+        for (int i = 0; i < mWidth * mHeight * 3; i += 3) {
             m_stats.value().averageColor +=
                 glm::vec4(data[i] / 255.0f, data[i + 1] / 255.0f, data[i + 2] / 255.0f, 1.0f);
         }
@@ -128,7 +128,7 @@ OpenGLTexture::OpenGLTexture(const FileLoadParams &params)
         mGLInternalFormat = GL_RGBA;
         mGLChannelFormat = GL_RGBA;
 
-        for (int i = 0; i < mWidth * mHeight; i += 4) {
+        for (int i = 0; i < mWidth * mHeight * 4; i += 4) {
             m_stats.value().averageColor += glm::vec4(data[i] / 255.0f, data[i + 1] / 255.0f,
                                                       data[i + 2] / 255.0f, data[i + 3] / 255.0f);
         }
