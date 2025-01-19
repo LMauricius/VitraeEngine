@@ -1,6 +1,7 @@
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Collections/FormGenerator.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 
 #include <iostream>
@@ -94,6 +95,7 @@ ComponentRoot::ComponentRoot()
     Standard components
     */
     setComponent<MethodCollection>(new MethodCollection);
+    setComponent<FormGeneratorCollection>(new FormGeneratorCollection);
 }
 
 ComponentRoot::~ComponentRoot()
