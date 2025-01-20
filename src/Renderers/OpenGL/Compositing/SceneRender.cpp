@@ -166,9 +166,12 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     const LoDSelectionParams &lodParams =
         args.properties.get(StandardParam::LoDParams.name).get<LoDSelectionParams>();
     glm::mat4 mat_display = args.properties.get(StandardParam::mat_display.name).get<glm::mat4>();
-
     dynasma::FirmPtr<FrameStore> p_frame =
         args.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
+
+    StringId purposeId = m_params.rasterizing.modelFormPurpose;
+    glm::vec2 frameSize = p_frame->getSize();
+
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
     {
         MMETER_SCOPE_PROFILER("Sorting meshes");
@@ -260,20 +263,18 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                     {
                         MMETER_SCOPE_PROFILER("LoD selection");
 
-                        glm::vec4 sizedPoint = {1.0, 1.0, 1.0, 1.0};
-                        glm::vec4 zero = {0.0, 0.0, 0.0, 1.0};
+                        constexpr glm::vec4 sizedPoint = {1.0, 1.0, 1.0, 1.0};
+                        constexpr glm::vec4 zero = {0.0, 0.0, 0.0, 1.0};
                         glm::vec4 projPoint = mat_mvp * sizedPoint;
                         glm::vec4 projZero = mat_mvp * zero;
                         glm::vec2 visiblePointSize =
-                            glm::vec2(projPoint / projPoint.w - projZero / projZero.w) *
-                            p_frame->getSize();
+                            glm::vec2(projPoint / projPoint.w - projZero / projZero.w) * frameSize;
 
                         LoDContext lodCtx = {
                             .closestPointScaling = std::max(visiblePointSize.x, visiblePointSize.y),
                         };
 
-                        p_shape = p_modelProp->p_model->getBestForm(
-                            m_params.rasterizing.modelFormPurpose, lodParams, lodCtx);
+                        p_shape = p_modelProp->p_model->getBestForm(purposeId, lodParams, lodCtx);
                     }
                     p_shape->loadToGPU(rend);
 
