@@ -24,14 +24,14 @@ enum class LoDSelectionMethod {
      * If the model has enough different levels of detail, this should be indistinguishable from
      * FirstAbovehreshold, without going over the threshold
      */
-    FirstBelowhreshold,
+    FirstBelowThreshold,
     /**
      * Choose the lowest quality LoD that's too detailed according to the threshold
      * @note Ideal if we want the highest visual quality without losing too much performance.
      * Using quality above this usually doesn't bring visual improvement
      * if the threshold is setup for the screen's real detail granularity
      */
-    FirstAbovehreshold,
+    FirstAboveThreshold,
 };
 
 /**
@@ -106,6 +106,10 @@ struct LoDMeasure
 struct SmallestElementSizeMeasure : public LoDMeasure
 {
     float smallestElementSize;
+
+    inline SmallestElementSizeMeasure(float smallestElementSize)
+        : smallestElementSize(smallestElementSize)
+    {}
 
     bool isTooDetailed(const LoDContext &ctx, const LoDThresholdParams &threshold) override;
 };
