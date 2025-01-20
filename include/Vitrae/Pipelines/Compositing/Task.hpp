@@ -51,26 +51,6 @@ class ComposeTask : public Task
      * @throws ComposeTaskRequirementsChangedException if the pipeline needs to be rebuilt
      */
     virtual void run(RenderComposeContext ctx) const = 0;
-
-    /**
-     * The spec for fs_target filter property
-     */
-    static const ParamSpec FRAME_STORE_TARGET_SPEC;
-
-    /**
-     * The spec for scene filter property
-     */
-    static const ParamSpec SCENE_SPEC;
 };
-
-namespace StandardCompositorOutputNames
-{
-static constexpr const char OUTPUT[] = "rendered_scene";
-} // namespace StandardComposeOutputNames
-
-namespace StandardCompositorOutputTypes
-{
-static constexpr const TypeInfo &OUTPUT_TYPE = TYPE_INFO<dynasma::FirmPtr<FrameStore>>;
-}
 
 } // namespace Vitrae

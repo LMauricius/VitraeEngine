@@ -2,6 +2,7 @@
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
@@ -13,6 +14,11 @@
 
 namespace Vitrae
 {
+
+namespace
+{
+const ParamList FILTER_SPECS = {StandardParam::fs_target};
+}
 
 OpenGLComposeClearRender::OpenGLComposeClearRender(const SetupParams &params)
     : m_root(params.root), m_color(params.backgroundColor),
@@ -76,7 +82,7 @@ void OpenGLComposeClearRender::run(RenderComposeContext args) const
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
 
     dynasma::FirmPtr<FrameStore> p_frame =
-        args.properties.get(FRAME_STORE_SPEC.name).get<dynasma::FirmPtr<FrameStore>>();
+        args.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
 
     frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});

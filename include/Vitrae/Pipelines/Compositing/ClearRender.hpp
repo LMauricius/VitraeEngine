@@ -22,16 +22,6 @@ class ComposeClearRender : public ComposeTask
         glm::vec4 backgroundColor;
         std::vector<String> outputTokenNames;
     };
-
-    /**
-     * The spec for frame_store filter property
-     */
-    static const ParamSpec FRAME_STORE_SPEC;
-
-    /**
-     * The constant filter specs of ComposeClearRender
-     */
-    static const ParamList FILTER_SPECS;
 };
 
 struct ComposeClearRenderKeeperSeed

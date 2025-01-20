@@ -1,5 +1,6 @@
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
+#include "Vitrae/Params/Standard.hpp"
 
 #include "MMeter.h"
 
@@ -42,7 +43,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
         m_friendlyName += spec.fragmentSpec.name;
     }
 
-    m_consumeSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
+    m_consumeSpecs.insert_back(StandardParam::fs_target);
 
     for (auto &tokenName : params.inputTokenNames) {
         m_inputSpecs.insert_back({tokenName, TYPE_INFO<void>});
@@ -111,7 +112,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
         .p_colorTexture = {},
         .p_depthTexture = {},
         .outputTextureSpecs = {},
-        .friendlyName = ctx.aliases.choiceStringFor(FRAME_STORE_TARGET_SPEC.name)};
+        .friendlyName = ctx.aliases.choiceStringFor(StandardParam::fs_target.name)};
     glm::vec2 retrSize = m_size.get(ctx.properties);
 
     if (m_outputColorTextureNameId != "") {

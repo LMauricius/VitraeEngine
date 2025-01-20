@@ -3,6 +3,7 @@
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Pipelines/PipelineContainer.hpp"
 
 #include "MMeter.h"
@@ -13,12 +14,6 @@
 namespace Vitrae
 {
 class Renderer;
-
-const ParamSpec Compositor::FRAME_STORE_TARGET_SPEC = {
-    .name = "fs_display",
-    .typeInfo = TYPE_INFO<dynasma::FirmPtr<FrameStore>>,
-
-};
 
 Compositor::Compositor(ComponentRoot &root)
     : m_root(root), m_needsRebuild(true), m_needsFrameStoreRegeneration(true), m_pipeline(),
@@ -89,7 +84,7 @@ void Compositor::compose()
             {
                 MMETER_SCOPE_PROFILER("FrameStore sync");
 
-                parameters.get(FRAME_STORE_TARGET_SPEC.name)
+                parameters.get(StandardParam::fs_target.name)
                     .get<dynasma::FirmPtr<FrameStore>>()
                     ->sync();
             }

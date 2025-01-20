@@ -27,24 +27,4 @@ class ShaderTask : public Task
     virtual void outputUsageCode(BuildContext args) const = 0;
 };
 
-namespace StandardShaderPropertyNames
-{
-static constexpr const char INPUT_VIEW[] = "mat_view";
-static constexpr const char INPUT_PROJECTION[] = "mat_proj";
-static constexpr const char INPUT_MODEL[] = "mat_model";
-
-static constexpr const char FRAGMENT_OUTPUT[] = "shade";
-static constexpr const char COMPUTE_OUTPUT[] = "data_computed";
-} // namespace StandardShaderOutputNames
-
-namespace StandardShaderPropertyTypes
-{
-static constexpr const TypeInfo &INPUT_VIEW = TYPE_INFO<glm::mat4>;
-static constexpr const TypeInfo &INPUT_PROJECTION = TYPE_INFO<glm::mat4>;
-static constexpr const TypeInfo &INPUT_MODEL = TYPE_INFO<glm::mat4>;
-
-static constexpr const TypeInfo &FRAGMENT_OUTPUT = TYPE_INFO<glm::vec4>;
-static constexpr const TypeInfo &VERTEX_OUTPUT = TYPE_INFO<glm::vec4>;
-}
-
 } // namespace Vitrae

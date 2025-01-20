@@ -4,6 +4,7 @@
 #include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Dynamic/VariantScope.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
@@ -66,8 +67,8 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
         m_outputSpecs.insert_back({.name = spec, .typeInfo = TYPE_INFO<void>});
     }
 
-    m_params.ordering.inputSpecs.insert_back(SCENE_SPEC);
-    m_params.ordering.filterSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
+    m_params.ordering.inputSpecs.insert_back(StandardParam::scene);
+    m_params.ordering.filterSpecs.insert_back(StandardParam::fs_target);
 }
 
 std::size_t OpenGLComposeSceneRender::memory_cost() const
@@ -147,8 +148,8 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
             specsContainer.inputSpecs.insert_back({.name = tokenName, .typeInfo = TYPE_INFO<void>});
         }
 
-        specsContainer.inputSpecs.insert_back(SCENE_SPEC);
-        specsContainer.filterSpecs.insert_back(FRAME_STORE_TARGET_SPEC);
+        specsContainer.inputSpecs.insert_back(StandardParam::scene);
+        specsContainer.filterSpecs.insert_back(StandardParam::fs_target);
 
         specsContainer.inputSpecs.merge(m_params.ordering.inputSpecs);
         specsContainer.consumingSpecs.merge(m_params.ordering.consumingSpecs);
@@ -158,10 +159,10 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     SpecsPerAliases &specsContainer = *(*specsIt).second;
 
     // extract common inputs
-    Scene &scene = *args.properties.get(SCENE_SPEC.name).get<dynasma::FirmPtr<Scene>>();
+    Scene &scene = *args.properties.get(StandardParam::scene.name).get<dynasma::FirmPtr<Scene>>();
 
     dynasma::FirmPtr<FrameStore> p_frame =
-        args.properties.get(FRAME_STORE_TARGET_SPEC.name).get<dynasma::FirmPtr<FrameStore>>();
+        args.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
     {
         MMETER_SCOPE_PROFILER("Sorting meshes");
@@ -312,7 +313,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                                 // set the 'environmental' uniforms
                                 // skip those that will be set by the material
                                 if (auto it = p_currentShader->uniformSpecs.find(
-                                        StandardShaderPropertyNames::INPUT_MODEL);
+                                        StandardParam::mat_model.name);
                                     it != p_currentShader->uniformSpecs.end()) {
                                     glModelMatrixUniformLocation = (*it).second.location;
                                 } else {

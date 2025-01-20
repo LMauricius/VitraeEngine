@@ -23,6 +23,8 @@ inline const ParamSpec scene     = {.name = "scene",     .typeInfo = TYPE_INFO<d
 inline const ParamSpec camera    = {.name = "camera",    .typeInfo = TYPE_INFO<dynasma::FirmPtr<Camera>>};
 inline const ParamSpec fs_target = {.name = "fs_target", .typeInfo = TYPE_INFO<dynasma::FirmPtr<FrameStore>>};
 inline const ParamSpec LoDParams = {.name = "LoDParams", .typeInfo = TYPE_INFO<LoDSelectionParams>};
+
+inline const ParamSpec mat_model = {.name = "mat_model", .typeInfo = TYPE_INFO<glm::mat4>};
 // clang-format on
 
 } // namespace StandardParam
