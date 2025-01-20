@@ -203,7 +203,12 @@ class ComponentRoot
     }
     template <class T> const UniqueAnyPtr &getGenericStorageVariable() const
     {
-        return mCustomComponents.at(getClassID<T>());
+        try {
+            return mCustomComponents.at(getClassID<T>());
+        }
+        catch (std::out_of_range) {
+            throw std::out_of_range("Component not registered");
+        }
     }
 
     template <class aiType> using MeshBufferInfoList = std::vector<AiMeshBufferInfo<aiType>>;
