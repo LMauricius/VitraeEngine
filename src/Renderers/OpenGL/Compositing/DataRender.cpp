@@ -1,12 +1,12 @@
 #include "Vitrae/Renderers/OpenGL/Compositing/DataRender.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Assets/Model.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Dynamic/VariantScope.hpp"
 #include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
-#include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
 
@@ -93,6 +93,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
     CompiledGLSLShaderCacher &shaderCacher = m_root.getComponent<CompiledGLSLShaderCacher>();
 
     // Get specs cache and init it if needed
+    bool needsRebuild = false;
     std::size_t specsKey = getSpecsKey(args.aliases);
     auto specsIt = m_specsPerKey.find(specsKey);
     if (specsIt == m_specsPerKey.end()) {
@@ -102,6 +103,11 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
         for (auto &tokenName : m_params.inputTokenNames) {
             specsContainer.inputSpecs.insert_back({.name = tokenName, .typeInfo = TYPE_INFO<void>});
         }
+
+        specsContainer.inputSpecs.insert_back(StandardParam::mat_display);
+        specsContainer.filterSpecs.insert_back(StandardParam::fs_target);
+
+        needsRebuild = true;
     }
 
     SpecsPerAliases &specsContainer = *(*specsIt).second;
@@ -110,10 +116,25 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
     dynasma::FirmPtr<FrameStore> p_frame =
         args.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
+    glm::mat4 mat_display = args.properties.get(StandardParam::mat_display.name).get<glm::mat4>();
 
-    auto p_mesh = m_params.p_dataPointMesh.getLoaded();
+    LoDSelectionParams lodParams = {
+        .method = LoDSelectionMethod::Maximum,
+        .threshold =
+            {
+                .minElementSize = 1.0f,
+            },
+    };
+    LoDContext lodCtx = {
+        .closestPointScaling = 1.0f,
+    };
 
-    auto p_mat = p_mesh->getMaterial().getLoaded();
+    auto p_model = m_params.p_dataPointModel.getLoaded();
+    auto p_shape =
+        p_model->getBestForm(m_params.rasterizing.modelFormPurpose, lodParams, lodCtx).getLoaded();
+    p_shape->loadToGPU(rend);
+
+    auto p_mat = p_model->getMaterial().getLoaded();
 
     const ParamAliases *p_aliaseses[] = {&p_mat->getParamAliases(), &args.aliases};
     ParamAliases combinedAliases(p_aliaseses);
@@ -121,6 +142,8 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
     // Compile and setup the shader
     dynasma::FirmPtr<CompiledGLSLShader> p_compiledShader;
     GLint glModelMatrixUniformLocation;
+    GLint glMVPMatrixUniformLocation;
+    GLint glDisplayMatrixUniformLocation;
 
     {
         MMETER_SCOPE_PROFILER("Shader setup");
@@ -130,14 +153,13 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
             MMETER_SCOPE_PROFILER("Shader loading");
 
             p_compiledShader = shaderCacher.retrieve_asset({CompiledGLSLShader::SurfaceShaderParams(
-                combinedAliases, m_params.vertexPositionOutputPropertyName,
+                combinedAliases, m_params.rasterizing.vertexPositionOutputPropertyName,
                 *frame.getRenderComponents(), m_root)});
 
             // Aliases should've already been taken into account, so use properties directly
             VariantScope &directProperties = args.properties.getUnaliasedScope();
 
             // Store pipeline property specs
-            bool needsRebuild = false;
             needsRebuild |= (specsContainer.inputSpecs.merge(p_compiledShader->inputSpecs) > 0);
             needsRebuild |= (specsContainer.filterSpecs.merge(p_compiledShader->filterSpecs) > 0);
             needsRebuild |=
@@ -145,6 +167,25 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
 
             if (needsRebuild) {
                 throw ComposeTaskRequirementsChangedException();
+            }
+
+            if (auto it = p_compiledShader->uniformSpecs.find(StandardParam::mat_model.name);
+                it != p_compiledShader->uniformSpecs.end()) {
+                glModelMatrixUniformLocation = (*it).second.location;
+            } else {
+                glModelMatrixUniformLocation = -1;
+            }
+            if (auto it = p_compiledShader->uniformSpecs.find(StandardParam::mat_display.name);
+                it != p_compiledShader->uniformSpecs.end()) {
+                glDisplayMatrixUniformLocation = (*it).second.location;
+            } else {
+                glDisplayMatrixUniformLocation = -1;
+            }
+            if (auto it = p_compiledShader->uniformSpecs.find(StandardParam::mat_mvp.name);
+                it != p_compiledShader->uniformSpecs.end()) {
+                glMVPMatrixUniformLocation = (*it).second.location;
+            } else {
+                glMVPMatrixUniformLocation = -1;
             }
 
             glUseProgram(p_compiledShader->programGLName);
@@ -164,7 +205,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
     {
         MMETER_SCOPE_PROFILER("Rendering (multipass)");
 
-        switch (m_params.rasterizingMode) {
+        switch (m_params.rasterizing.rasterizingMode) {
         // derivational methods (all methods for now)
         case RasterizingMode::DerivationalFillCenters:
         case RasterizingMode::DerivationalFillEdges:
@@ -180,7 +221,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
                 glEnable(GL_DEPTH_TEST);
                 glDepthFunc(GL_LESS);
 
-                switch (m_params.cullingMode) {
+                switch (m_params.rasterizing.cullingMode) {
                 case CullingMode::None:
                     glDisable(GL_CULL_FACE);
                     break;
@@ -195,13 +236,13 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
                 }
 
                 // smoothing
-                if (m_params.smoothFilling) {
+                if (m_params.rasterizing.smoothFilling) {
                     glEnable(GL_POLYGON_SMOOTH);
                     glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
                 } else {
                     glDisable(GL_POLYGON_SMOOTH);
                 }
-                if (m_params.smoothTracing) {
+                if (m_params.rasterizing.smoothTracing) {
                     glEnable(GL_LINE_SMOOTH);
                     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
                 } else {
@@ -215,17 +256,25 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
 
                 // run the data generator
 
-                OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_mesh);
-                mesh.loadToGPU(rend);
-
-                glBindVertexArray(mesh.VAO);
-                std::size_t triCount = mesh.getTriangles().size();
-
                 RenderCallback renderCallback = [glModelMatrixUniformLocation,
-                                                 triCount](const glm::mat4 &transform) {
-                    glUniformMatrix4fv(glModelMatrixUniformLocation, 1, GL_FALSE,
-                                       &(transform[0][0]));
-                    glDrawElements(GL_TRIANGLES, 3 * triCount, GL_UNSIGNED_INT, 0);
+                                                 glDisplayMatrixUniformLocation,
+                                                 glMVPMatrixUniformLocation, &mat_display, p_shape,
+                                                 &rend](const glm::mat4 &transform) {
+                    if (glModelMatrixUniformLocation != -1) {
+                        glUniformMatrix4fv(glModelMatrixUniformLocation, 1, GL_FALSE,
+                                           &(transform[0][0]));
+                    }
+                    if (glDisplayMatrixUniformLocation != -1) {
+                        glUniformMatrix4fv(glDisplayMatrixUniformLocation, 1, GL_FALSE,
+                                           &(mat_display[0][0]));
+                    }
+                    if (glMVPMatrixUniformLocation != -1) {
+                        glm::mat4 mat_mvp = mat_display * transform;
+                        glUniformMatrix4fv(glMVPMatrixUniformLocation, 1, GL_FALSE,
+                                           &(mat_mvp[0][0]));
+                    }
+
+                    p_shape->rasterize();
                 };
 
                 m_params.dataGenerator(args, renderCallback);
@@ -234,7 +283,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
             };
 
             // render filled polygons
-            switch (m_params.rasterizingMode) {
+            switch (m_params.rasterizing.rasterizingMode) {
             case RasterizingMode::DerivationalFillCenters:
             case RasterizingMode::DerivationalFillEdges:
             case RasterizingMode::DerivationalFillVertices:
@@ -246,11 +295,11 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
             }
 
             // render edges
-            switch (m_params.rasterizingMode) {
+            switch (m_params.rasterizing.rasterizingMode) {
             case RasterizingMode::DerivationalFillEdges:
             case RasterizingMode::DerivationalTraceEdges:
             case RasterizingMode::DerivationalTraceVertices:
-                if (m_params.smoothTracing) {
+                if (m_params.rasterizing.smoothTracing) {
                     glDepthMask(GL_FALSE);
                     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                     glEnable(GL_BLEND);
@@ -266,7 +315,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
             }
 
             // render vertices
-            switch (m_params.rasterizingMode) {
+            switch (m_params.rasterizing.rasterizingMode) {
             case RasterizingMode::DerivationalFillVertices:
             case RasterizingMode::DerivationalTraceVertices:
             case RasterizingMode::DerivationalDotVertices:
@@ -305,7 +354,8 @@ StringView OpenGLComposeDataRender::getFriendlyName() const
 std::size_t OpenGLComposeDataRender::getSpecsKey(const ParamAliases &aliases) const
 {
     return combinedHashes<2>(
-        {{std::hash<StringId>{}(m_params.vertexPositionOutputPropertyName), aliases.hash()}});
+        {{std::hash<StringId>{}(m_params.rasterizing.vertexPositionOutputPropertyName),
+          aliases.hash()}});
 }
 
 } // namespace Vitrae

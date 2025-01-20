@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Data/LevelOfDetail.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Params/ParamSpec.hpp"
 #include "dynasma/pointer.hpp"
@@ -9,7 +10,6 @@ namespace Vitrae
 class Scene;
 class Camera;
 class FrameStore;
-class LoDSelectionParams;
 
 /**
  * Namespace containing commonly used ParamSpecs, identifiable by their string names
@@ -19,14 +19,30 @@ namespace StandardParam
 
 // clang-format off
 
-inline const ParamSpec scene     = {.name = "scene",     .typeInfo = TYPE_INFO<dynasma::FirmPtr<Scene>>};
-inline const ParamSpec camera    = {.name = "camera",    .typeInfo = TYPE_INFO<dynasma::FirmPtr<Camera>>};
-inline const ParamSpec fs_target = {.name = "fs_target", .typeInfo = TYPE_INFO<dynasma::FirmPtr<FrameStore>>};
-inline const ParamSpec LoDParams = {.name = "LoDParams", .typeInfo = TYPE_INFO<dynasma::FirmPtr<LoDSelectionParams>>};
+inline const ParamSpec scene       = {"scene",       TYPE_INFO<dynasma::FirmPtr<Scene>>};
+inline const ParamSpec camera      = {"camera",      TYPE_INFO<dynasma::FirmPtr<Camera>>};
+inline const ParamSpec fs_target   = {"fs_target",   TYPE_INFO<dynasma::FirmPtr<FrameStore>>};
+inline const ParamSpec fs_display  = {"fs_display",  TYPE_INFO<dynasma::FirmPtr<FrameStore>>};
+inline const ParamSpec LoDParams   = {"LoDParams",   TYPE_INFO<LoDSelectionParams>};
+    
+inline const ParamSpec mat_model   = {"mat_model",   TYPE_INFO<glm::mat4>};
+inline const ParamSpec mat_view    = {"mat_view",    TYPE_INFO<glm::mat4>};
+inline const ParamSpec mat_proj    = {"mat_proj",    TYPE_INFO<glm::mat4>};
 
-inline const ParamSpec mat_model = {.name = "mat_model", .typeInfo = TYPE_INFO<glm::mat4>};
+/// @brief Combined matrix of view and projection
+inline const ParamSpec mat_display = {"mat_display", TYPE_INFO<glm::mat4>};
 
-inline const ParamSpec shade     = {.name = "shade",     .typeInfo = TYPE_INFO<glm::mat4>};
+/// @brief Combined matrix of model, view and projection
+inline const ParamSpec mat_mvp     = {"mat_mvp",     TYPE_INFO<glm::mat4>};
+
+/// @brief The surface color with lights applied to it
+inline const ParamSpec shade       = {"shade",       TYPE_INFO<glm::vec4>};
+
+/// @subsection Vertex properties
+inline const ParamSpec position    = {"position",    TYPE_INFO<glm::vec3>};
+inline const ParamSpec normal      = {"normal",      TYPE_INFO<glm::vec3>};
+inline const ParamSpec texcoord0   = {"texcoord0",   TYPE_INFO<glm::vec2>};
+
 // clang-format on
 
 } // namespace StandardParam

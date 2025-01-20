@@ -26,8 +26,6 @@ class Compositor : public dynasma::PolymorphicBase
 
     void compose();
 
-    static const ParamSpec FRAME_STORE_TARGET_SPEC;
-
     VariantScope parameters;
 
   protected:

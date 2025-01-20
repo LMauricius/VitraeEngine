@@ -1,6 +1,5 @@
 #include "Vitrae/Assets/Model.hpp"
-#include "Vitrae/Assets/Material.hpp"
-#include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Assets/Shapes/Mesh.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/TypeConversion/StringCvt.hpp"
 
@@ -12,63 +11,111 @@
 
 namespace Vitrae
 {
-Model::Model(const FileLoadParams &params)
+Model::Model(const AssimpLoadParams &params) : m_root(params.root)
 {
-    const std::filesystem::path &filepath = params.filepath;
-    ComponentRoot &root = params.root;
+    MeshKeeper &meshKeeper = params.root.getComponent<MeshKeeper>();
+    auto p_mesh =
+        meshKeeper.new_asset({Mesh::AssimpLoadParams{params.root, params.p_extMesh}}).getLoaded();
 
-    // prepare needed managers
-    MeshKeeper &meshKeeper = root.getComponent<MeshKeeper>();
-    MaterialKeeper &matKeeper = root.getComponent<MaterialKeeper>();
+    // Calculate minimum edge length
+    float minEdgeLength = std::numeric_limits<float>::max();
 
-    // load scene
-    Assimp::Importer importer;
+    std::span<const Triangle> triangles = p_mesh->getTriangles();
+    std::span<const glm::vec3> positions =
+        p_mesh->getVertexElements<glm::vec3>(StandardVertexBufferNames::POSITION);
+    for (const auto &tri : triangles) {
+        float e0 = glm::distance(positions[tri.ind[0]], positions[tri.ind[1]]);
+        float e1 = glm::distance(positions[tri.ind[1]], positions[tri.ind[2]]);
+        float e2 = glm::distance(positions[tri.ind[2]], positions[tri.ind[0]]);
 
-    const aiScene *extScenePtr = importer.ReadFile(
-        params.filepath.c_str(), aiProcess_CalcTangentSpace | aiProcess_Triangulate |
-                                     aiProcess_JoinIdenticalVertices | aiProcess_SortByPType |
-                                     aiProcess_FlipUVs | aiProcess_GenBoundingBoxes);
-
-    if (!extScenePtr) {
-        params.root.getErrStream()
-            << "Loading scene failed: " << importer.GetErrorString() << std::endl;
-        return;
+        minEdgeLength = std::min(minEdgeLength, std::min(e0, std::min(e1, e2)));
     }
 
-    // load materials
-    std::vector<dynasma::LazyPtr<Material>> matById;
-    if (extScenePtr->HasMaterials()) {
-        matById.reserve(extScenePtr->mNumMaterials);
-        for (int i = 0; i < extScenePtr->mNumMaterials; i++) {
-            auto p_mat = matKeeper.new_asset({
-                Material::AssimpLoadParams{params.root, extScenePtr->mMaterials[i],
-                                           params.filepath},
-            });
-            matById.emplace_back(p_mat);
+    addForm("visual",
+            std::unique_ptr<Vitrae::LoDMeasure>(new SmallestElementSizeMeasure(minEdgeLength)),
+            p_mesh);
+}
+
+Model::~Model() {}
+
+void Model::setMaterial(dynasma::LazyPtr<Material> p_mat)
+{
+    mp_material = p_mat;
+}
+
+dynasma::LazyPtr<Material> Model::getMaterial() const
+{
+    return mp_material;
+}
+
+dynasma::LazyPtr<Shape> Model::getBestForm(StringId purpose, const LoDSelectionParams &lodParams,
+                                           const LoDContext &lodCtx) const
+{
+    const auto &forms = getFormsWithPurpose(purpose);
+
+    switch (lodParams.method) {
+    case LoDSelectionMethod::Minimum:
+        return forms.back().second;
+    case LoDSelectionMethod::Maximum:
+        return forms.front().second;
+    case LoDSelectionMethod::FirstBelowThreshold: {
+        dynasma::LazyPtr<Shape> p_choice;
+
+        for (const auto &[p_lodMeasure, p_shape] : forms) {
+            if (!p_lodMeasure->isTooDetailed(lodCtx, lodParams.threshold)) {
+                return p_shape;
+            }
         }
+
+        return forms.back().second;
+    }
+    case LoDSelectionMethod::FirstAboveThreshold: {
+        dynasma::LazyPtr<Shape> p_choice;
+
+        for (const auto &[p_lodMeasure, p_shape] : forms) {
+            if (!p_lodMeasure->isTooDetailed(lodCtx, lodParams.threshold)) {
+                break;
+            } else {
+                p_choice = p_shape;
+            }
+        }
+
+        if (p_choice != dynasma::LazyPtr<Shape>())
+            return p_choice;
+        else
+            return forms.back().second;
+    }
     }
 
-    // load meshes
-    if (extScenePtr->HasMeshes()) {
-        for (int i = 0; i < extScenePtr->mNumMeshes; i++) {
+    throw std::out_of_range("Form not found");
+}
 
-            auto p_mesh = meshKeeper
-                              .new_asset({
-                                  Mesh::AssimpLoadParams{
-                                      params.root,
-                                      extScenePtr->mMeshes[i],
-                                      filepath,
-                                  },
-                              })
-                              .getLoaded();
+DetailFormSpan Model::getFormsWithPurpose(StringId purpose) const
+{
+    auto it = m_formsByPurpose.find(purpose);
 
-            // set material
-            p_mesh->setMaterial(matById[extScenePtr->mMeshes[i]->mMaterialIndex]);
-
-            m_meshes.push_back(p_mesh);
+    if (it != m_formsByPurpose.end()) {
+        return (*it).second;
+    } else {
+        const FormGeneratorCollection &generators = m_root.getComponent<FormGeneratorCollection>();
+        if (auto genIt = generators.find(purpose); genIt != generators.end()) {
+            it = m_formsByPurpose.emplace(purpose, (*genIt).second(*this)).first;
+            return (*it).second;
+        } else {
+            throw std::out_of_range("Form not found and genarator for it doesn't exist");
         }
     }
 }
 
-Model::~Model() {}
+void Model::addForm(StringId purpose, std::unique_ptr<LoDMeasure> lodMeasure,
+                    dynasma::LazyPtr<Shape> p_shape)
+{
+    m_formsByPurpose[purpose].emplace_back(std::move(lodMeasure), p_shape);
+}
+
+void Model::setFormsWithPurpose(StringId purpose, DetailFormVector forms)
+{
+    m_formsByPurpose[purpose] = std::move(forms);
+}
+
 } // namespace Vitrae

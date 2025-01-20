@@ -890,23 +890,31 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env
         "CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env) const");
 
     for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
-        rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
-            .setUniform(uniSpec.location, env.get(propertyNameId));
+        if (env.has(propertyNameId)) {
+            rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
+                .setUniform(uniSpec.location, env.get(propertyNameId));
+        }
     }
 
     for (auto [propertyNameId, bindSpec] : this->opaqueBindingSpecs) {
-        rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
-            .setOpaqueBinding(bindSpec.location, env.get(propertyNameId));
+        if (env.has(propertyNameId)) {
+            rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
+                .setOpaqueBinding(bindSpec.location, env.get(propertyNameId));
+        }
     }
 
     for (auto [propertyNameId, uboSpec] : this->uboSpecs) {
-        rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
-            .setUBOBinding(uboSpec.location, env.get(propertyNameId));
+        if (env.has(propertyNameId)) {
+            rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
+                .setUBOBinding(uboSpec.location, env.get(propertyNameId));
+        }
     }
 
     for (auto [propertyNameId, ssboSpec] : this->ssboSpecs) {
-        rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
-            .setSSBOBinding(ssboSpec.location, env.get(propertyNameId));
+        if (env.has(propertyNameId)) {
+            rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
+                .setSSBOBinding(ssboSpec.location, env.get(propertyNameId));
+        }
     }
 }
 
@@ -919,15 +927,11 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env
     auto &matProperties = material.getProperties();
 
     for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
-        if (propertyNameId == StandardParam::mat_model.name) {
-            // this is set per model
-            /// TODO: This is a hack currently
-        } else if (auto nameValIt = matProperties.find(propertyNameId);
-                   nameValIt != matProperties.end()) {
+        if (auto nameValIt = matProperties.find(propertyNameId); nameValIt != matProperties.end()) {
             // convert material variant to uniform
             rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
                 .setUniform(uniSpec.location, (*nameValIt).second);
-        } else {
+        } else if (envProperties.has(propertyNameId)) {
             // convert context variant to uniform
             rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
                 .setUniform(uniSpec.location, envProperties.get(propertyNameId));
@@ -939,7 +943,7 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env
             // bind material variant value
             rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
                 .setOpaqueBinding(bindSpec.bindingIndex, (*nameValIt).second);
-        } else {
+        } else if (envProperties.has(propertyNameId)) {
             // bind context variant value
             rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
                 .setOpaqueBinding(bindSpec.bindingIndex, envProperties.get(propertyNameId));
@@ -951,7 +955,7 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env
             // bind material variant UBO
             rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
                 .setUBOBinding(uboSpec.bindingIndex, (*nameValIt).second);
-        } else {
+        } else if (envProperties.has(propertyNameId)) {
             // bind context variant UBO
             rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
                 .setUBOBinding(uboSpec.bindingIndex, envProperties.get(propertyNameId));
@@ -963,7 +967,7 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env
             // bind material variant buffer
             rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
                 .setSSBOBinding(ssboSpec.bindingIndex, (*nameValIt).second);
-        } else {
+        } else if (envProperties.has(propertyNameId)) {
             // bind context variant buffer
             rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
                 .setSSBOBinding(ssboSpec.bindingIndex, envProperties.get(propertyNameId));
@@ -981,10 +985,8 @@ void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, Varian
     auto &matProperties = firstMaterial.getProperties();
 
     for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
-        if (propertyNameId == StandardParam::mat_model.name) {
-            // this is set per model
-            /// TODO: This is a hack currently
-        } else if (matProperties.find(propertyNameId) == matProperties.end()) {
+        if (matProperties.find(propertyNameId) == matProperties.end() &&
+            envProperties.has(propertyNameId)) {
             // convert context variant to uniform
             rend.getTypeConversion(uniSpec.srcSpec.typeInfo)
                 .setUniform(uniSpec.location, envProperties.get(propertyNameId));
@@ -992,7 +994,8 @@ void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, Varian
     }
 
     for (auto [propertyNameId, bindSpec] : this->opaqueBindingSpecs) {
-        if (matProperties.find(propertyNameId) == matProperties.end()) {
+        if (matProperties.find(propertyNameId) == matProperties.end() &&
+            envProperties.has(propertyNameId)) {
             // bind context variant
             rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
                 .setOpaqueBinding(bindSpec.bindingIndex, envProperties.get(propertyNameId));
@@ -1000,7 +1003,8 @@ void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, Varian
     }
 
     for (auto [propertyNameId, uboSpec] : this->uboSpecs) {
-        if (matProperties.find(propertyNameId) == matProperties.end()) {
+        if (matProperties.find(propertyNameId) == matProperties.end() &&
+            envProperties.has(propertyNameId)) {
             // bind context variant UBO
             rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
                 .setUBOBinding(uboSpec.bindingIndex, envProperties.get(propertyNameId));
@@ -1008,7 +1012,8 @@ void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, Varian
     }
 
     for (auto [propertyNameId, ssboSpec] : this->ssboSpecs) {
-        if (matProperties.find(propertyNameId) == matProperties.end()) {
+        if (matProperties.find(propertyNameId) == matProperties.end() &&
+            envProperties.has(propertyNameId)) {
             // bind context variant buffer
             rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
                 .setSSBOBinding(ssboSpec.bindingIndex, envProperties.get(propertyNameId));

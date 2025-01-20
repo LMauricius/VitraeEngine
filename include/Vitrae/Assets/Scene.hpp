@@ -12,7 +12,7 @@
 namespace Vitrae
 {
 class ComponentRoot;
-class Mesh;
+class Model;
 
 class Camera : public SimpleTransformation
 {
@@ -37,9 +37,9 @@ class DirectionalLight
     glm::mat4 getProjectionMatrix();
 };
 
-struct MeshProp
+struct ModelProp
 {
-    dynasma::FirmPtr<Mesh> p_mesh;
+    dynasma::FirmPtr<Model> p_model;
     SimpleTransformation transform;
 };
 
@@ -70,7 +70,7 @@ class Scene : public dynasma::PolymorphicBase
     Scene parts (to be replaced with a more modular approach)
     */
 
-    std::vector<MeshProp> meshProps;
+    std::vector<ModelProp> modelProps;
     Camera camera;
     DirectionalLight light;
 

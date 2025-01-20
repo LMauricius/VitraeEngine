@@ -63,6 +63,7 @@ enum class RasterizingMode {
 struct RasterizingSetupParams
 {
     String vertexPositionOutputPropertyName;
+    String modelFormPurpose;
     CullingMode cullingMode = CullingMode::Backface;
     BlendingFunction sourceBlending = BlendingFunction::One;
     BlendingFunction destinationBlending = BlendingFunction::Zero;

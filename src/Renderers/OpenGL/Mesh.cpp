@@ -78,8 +78,10 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
 
 OpenGLMesh::~OpenGLMesh() {}
 
-void OpenGLMesh::loadToGPU(OpenGLRenderer &rend)
+void OpenGLMesh::loadToGPU(Renderer &r)
 {
+    OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(r);
+
     if (!m_sentToGPU) {
         m_sentToGPU = true;
 
@@ -140,16 +142,6 @@ void OpenGLMesh::unloadFromGPU()
     }
 }
 
-void OpenGLMesh::setMaterial(dynasma::LazyPtr<Material> mat)
-{
-    mMaterial = mat;
-}
-
-dynasma::LazyPtr<Material> OpenGLMesh::getMaterial() const
-{
-    return mMaterial.value();
-}
-
 std::span<const Triangle> OpenGLMesh::getTriangles() const
 {
     return mTriangles;
@@ -158,6 +150,12 @@ std::span<const Triangle> OpenGLMesh::getTriangles() const
 BoundingBox OpenGLMesh::getBoundingBox() const
 {
     return m_aabb;
+}
+
+void OpenGLMesh::rasterize() const
+{
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, 3 * mTriangles.size(), GL_UNSIGNED_INT, 0);
 }
 
 Variant OpenGLMesh::getVertexData(StringId bufferName, const TypeInfo &type) const

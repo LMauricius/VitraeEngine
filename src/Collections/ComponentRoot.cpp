@@ -1,6 +1,6 @@
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Assets/Material.hpp"
-#include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Assets/Shapes/Mesh.hpp"
 #include "Vitrae/Collections/FormGenerator.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 

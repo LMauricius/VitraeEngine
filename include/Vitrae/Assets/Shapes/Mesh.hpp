@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Data/BoundingBox.hpp"
+#include "Vitrae/Assets/Shapes/Shape.hpp"
 #include "Vitrae/Data/GraphicPrimitives.hpp"
 #include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
@@ -19,13 +19,12 @@
 namespace Vitrae
 {
 class ComponentRoot;
-class Material;
 
 /**
- * A mesh is a 3D polygonal piece of geometry,
- * with an assigned Material
+ * A mesh is a 3D polygonal shape defined by a set of triangles connected by shared vertices.
+ * It depicts a possibly smooth surface by interpolating data between defined vertices.
  */
-class Mesh : public dynasma::PolymorphicBase
+class Mesh : public Shape
 {
   public:
     struct AssimpLoadParams
@@ -36,10 +35,7 @@ class Mesh : public dynasma::PolymorphicBase
 
     virtual ~Mesh() = default;
 
-    virtual void setMaterial(dynasma::LazyPtr<Material> mat) = 0;
-    virtual dynasma::LazyPtr<Material> getMaterial() const = 0;
     virtual std::span<const Triangle> getTriangles() const = 0;
-    virtual BoundingBox getBoundingBox() const = 0;
 
     /**
      * @tparam ElementT The type of the vertex element
@@ -54,8 +50,6 @@ class Mesh : public dynasma::PolymorphicBase
         assert(anyArray.getAssignedTypeInfo() == TYPE_INFO<std::span<const ElementT>>);
         return anyArray.get<std::span<const ElementT>>();
     }
-
-    virtual std::size_t memory_cost() const = 0;
 
   protected:
     /**

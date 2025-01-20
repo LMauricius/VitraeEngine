@@ -9,7 +9,7 @@
 
 namespace Vitrae
 {
-class Mesh;
+class Model;
 
 class ComposeDataRender : public ComposeTask
 {
@@ -23,14 +23,9 @@ class ComposeDataRender : public ComposeTask
         ComponentRoot &root;
         std::vector<String> inputTokenNames;
         std::vector<String> outputTokenNames;
-        dynasma::LazyPtr<Mesh> p_dataPointMesh;
+        dynasma::LazyPtr<Model> p_dataPointModel;
         DataGeneratorFunction dataGenerator;
-        String vertexPositionOutputPropertyName;
-        CullingMode cullingMode = CullingMode::Backface;
-        RasterizingMode rasterizingMode = RasterizingMode::DerivationalFillCenters;
-        bool smoothFilling : 1 = false;
-        bool smoothTracing : 1 = false;
-        bool smoothDotting : 1 = false;
+        RasterizingSetupParams rasterizing;
     };
 
     using ComposeTask::ComposeTask;

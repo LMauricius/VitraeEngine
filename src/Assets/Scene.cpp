@@ -1,7 +1,7 @@
 #include "Vitrae/Assets/Scene.hpp"
 
 #include "Vitrae/Assets/Material.hpp"
-#include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Assets/Model.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 
 #include "assimp/Importer.hpp"
@@ -41,7 +41,6 @@ std::size_t Scene::memory_cost() const
 
 void Scene::loadFromAssimp(const AssimpLoadParams &params)
 {
-    MeshKeeper &meshKeeper = params.root.getComponent<MeshKeeper>();
     MaterialKeeper &matKeeper = params.root.getComponent<MaterialKeeper>();
 
     // load materials
@@ -57,17 +56,17 @@ void Scene::loadFromAssimp(const AssimpLoadParams &params)
         }
     }
 
-    // load meshes
-    std::vector<dynasma::FirmPtr<Mesh>> meshById;
+    // load models
+    std::vector<dynasma::FirmPtr<Model>> modelById;
     if (params.p_extScene->HasMeshes()) {
         for (unsigned int i = 0; i < params.p_extScene->mNumMeshes; ++i) {
-            dynasma::FirmPtr<Mesh> p_mesh = meshKeeper.new_asset({Mesh::AssimpLoadParams{
-                params.root, params.p_extScene->mMeshes[i], params.sceneFilepath}});
+            dynasma::FirmPtr<Model> p_model = dynasma::makeStandalone<Model>(
+                Model::AssimpLoadParams{params.root, params.p_extScene->mMeshes[i]});
 
             // set material
-            p_mesh->setMaterial(matById[params.p_extScene->mMeshes[i]->mMaterialIndex]);
+            p_model->setMaterial(matById[params.p_extScene->mMeshes[i]->mMaterialIndex]);
 
-            meshById.emplace_back(p_mesh);
+            modelById.emplace_back(p_model);
         }
     }
 
@@ -92,9 +91,9 @@ void Scene::loadFromAssimp(const AssimpLoadParams &params)
                 .scaling = {aiScaling.x, aiScaling.y, aiScaling.z}};
 
             for (std::size_t i = 0; i < p_node->mNumMeshes; ++i) {
-                dynasma::FirmPtr<Mesh> p_mesh = meshById[p_node->mMeshes[i]];
+                dynasma::FirmPtr<Model> p_model = modelById[p_node->mMeshes[i]];
 
-                meshProps.emplace_back(MeshProp{p_mesh, transf});
+                modelProps.emplace_back(ModelProp{p_model, transf});
             }
 
             for (std::size_t i = 0; i < p_node->mNumChildren; ++i) {

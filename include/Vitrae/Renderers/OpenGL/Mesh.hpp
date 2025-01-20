@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Assets/Mesh.hpp"
+#include "Vitrae/Assets/Shapes/Mesh.hpp"
 #include "Vitrae/Containers/StableMap.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 
@@ -20,11 +20,9 @@ class OpenGLMesh : public Mesh
     OpenGLMesh(const AssimpLoadParams &params);
     ~OpenGLMesh();
 
-    void loadToGPU(OpenGLRenderer &rend);
+    void loadToGPU(Renderer &rend);
     void unloadFromGPU();
 
-    void setMaterial(dynasma::LazyPtr<Material> mat) override;
-    dynasma::LazyPtr<Material> getMaterial() const override;
     std::span<const Triangle> getTriangles() const override;
     BoundingBox getBoundingBox() const override;
 
@@ -34,13 +32,14 @@ class OpenGLMesh : public Mesh
         return sizeof(*this);
     }
 
+    void rasterize() const override;
+
     GLuint VAO;
     std::vector<GLuint> VBOs;
     GLuint EBO;
 
   protected:
     String m_friendlyname;
-    std::optional<dynasma::LazyPtr<Material>> mMaterial;
     std::vector<Triangle> mTriangles;
     BoundingBox m_aabb;
     StableMap<StringId, std::vector<glm::vec1>> namedVec1Buffers;

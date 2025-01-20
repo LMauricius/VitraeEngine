@@ -84,7 +84,7 @@ void Compositor::compose()
             {
                 MMETER_SCOPE_PROFILER("FrameStore sync");
 
-                parameters.get(StandardParam::fs_target.name)
+                parameters.get(StandardParam::fs_display.name)
                     .get<dynasma::FirmPtr<FrameStore>>()
                     ->sync();
             }

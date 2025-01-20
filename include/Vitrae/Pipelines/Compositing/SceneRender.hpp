@@ -14,8 +14,8 @@ namespace Vitrae
 class ComposeSceneRender : public ComposeTask
 {
   public:
-    using FilterFunc = std::function<bool(const MeshProp &prop)>;
-    using SortFunc = std::function<bool(const MeshProp &l, const MeshProp &r)>;
+    using FilterFunc = std::function<bool(const ModelProp &prop)>;
+    using SortFunc = std::function<bool(const ModelProp &l, const ModelProp &r)>;
     struct SetupParams
     {
         ComponentRoot &root;

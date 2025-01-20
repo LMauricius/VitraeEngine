@@ -1,6 +1,7 @@
 #include "Vitrae/Renderers/OpenGL/Compositing/SceneRender.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Assets/Material.hpp"
+#include "Vitrae/Assets/Model.hpp"
 #include "Vitrae/Assets/Scene.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Dynamic/VariantScope.hpp"
@@ -68,6 +69,8 @@ OpenGLComposeSceneRender::OpenGLComposeSceneRender(const SetupParams &params)
     }
 
     m_params.ordering.inputSpecs.insert_back(StandardParam::scene);
+    m_params.ordering.inputSpecs.insert_back(StandardParam::LoDParams);
+    m_params.ordering.inputSpecs.insert_back(StandardParam::mat_display);
     m_params.ordering.filterSpecs.insert_back(StandardParam::fs_target);
 }
 
@@ -160,6 +163,9 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
     // extract common inputs
     Scene &scene = *args.properties.get(StandardParam::scene.name).get<dynasma::FirmPtr<Scene>>();
+    const LoDSelectionParams &lodParams =
+        args.properties.get(StandardParam::LoDParams.name).get<LoDSelectionParams>();
+    glm::mat4 mat_display = args.properties.get(StandardParam::mat_display.name).get<glm::mat4>();
 
     dynasma::FirmPtr<FrameStore> p_frame =
         args.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
@@ -167,22 +173,19 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     {
         MMETER_SCOPE_PROFILER("Sorting meshes");
 
-        auto [meshFilter, meshComparator] = m_params.ordering.generateFilterAndSort(scene, args);
+        auto [modelFilter, modelComparator] = m_params.ordering.generateFilterAndSort(scene, args);
 
-        m_sortedMeshProps.clear();
-        m_sortedMeshProps.reserve(scene.meshProps.size());
+        m_sortedModelProps.clear();
+        m_sortedModelProps.reserve(scene.modelProps.size());
 
-        for (auto &meshProp : scene.meshProps) {
-            if (meshFilter(meshProp)) {
-                OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*meshProp.p_mesh);
-                mesh.loadToGPU(rend);
-
-                m_sortedMeshProps.push_back(&meshProp);
+        for (auto &modelProp : scene.modelProps) {
+            if (modelFilter(modelProp)) {
+                m_sortedModelProps.push_back(&modelProp);
             }
         }
 
-        std::sort(m_sortedMeshProps.begin(), m_sortedMeshProps.end(),
-                  [&](const MeshProp *l, const MeshProp *r) { return meshComparator(*l, *r); });
+        std::sort(m_sortedModelProps.begin(), m_sortedModelProps.end(),
+                  [&](const ModelProp *l, const ModelProp *r) { return modelComparator(*l, *r); });
     }
 
     // check for whether we have all input deps or whether we need to update the pipeline
@@ -246,10 +249,36 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                 dynasma::FirmPtr<CompiledGLSLShader> p_currentShader;
                 std::size_t currentShaderHash = 0;
                 GLint glModelMatrixUniformLocation;
+                GLint glMVPMatrixUniformLocation;
+                GLint glDisplayMatrixUniformLocation;
 
-                for (auto p_meshProp : m_sortedMeshProps) {
+                for (auto p_modelProp : m_sortedModelProps) {
+                    // Setup the shape to render
+                    dynasma::FirmPtr<Shape> p_shape;
+                    glm::mat4 mat_model = p_modelProp->transform.getModelMatrix();
+                    glm::mat4 mat_mvp = mat_display * mat_model;
+                    {
+                        MMETER_SCOPE_PROFILER("LoD selection");
+
+                        glm::vec4 sizedPoint = {1.0, 1.0, 1.0, 1.0};
+                        glm::vec4 zero = {0.0, 0.0, 0.0, 1.0};
+                        glm::vec4 projPoint = mat_mvp * sizedPoint;
+                        glm::vec4 projZero = mat_mvp * zero;
+                        glm::vec2 visiblePointSize =
+                            glm::vec2(projPoint / projPoint.w - projZero / projZero.w) *
+                            p_frame->getSize();
+
+                        LoDContext lodCtx = {
+                            .closestPointScaling = std::max(visiblePointSize.x, visiblePointSize.y),
+                        };
+
+                        p_shape = p_modelProp->p_model->getBestForm(
+                            m_params.rasterizing.modelFormPurpose, lodParams, lodCtx);
+                    }
+                    p_shape->loadToGPU(rend);
+
                     dynasma::FirmPtr<const Material> p_nextMaterial =
-                        p_meshProp->p_mesh->getMaterial();
+                        p_modelProp->p_model->getMaterial();
 
                     if (p_nextMaterial != p_currentMaterial) {
                         MMETER_SCOPE_PROFILER("Material iteration");
@@ -289,7 +318,9 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                                     for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
                                         if (p_currentMaterial->getProperties().find(nameId) ==
                                                 p_currentMaterial->getProperties().end() &&
-                                            nameId != StandardShaderPropertyNames::INPUT_MODEL &&
+                                            nameId != StandardParam::mat_model.name &&
+                                            nameId != StandardParam::mat_display.name &&
+                                            nameId != StandardParam::mat_mvp.name &&
                                             p_targetSpecs->getMappedSpecs().find(nameId) ==
                                                 p_targetSpecs->getMappedSpecs().end()) {
                                             p_targetSpecs->insert_back(spec);
@@ -319,6 +350,20 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                                 } else {
                                     glModelMatrixUniformLocation = -1;
                                 }
+                                if (auto it = p_currentShader->uniformSpecs.find(
+                                        StandardParam::mat_display.name);
+                                    it != p_currentShader->uniformSpecs.end()) {
+                                    glDisplayMatrixUniformLocation = (*it).second.location;
+                                } else {
+                                    glDisplayMatrixUniformLocation = -1;
+                                }
+                                if (auto it = p_currentShader->uniformSpecs.find(
+                                        StandardParam::mat_mvp.name);
+                                    it != p_currentShader->uniformSpecs.end()) {
+                                    glMVPMatrixUniformLocation = (*it).second.location;
+                                } else {
+                                    glMVPMatrixUniformLocation = -1;
+                                }
 
                                 p_currentShader->setupNonMaterialProperties(rend, directProperties,
                                                                             *p_currentMaterial);
@@ -332,16 +377,21 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
                     if (!needsRebuild) {
                         MMETER_SCOPE_PROFILER("Mesh draw");
-
-                        OpenGLMesh &mesh = static_cast<OpenGLMesh &>(*p_meshProp->p_mesh);
-
-                        glBindVertexArray(mesh.VAO);
+                        
                         if (glModelMatrixUniformLocation != -1) {
                             glUniformMatrix4fv(glModelMatrixUniformLocation, 1, GL_FALSE,
-                                               &(p_meshProp->transform.getModelMatrix()[0][0]));
+                                               &(mat_model[0][0]));
                         }
-                        glDrawElements(GL_TRIANGLES, 3 * mesh.getTriangles().size(),
-                                       GL_UNSIGNED_INT, 0);
+                        if (glDisplayMatrixUniformLocation != -1) {
+                            glUniformMatrix4fv(glDisplayMatrixUniformLocation, 1, GL_FALSE,
+                                               &(mat_display[0][0]));
+                        }
+                        if (glMVPMatrixUniformLocation != -1) {
+                            glUniformMatrix4fv(glMVPMatrixUniformLocation, 1, GL_FALSE,
+                                               &(mat_mvp[0][0]));
+                        }
+
+                        p_shape->rasterize();
                     }
                 }
 
