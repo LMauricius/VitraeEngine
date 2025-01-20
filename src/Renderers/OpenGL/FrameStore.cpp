@@ -1,6 +1,7 @@
 #include "Vitrae/Renderers/OpenGL/FrameStore.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Params/ParamList.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/Texture.hpp"
 
@@ -45,9 +46,7 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
         width = p_texture->getSize().x;
         height = p_texture->getSize().y;
 
-        renderComponents.emplace_back(
-            ParamSpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
-                      .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT});
+        renderComponents.emplace_back(StandardParam::shade);
 
         colorAttachmentUnusedIndex++;
     }
@@ -88,8 +87,7 @@ OpenGLFrameStore::OpenGLFrameStore(const WindowDisplayParams &params)
 
     // setup members
     mp_renderComponents = dynasma::makeStandalone<ParamList, std::span<const Vitrae::ParamSpec>>(
-        {{ParamSpec{.name = StandardShaderPropertyNames::FRAGMENT_OUTPUT,
-                    .typeInfo = StandardShaderPropertyTypes::FRAGMENT_OUTPUT}}});
+        {{StandardParam::shade}});
     m_contextSwitcher = WindowContextSwitcher{window, params.onClose, params.onDrag};
 
     // register callbacks

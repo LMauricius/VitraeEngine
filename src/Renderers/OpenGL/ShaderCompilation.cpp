@@ -1,10 +1,11 @@
 #include "Vitrae/Renderers/OpenGL/ShaderCompilation.hpp"
 #include "Vitrae/Assets/Material.hpp"
-#include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
-#include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Params/ParamList.hpp"
+#include "Vitrae/Params/Standard.hpp"
+#include "Vitrae/Renderers/OpenGL.hpp"
 
 #include "MMeter.h"
 
@@ -139,7 +140,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             if (p_helper->p_compSpec->shaderType == GL_VERTEX_SHADER) {
                 passedVarSpecs.insert_back({
                     .name = p_helper->p_compSpec->aliases.choiceStringFor("gl_Position"),
-                    .typeInfo = StandardShaderPropertyTypes::VERTEX_OUTPUT,
+                    .typeInfo = TYPE_INFO<glm::vec4>,
                 });
             }
 
@@ -918,7 +919,7 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env
     auto &matProperties = material.getProperties();
 
     for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
-        if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
+        if (propertyNameId == StandardParam::mat_model.name) {
             // this is set per model
             /// TODO: This is a hack currently
         } else if (auto nameValIt = matProperties.find(propertyNameId);
@@ -980,7 +981,7 @@ void CompiledGLSLShader::setupNonMaterialProperties(OpenGLRenderer &rend, Varian
     auto &matProperties = firstMaterial.getProperties();
 
     for (auto [propertyNameId, uniSpec] : this->uniformSpecs) {
-        if (propertyNameId == StandardShaderPropertyNames::INPUT_MODEL) {
+        if (propertyNameId == StandardParam::mat_model.name) {
             // this is set per model
             /// TODO: This is a hack currently
         } else if (matProperties.find(propertyNameId) == matProperties.end()) {

@@ -173,7 +173,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
     }
 
     auto frame = frameManager.register_asset({frameParams}).getLoaded();
-    ctx.properties.set(FRAME_STORE_TARGET_SPEC.name, frame);
+    ctx.properties.set(StandardParam::fs_target.name, frame);
 }
 
 StringView ComposeFrameToTexture::getFriendlyName() const
