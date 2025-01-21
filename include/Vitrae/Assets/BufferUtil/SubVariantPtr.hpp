@@ -33,6 +33,19 @@ class SharedSubBufferVariantPtr
      */
     SharedSubBufferVariantPtr(const SharedBufferVariantPtr &p_buffer);
 
+    /**
+     * Constructor from fixed type buffer ptr
+     */
+    template <class HeaderT, class ElementT>
+    SharedSubBufferVariantPtr(SharedBufferPtr<HeaderT, ElementT> p_buffer)
+        : SharedSubBufferVariantPtr(p_buffer.getRawBuffer(), TYPE_INFO<ElementT>,
+                                    BufferLayoutInfo::getFirstElementOffset<HeaderT, ElementT>(),
+                                    sizeof(ElementT), p_buffer.numElements())
+    {}
+
+    /**
+     * Constructor from fixed type buffer ptr
+     */
     template <class ElementT>
     SharedSubBufferVariantPtr(SharedSubBufferPtr<ElementT> p_buffer)
         : SharedSubBufferVariantPtr(p_buffer.getRawBuffer(), TYPE_INFO<ElementT>,
@@ -95,7 +108,7 @@ class SharedSubBufferVariantPtr
         return *reinterpret_cast<const ElementT *>(mp_buffer->data() + m_bytesOffset +
                                                    m_bytesStride * index);
     }
-    template <typename ElementT> ElementT &getElement(std::size_t index)
+    template <typename ElementT> ElementT &getMutableElement(std::size_t index) const
     {
         throwIfElementMismatch(TYPE_INFO<ElementT>);
         return *reinterpret_cast<ElementT *>(
@@ -107,22 +120,20 @@ class SharedSubBufferVariantPtr
     /**
      * @returns A StridedSpan of all elements
      */
-    template <typename ElementT> StridedSpan<ElementT> getElements()
+    template <typename ElementT> StridedSpan<const ElementT> getElements() const
+    {
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
+        return StridedSpan<const ElementT>(
+            reinterpret_cast<const ElementT *>(mp_buffer->data() + m_bytesOffset), m_numElements,
+            m_bytesStride);
+    }
+    template <typename ElementT> StridedSpan<ElementT> getMutableElements() const
     {
         throwIfElementMismatch(TYPE_INFO<ElementT>);
         return StridedSpan<ElementT>(
             reinterpret_cast<ElementT *>(
                 (*mp_buffer)[{m_bytesOffset, m_bytesOffset + m_bytesStride * m_numElements}]
                     .data()),
-            m_numElements, m_bytesStride);
-    }
-    template <typename ElementT> StridedSpan<const ElementT> getElements() const
-    {
-        throwIfElementMismatch(TYPE_INFO<ElementT>);
-        return StridedSpan<const ElementT>(
-            reinterpret_cast<const ElementT *>(
-                dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
-                m_bytesOffset),
             m_numElements, m_bytesStride);
     }
 

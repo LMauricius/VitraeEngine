@@ -25,6 +25,9 @@ class SharedBufferVariantPtr
     SharedBufferVariantPtr(dynasma::FirmPtr<RawSharedBuffer> buffer, const TypeInfo &headerTypeinfo,
                            const TypeInfo &elementTypeinfo);
 
+    /**
+     * Constructor from a SharedBufferPtr
+     */
     template <class THeaderT, class TElementT>
     SharedBufferVariantPtr(SharedBufferPtr<THeaderT, TElementT> p_buffer)
         : SharedBufferVariantPtr(p_buffer.getRawBuffer(), TYPE_INFO<THeaderT>, TYPE_INFO<TElementT>)
@@ -75,7 +78,7 @@ class SharedBufferVariantPtr
         throwIfHeaderMismatch(TYPE_INFO<HeaderT>);
         return *reinterpret_cast<const HeaderT *>(mp_buffer->data());
     }
-    template <typename HeaderT> HeaderT &getHeader()
+    template <typename HeaderT> HeaderT &getMutableHeader() const
     {
         throwIfHeaderMismatch(TYPE_INFO<HeaderT>);
         return *reinterpret_cast<HeaderT *>((*mp_buffer)[{0, sizeof(HeaderT)}].data());
@@ -92,7 +95,7 @@ class SharedBufferVariantPtr
             BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo) +
             sizeof(ElementT) * index);
     }
-    template <typename ElementT> ElementT &getElement(std::size_t index)
+    template <typename ElementT> ElementT &getMutableElement(std::size_t index) const
     {
         throwIfElementMismatch(TYPE_INFO<ElementT>);
         return *reinterpret_cast<ElementT *>(
@@ -107,21 +110,21 @@ class SharedBufferVariantPtr
     /**
      * @returns A span of all FAM elements
      */
-    template <typename ElementT> std::span<ElementT> getElements()
-    {
-        throwIfElementMismatch(TYPE_INFO<ElementT>);
-        return std::span<ElementT>(
-            reinterpret_cast<ElementT *>(
-                mp_buffer->data() +
-                BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo)),
-            numElements());
-    }
     template <typename ElementT> std::span<const ElementT> getElements() const
     {
         throwIfElementMismatch(TYPE_INFO<ElementT>);
         return std::span<const ElementT>(
             reinterpret_cast<const ElementT *>(
                 dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
+                BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo)),
+            numElements());
+    }
+    template <typename ElementT> std::span<ElementT> getMutableElements() const
+    {
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
+        return std::span<ElementT>(
+            reinterpret_cast<ElementT *>(
+                mp_buffer->data() +
                 BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo)),
             numElements());
     }

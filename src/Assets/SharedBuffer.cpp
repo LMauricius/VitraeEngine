@@ -24,7 +24,7 @@ const Byte *RawSharedBuffer::data() const
     return m_bufferPtr;
 }
 
-Byte *RawSharedBuffer::data()
+Byte *RawSharedBuffer::mutableData()
 {
     if (!m_bufferPtr)
         requestBufferPtr();

@@ -25,6 +25,7 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
 
     /**
      * Constructs a SharedBufferPtr from a RawSharedBuffer FirmPtr
+     * @note Make sure the buffer is compatible with the expected data types
      */
     SharedBufferPtr(dynasma::FirmPtr<RawSharedBuffer> p_buffer) : mp_buffer(p_buffer) {}
 
@@ -51,36 +52,10 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
      * until reassigning this to a properly constructed SharedBufferPtr
      */
     SharedBufferPtr() = default;
-
-    /**
-     * @brief Moves the pointer. Nullifies the other
-     */
     SharedBufferPtr(SharedBufferPtr &&other) = default;
-
-    /**
-     * @brief copies the pointer.
-     */
     SharedBufferPtr(const SharedBufferPtr &other) = default;
-
-    /**
-     * @brief Move assigns the pointer. Nullifies the other
-     */
     SharedBufferPtr &operator=(SharedBufferPtr &&other) = default;
-
-    /**
-     * @brief Copy assigns the pointer.
-     */
     SharedBufferPtr &operator=(const SharedBufferPtr &other) = default;
-
-    /**
-     * @brief Assigns the pointer to the raw buffer.
-     * @note Make sure the buffer is compatible with the expected data types
-     */
-    SharedBufferPtr &operator=(dynasma::FirmPtr<RawSharedBuffer> p_buffer)
-    {
-        mp_buffer = p_buffer;
-        return *this;
-    }
 
     /**
      * Resizes the underlying RawSharedBuffer to contain the given number of FAM elements
@@ -120,7 +95,7 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
         return *reinterpret_cast<const HeaderT2 *>(mp_buffer->data());
     }
     template <typename HeaderT2 = HeaderT>
-    HeaderT2 &getHeader()
+    HeaderT2 &getMutableHeader() const
         requires HAS_HEADER
     {
         return *reinterpret_cast<HeaderT2 *>((*mp_buffer)[{0, sizeof(HeaderT2)}].data());
@@ -138,7 +113,7 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
             sizeof(ElementT2) * index);
     }
     template <typename ElementT2 = ElementT>
-    ElementT2 &getElement(std::size_t index)
+    ElementT2 &getMutableElement(std::size_t index) const
         requires HAS_FAM_ELEMENTS
     {
         return *reinterpret_cast<ElementT2 *>(
@@ -152,21 +127,21 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
      * @returns A span of all FAM elements
      */
     template <typename ElementT2 = ElementT>
-    std::span<ElementT2> getElements()
-        requires HAS_FAM_ELEMENTS
-    {
-        return std::span<ElementT2>(
-            reinterpret_cast<ElementT2 *>(
-                mp_buffer->data() + BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>()),
-            numElements());
-    }
-    template <typename ElementT2 = ElementT>
     std::span<const ElementT2> getElements() const
         requires HAS_FAM_ELEMENTS
     {
         return std::span<const ElementT2>(
             reinterpret_cast<const ElementT2 *>(
-                dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
+                mp_buffer->data() + BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>()),
+            numElements());
+    }
+    template <typename ElementT2 = ElementT>
+    std::span<ElementT2> getMutableElements() const
+        requires HAS_FAM_ELEMENTS
+    {
+        return std::span<ElementT2>(
+            reinterpret_cast<ElementT2 *>(
+                mp_buffer->mutableData() +
                 BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>()),
             numElements());
     }
@@ -215,7 +190,7 @@ template <class THeaderT, class TElementT>
 SharedBufferPtr<THeaderT, TElementT> makeBuffer(ComponentRoot &root, BufferUsageHints usage,
                                                 std::size_t numElements,
                                                 StringView friendlyName = "")
-    requires(!std::same_as<THeaderT, void>)
+    requires(!std::same_as<TElementT, void>)
 {
     return SharedBufferPtr<THeaderT, TElementT>(
         root.getComponent<RawSharedBufferKeeper>().new_asset(RawSharedBufferKeeperSeed{

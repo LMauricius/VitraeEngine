@@ -51,7 +51,7 @@ class RawSharedBuffer : public dynasma::PolymorphicBase
 
     inline std::size_t size() const { return m_size; }
     const Byte *data() const;
-    Byte *data();
+    Byte *mutableData();
 
     std::span<const Byte> operator[](std::pair<std::size_t, std::size_t> slice) const;
     std::span<Byte> operator[](std::pair<std::size_t, std::size_t> slice);

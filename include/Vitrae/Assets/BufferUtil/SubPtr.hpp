@@ -45,6 +45,27 @@ template <class TElementT> class SharedSubBufferPtr
     /**
      * Constructs a SharedSubBufferPtr from a SharedSubBufferVariantPtr FirmPtr
      */
+    SharedSubBufferPtr(SharedBufferVariantPtr p_buffer)
+        : mp_buffer(p_buffer.getRawBuffer()),
+          m_bytesOffset(BufferLayoutInfo::getFirstElementOffset(p_buffer.getHeaderTypeInfo(),
+                                                                p_buffer.getElementTypeinfo())),
+          m_bytesStride(sizeof(ElementT)), m_numElements(p_buffer.numElements())
+    {
+        if (p_buffer.getHeaderTypeinfo() != TYPE_INFO<HeaderT>) {
+            throw std::invalid_argument(
+                "SharedBufferPtr: Header type mismatch by assigning variant's " +
+                String(p_buffer.getHeaderTypeinfo().getShortTypeName()));
+        }
+        if (p_buffer.getElementTypeinfo() != TYPE_INFO<ElementT>) {
+            throw std::invalid_argument(
+                "SharedBufferPtr: Element type mismatch by assigning variant's " +
+                String(p_buffer.getElementTypeinfo().getShortTypeName()));
+        }
+    }
+
+    /**
+     * Constructs a SharedSubBufferPtr from a SharedSubBufferVariantPtr FirmPtr
+     */
     SharedSubBufferPtr(SharedSubBufferVariantPtr p_buffer)
         : mp_buffer(p_buffer.getRawBuffer()), m_bytesOffset(p_buffer.getBytesOffset()),
           m_bytesStride(p_buffer.getBytesStride()), m_numElements(p_buffer.numElements())
@@ -67,25 +88,9 @@ template <class TElementT> class SharedSubBufferPtr
      * until reassigning this to a properly constructed SharedSubBufferPtr
      */
     SharedSubBufferPtr() = default;
-
-    /**
-     * @brief Moves the pointer. Nullifies the other
-     */
     SharedSubBufferPtr(SharedSubBufferPtr &&other) = default;
-
-    /**
-     * @brief copies the pointer.
-     */
     SharedSubBufferPtr(const SharedSubBufferPtr &other) = default;
-
-    /**
-     * @brief Move assigns the pointer. Nullifies the other
-     */
     SharedSubBufferPtr &operator=(SharedSubBufferPtr &&other) = default;
-
-    /**
-     * @brief Copy assigns the pointer.
-     */
     SharedSubBufferPtr &operator=(const SharedSubBufferPtr &other) = default;
 
     /**
@@ -111,7 +116,7 @@ template <class TElementT> class SharedSubBufferPtr
         return *reinterpret_cast<const ElementT *>(mp_buffer->data() + m_bytesOffset +
                                                    m_bytesStride * index);
     }
-    ElementT &getElement(std::size_t index)
+    ElementT &getMutableElement(std::size_t index) const
     {
         return *reinterpret_cast<ElementT *>(
             (*mp_buffer)[{m_bytesOffset + m_bytesStride * index,
@@ -122,20 +127,18 @@ template <class TElementT> class SharedSubBufferPtr
     /**
      * @returns A StridedSpan of all elements
      */
-    StridedSpan<ElementT> getElements()
+    StridedSpan<const ElementT> getElements() const
+    {
+        return StridedSpan<const ElementT>(
+            reinterpret_cast<const ElementT *>(mp_buffer->data() + m_bytesOffset), m_numElements,
+            m_bytesStride);
+    }
+    StridedSpan<ElementT> getMutableElements() const
     {
         return StridedSpan<ElementT>(
             reinterpret_cast<ElementT *>(
                 (*mp_buffer)[{m_bytesOffset, m_bytesOffset + m_bytesStride * m_numElements}]
                     .data()),
-            m_numElements, m_bytesStride);
-    }
-    StridedSpan<const ElementT> getElements() const
-    {
-        return StridedSpan<const ElementT>(
-            reinterpret_cast<const ElementT *>(
-                dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
-                m_bytesOffset),
             m_numElements, m_bytesStride);
     }
 
