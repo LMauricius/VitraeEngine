@@ -38,38 +38,45 @@ class Mesh : public Shape
     {
         ComponentRoot &root;
         StableMap<StringId, SharedSubBufferVariantPtr> vertexComponentBuffers;
+        SharedBufferPtr<void, Triangle> indexBuffer;
     };
 
     virtual ~Mesh() = default;
 
-    virtual std::span<const Triangle> getTriangles() const = 0;
+    /**
+     * @returns The subbuffer of vertex components
+     * @param componentName The name of the vertex component to get ("position", "normal", etc.)
+     */
+    virtual SharedSubBufferVariantPtr getVertexComponentBuffer(StringId componentName) const = 0;
+
+    /**
+     * @returns The index buffer
+     */
+    virtual SharedBufferPtr<void, Triangle> getIndexBuffer() const = 0;
 
     /**
      * @tparam ElementT The type of the vertex element
-     * @param elementName The name of the vertex element to get ("position", "normal", etc.)
+     * @param componentName The name of the vertex component to get ("position", "normal", etc.)
      * @returns A span of ElementT values
      * @throws std::out_of_range if the element does not exist or a wrong type is used
      */
     template <class ElementT>
-    std::span<const ElementT> getVertexElements(StringId elementName) const
+    StridedSpan<const ElementT> getVertexComponentData(StringId componentName) const
     {
-        Variant anyArray = getVertexData(elementName, TYPE_INFO<ElementT>);
-        assert(anyArray.getAssignedTypeInfo() == TYPE_INFO<std::span<const ElementT>>);
-        return anyArray.get<std::span<const ElementT>>();
+        return getVertexComponentBuffer(componentName).getElements<ElementT>();
     }
 
-  protected:
     /**
-     * @returns std::span<const ElementT> where ElementT is the type whose TypeInfo we passed
+     * @returns A span of Triangle values with indices of the mesh vertices
      */
-    virtual Variant getVertexData(StringId bufferName, const TypeInfo &type) const = 0;
+    inline std::span<const Triangle> getTriangles() const { return getIndexBuffer().getElements(); }
 };
 
 struct MeshKeeperSeed
 {
     using Asset = Mesh;
 
-    std::variant<Mesh::AssimpLoadParams> kernel;
+    std::variant<Mesh::AssimpLoadParams, Mesh::TriangleVerticesParams> kernel;
 
     inline std::size_t load_cost() const { return 1; }
 };

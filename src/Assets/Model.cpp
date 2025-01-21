@@ -21,8 +21,8 @@ Model::Model(const AssimpLoadParams &params) : m_root(params.root)
     float minEdgeLength = std::numeric_limits<float>::max();
 
     std::span<const Triangle> triangles = p_mesh->getTriangles();
-    std::span<const glm::vec3> positions =
-        p_mesh->getVertexElements<glm::vec3>(StandardVertexBufferNames::POSITION);
+    StridedSpan<const glm::vec3> positions =
+        p_mesh->getVertexComponentData<glm::vec3>(StandardVertexBufferNames::POSITION);
     for (const auto &tri : triangles) {
         float e0 = glm::distance(positions[tri.ind[0]], positions[tri.ind[1]]);
         float e1 = glm::distance(positions[tri.ind[1]], positions[tri.ind[2]]);
