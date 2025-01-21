@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Assets/Buffers/LayoutInfo.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
 
 namespace Vitrae
@@ -9,6 +10,7 @@ namespace Vitrae
  * A SharedBufferPtr is used to access a shared buffer, with a safer underlying type.
  * @tparam HeaderT the type stored at the start of the buffer. Use void if there is no header.
  * @tparam ElementT the type stored in the array after the header. Use void if there is no FAM
+ * @note It can be returned along with a constructed buffer by makeBuffer<...>(...) functions
  */
 template <class THeaderT, class TElementT> class SharedBufferPtr
 {
@@ -18,81 +20,6 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
 
     static constexpr bool HAS_HEADER = !std::is_same_v<HeaderT, void>;
     static constexpr bool HAS_FAM_ELEMENTS = !std::is_same_v<ElementT, void>;
-
-    /**
-     * @return The offset (in bytes) of the first FAM element
-     */
-    template <typename ElementT2 = ElementT>
-    static constexpr std::ptrdiff_t getFirstElementOffset()
-        requires HAS_FAM_ELEMENTS
-    {
-        if constexpr (HAS_HEADER)
-            return ((sizeof(HeaderT) - 1) / alignof(ElementT2) + 1) * alignof(ElementT2);
-        else
-            return 0;
-    }
-
-    /**
-     * @return Minimum buffer size for the given number of FAM elements
-     * @param numElements The number of FAM elements
-     */
-    template <typename ElementT2 = ElementT>
-    static constexpr std::size_t calcMinimumBufferSize(std::size_t numElements)
-        requires HAS_FAM_ELEMENTS
-    {
-        if constexpr (HAS_HEADER)
-            return getFirstElementOffset() + sizeof(ElementT2) * numElements;
-        else
-            return sizeof(ElementT2) * numElements;
-    }
-
-    /**
-     * @return Minimum buffer size with no elements
-     */
-    static constexpr std::size_t calcMinimumBufferSize()
-    {
-        if constexpr (HAS_FAM_ELEMENTS)
-            return getFirstElementOffset();
-        else if constexpr (HAS_HEADER)
-            return sizeof(HeaderT);
-        return 0;
-    }
-
-    /**
-     * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
-     * with enough size for the HeaderT
-     */
-    static SharedBufferPtr makeBuffer(ComponentRoot &root, BufferUsageHints usage,
-                                      StringView friendlyName = "")
-
-    {
-        return SharedBufferPtr(root.getComponent<RawSharedBufferKeeper>().new_asset(
-            RawSharedBufferKeeperSeed{.kernel = RawSharedBuffer::SetupParams{
-                                          .renderer = root.getComponent<Renderer>(),
-                                          .root = root,
-                                          .usage = usage,
-                                          .size = calcMinimumBufferSize(),
-                                          .friendlyName = String(friendlyName),
-                                      }}));
-    }
-
-    /**
-     * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
-     * with the specified number of elements
-     */
-    static SharedBufferPtr makeBuffer(ComponentRoot &root, BufferUsageHints usage,
-                                      std::size_t numElements, StringView friendlyName = "")
-        requires HAS_FAM_ELEMENTS
-    {
-        return SharedBufferPtr(root.getComponent<RawSharedBufferKeeper>().new_asset(
-            RawSharedBufferKeeperSeed{.kernel = RawSharedBuffer::SetupParams{
-                                          .renderer = root.getComponent<Renderer>(),
-                                          .root = root,
-                                          .usage = usage,
-                                          .size = calcMinimumBufferSize(numElements),
-                                          .friendlyName = String(friendlyName),
-                                      }}));
-    }
 
     /**
      * Constructs a SharedBufferPtr from a RawSharedBuffer FirmPtr
@@ -143,7 +70,8 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
     void resizeElements(std::size_t numElements)
         requires HAS_FAM_ELEMENTS
     {
-        mp_buffer->resize(calcMinimumBufferSize(numElements));
+        mp_buffer->resize(
+            BufferLayoutInfo::calcMinimumBufferSize<THeaderT, TElementT>(numElements));
     }
 
     /**
@@ -158,7 +86,9 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
     std::size_t numElements() const
         requires HAS_FAM_ELEMENTS
     {
-        return (mp_buffer->size() - getFirstElementOffset()) / sizeof(ElementT2);
+        return (mp_buffer->size() -
+                BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>()) /
+               sizeof(ElementT2);
     }
 
     /**
@@ -184,24 +114,31 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
     const ElementT2 &getElement(std::size_t index) const
         requires HAS_FAM_ELEMENTS
     {
-        return *reinterpret_cast<const ElementT2 *>(mp_buffer->data() + getFirstElementOffset() +
-                                                    sizeof(ElementT2) * index);
+        return *reinterpret_cast<const ElementT2 *>(
+            mp_buffer->data() + BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>() +
+            sizeof(ElementT2) * index);
     }
     template <typename ElementT2 = ElementT>
     ElementT2 &getElement(std::size_t index)
         requires HAS_FAM_ELEMENTS
     {
         return *reinterpret_cast<ElementT2 *>(
-            (*mp_buffer)[{getFirstElementOffset() + sizeof(ElementT2) * index,
-                          getFirstElementOffset() + sizeof(ElementT2) * index + sizeof(ElementT2)}]
+            (*mp_buffer)[{BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>() +
+                              sizeof(ElementT2) * index,
+                          BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>() +
+                              sizeof(ElementT2) * index + sizeof(ElementT2)}]
                 .data());
     }
+    /**
+     * @returns A span of all FAM elements
+     */
     template <typename ElementT2 = ElementT>
     std::span<ElementT2> getElements()
         requires HAS_FAM_ELEMENTS
     {
         return std::span<ElementT2>(
-            reinterpret_cast<ElementT2 *>(mp_buffer->data() + getFirstElementOffset()),
+            reinterpret_cast<ElementT2 *>(
+                mp_buffer->data() + BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>()),
             numElements());
     }
     template <typename ElementT2 = ElementT>
@@ -211,15 +148,14 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
         return std::span<const ElementT2>(
             reinterpret_cast<const ElementT2 *>(
                 dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
-                getFirstElementOffset()),
+                BufferLayoutInfo::getFirstElementOffset<THeaderT, TElementT>()),
             numElements());
     }
 
     /**
      * @returns the underlying RawSharedBuffer, type agnostic
      */
-    dynasma::FirmPtr<RawSharedBuffer> getRawBuffer() { return mp_buffer; }
-    dynasma::FirmPtr<const RawSharedBuffer> getRawBuffer() const { return mp_buffer; }
+    dynasma::FirmPtr<RawSharedBuffer> getRawBuffer() const { return mp_buffer; }
 
   protected:
     dynasma::FirmPtr<RawSharedBuffer> mp_buffer;
@@ -232,4 +168,44 @@ template <class T>
 concept SharedBufferPtrInst = requires(T t) {
     { SharedBufferPtr{t} } -> std::same_as<T>;
 };
+
+/**
+ * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
+ * with enough size for the HeaderT
+ */
+template <class THeaderT, class TElementT>
+SharedBufferPtr<THeaderT, TElementT> makeBuffer(ComponentRoot &root, BufferUsageHints usage,
+                                                StringView friendlyName = "")
+{
+    return SharedBufferPtr<THeaderT, TElementT>(
+        root.getComponent<RawSharedBufferKeeper>().new_asset(RawSharedBufferKeeperSeed{
+            .kernel = RawSharedBuffer::SetupParams{
+                .renderer = root.getComponent<Renderer>(),
+                .root = root,
+                .usage = usage,
+                .size = BufferLayoutInfo::calcMinimumBufferSize<THeaderT, TElementT>(),
+                .friendlyName = String(friendlyName),
+            }}));
+}
+
+/**
+ * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
+ * with the specified number of elements
+ */
+template <class THeaderT, class TElementT>
+SharedBufferPtr<THeaderT, TElementT> makeBuffer(ComponentRoot &root, BufferUsageHints usage,
+                                                std::size_t numElements,
+                                                StringView friendlyName = "")
+    requires(!std::same_as<THeaderT, void>)
+{
+    return SharedBufferPtr<THeaderT, TElementT>(
+        root.getComponent<RawSharedBufferKeeper>().new_asset(RawSharedBufferKeeperSeed{
+            .kernel = RawSharedBuffer::SetupParams{
+                .renderer = root.getComponent<Renderer>(),
+                .root = root,
+                .usage = usage,
+                .size = BufferLayoutInfo::calcMinimumBufferSize<THeaderT, TElementT>(numElements),
+                .friendlyName = String(friendlyName),
+            }}));
+}
 } // namespace Vitrae

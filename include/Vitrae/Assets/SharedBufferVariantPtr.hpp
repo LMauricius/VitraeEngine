@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Assets/Buffers/LayoutInfo.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 
@@ -10,53 +11,13 @@ namespace Vitrae
 
 /**
  * A SharedBufferVariantPtr is used to access a shared buffer, with a type-checked underlying type.
+ * It has a defined header (TYPE_INFO<void> if unused),
+ * and a FAM array of elements (TYPE_INFO<void> if unused).
+ * @note It can be returned along with a constructed buffer by makeBuffer(...) functions
  */
 class SharedBufferVariantPtr
 {
   public:
-    /**
-     * @return The offset (in bytes) of the first FAM element
-     * @param headerTypeinfo The TypeInfo for the header
-     * @param elementTypeinfo The TypeInfo for the FAM elements
-     */
-    static std::ptrdiff_t getFirstElementOffset(const TypeInfo &headerTypeinfo,
-                                                const TypeInfo &elementTypeinfo);
-
-    /**
-     * @return Minimum buffer size for the given number of FAM elements
-     * @param headerTypeinfo The TypeInfo for the header
-     * @param elementTypeinfo The TypeInfo for the FAM elements
-     * @param numElements The number of FAM elements
-     */
-    static std::size_t calcMinimumBufferSize(const TypeInfo &headerTypeinfo,
-                                             const TypeInfo &elementTypeinfo,
-                                             std::size_t numElements);
-
-    /**
-     * @return Minimum buffer size with no elements
-     * @param headerTypeinfo The TypeInfo for the header
-     * @param elementTypeinfo The TypeInfo for the FAM elements
-     */
-    static std::size_t calcMinimumBufferSize(const TypeInfo &headerTypeinfo,
-                                             const TypeInfo &elementTypeinfo);
-
-    /**
-     * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
-     * with enough size for the HeaderT
-     */
-    static SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
-                                             const TypeInfo &elementTypeinfo,
-                                             BufferUsageHints usage, StringView friendlyName = "");
-
-    /**
-     * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
-     * with the specified number of elements
-     */
-    static SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
-                                             const TypeInfo &elementTypeinfo,
-                                             BufferUsageHints usage, std::size_t numElements,
-                                             StringView friendlyName = "");
-
     /**
      * Constructor for the buffer along with explicit header and element types
      */
@@ -105,22 +66,12 @@ class SharedBufferVariantPtr
      */
     template <typename HeaderT> const HeaderT &getHeader() const
     {
-        if (TYPE_INFO<HeaderT> != *mp_headerTypeinfo) {
-            throw std::bad_cast("Header type mismatch: desired type " +
-                                String(TYPE_INFO<HeaderT>.getShortTypeName()) +
-                                " from buffer with header " +
-                                String(mp_headerTypeinfo->getShortTypeName()));
-        }
+        throwIfHeaderMismatch(TYPE_INFO<HeaderT>);
         return *reinterpret_cast<const HeaderT *>(mp_buffer->data());
     }
     template <typename HeaderT> HeaderT &getHeader()
     {
-        if (TYPE_INFO<HeaderT> != *mp_headerTypeinfo) {
-            throw std::bad_cast("Header type mismatch: desired type " +
-                                String(TYPE_INFO<HeaderT>.getShortTypeName()) +
-                                " from buffer with header " +
-                                String(mp_headerTypeinfo->getShortTypeName()));
-        }
+        throwIfHeaderMismatch(TYPE_INFO<HeaderT>);
         return *reinterpret_cast<HeaderT *>((*mp_buffer)[{0, sizeof(HeaderT)}].data());
     }
 
@@ -129,30 +80,22 @@ class SharedBufferVariantPtr
      */
     template <typename ElementT> const ElementT &getElement(std::size_t index) const
     {
-        if (TYPE_INFO<ElementT> != *mp_elementTypeinfo) {
-            throw std::bad_cast("Element type mismatch: desired type " +
-                                String(TYPE_INFO<ElementT>.getShortTypeName()) +
-                                " from buffer with elements " +
-                                String(mp_elementTypeinfo->getShortTypeName()));
-        }
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
         return *reinterpret_cast<const ElementT *>(
-            mp_buffer->data() + getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo) +
+            mp_buffer->data() +
+            BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo) +
             sizeof(ElementT) * index);
     }
     template <typename ElementT> ElementT &getElement(std::size_t index)
     {
-        if (TYPE_INFO<ElementT> != *mp_elementTypeinfo) {
-            throw std::bad_cast("Element type mismatch: desired type " +
-                                String(TYPE_INFO<ElementT>.getShortTypeName()) +
-                                " from buffer with elements " +
-                                String(mp_elementTypeinfo->getShortTypeName()));
-        }
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
         return *reinterpret_cast<ElementT *>(
-            (*mp_buffer)[{getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo) +
-                              sizeof(ElementT) * index,
-                          getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo) +
-                              sizeof(ElementT) * index + sizeof(ElementT)}]
-                .data());
+            (*mp_buffer)
+                [{BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo) +
+                      sizeof(ElementT) * index,
+                  BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo) +
+                      sizeof(ElementT) * index + sizeof(ElementT)}]
+                    .data());
     }
 
     /**
@@ -160,29 +103,20 @@ class SharedBufferVariantPtr
      */
     template <typename ElementT> std::span<ElementT> getElements()
     {
-        if (TYPE_INFO<ElementT> != *mp_elementTypeinfo) {
-            throw std::bad_cast("Element type mismatch: desired type " +
-                                String(TYPE_INFO<ElementT>.getShortTypeName()) +
-                                " from buffer with elements " +
-                                String(mp_elementTypeinfo->getShortTypeName()));
-        }
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
         return std::span<ElementT>(
             reinterpret_cast<ElementT *>(
-                mp_buffer->data() + getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo)),
+                mp_buffer->data() +
+                BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo)),
             numElements());
     }
     template <typename ElementT> std::span<const ElementT> getElements() const
     {
-        if (TYPE_INFO<ElementT> != *mp_elementTypeinfo) {
-            throw std::bad_cast("Element type mismatch: desired type " +
-                                String(TYPE_INFO<ElementT>.getShortTypeName()) +
-                                " from buffer with elements " +
-                                String(mp_elementTypeinfo->getShortTypeName()));
-        }
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
         return std::span<const ElementT>(
             reinterpret_cast<const ElementT *>(
                 dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
-                getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo)),
+                BufferLayoutInfo::getFirstElementOffset(*mp_headerTypeinfo, *mp_elementTypeinfo)),
             numElements());
     }
 
@@ -208,5 +142,27 @@ class SharedBufferVariantPtr
 
     const TypeInfo *mp_headerTypeinfo;
     const TypeInfo *mp_elementTypeinfo;
+
+    void throwIfHeaderMismatch(const TypeInfo &headerTypeinfo) const;
+    void throwIfElementMismatch(const TypeInfo &elementTypeinfo) const;
 };
+
+// Buffer constructions
+
+/**
+ * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
+ * with enough size for the HeaderT
+ */
+static SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
+                                         const TypeInfo &elementTypeinfo, BufferUsageHints usage,
+                                         StringView friendlyName = "");
+
+/**
+ * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
+ * with the specified number of elements
+ */
+static SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
+                                         const TypeInfo &elementTypeinfo, BufferUsageHints usage,
+                                         std::size_t numElements, StringView friendlyName = "");
+
 } // namespace Vitrae
