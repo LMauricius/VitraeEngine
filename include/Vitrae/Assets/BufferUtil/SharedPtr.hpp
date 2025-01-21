@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Assets/Buffers/LayoutInfo.hpp"
+#include "Vitrae/Assets/BufferUtil/LayoutInfo.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
 
 namespace Vitrae

@@ -1,4 +1,4 @@
-#include "Vitrae/Assets/Buffers/LayoutInfo.hpp"
+#include "Vitrae/Assets/BufferUtil/LayoutInfo.hpp"
 
 namespace Vitrae
 {

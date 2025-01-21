@@ -1,4 +1,4 @@
-#include "Vitrae/Assets/SharedBufferVariantPtr.hpp"
+#include "Vitrae/Assets/BufferUtil/SharedVariantPtr.hpp"
 
 namespace Vitrae
 {

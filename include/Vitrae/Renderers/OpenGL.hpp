@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Assets/SharedBufferPtr.hpp"
+#include "Vitrae/Assets/BufferUtil/SharedPtr.hpp"
 #include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Renderer.hpp"
 
