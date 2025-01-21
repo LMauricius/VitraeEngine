@@ -12,6 +12,7 @@ namespace Vitrae
 class ComponentRoot;
 class Material;
 class Renderer;
+class ParamList;
 
 /**
  * A shape is a renderable object
