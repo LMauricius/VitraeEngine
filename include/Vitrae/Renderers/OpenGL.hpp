@@ -51,9 +51,25 @@ struct GLTypeSpec
     std::vector<const GLTypeSpec *> memberTypeDependencies;
 };
 
+struct GLScalarSpec
+{
+
+    /**
+     * Constant such as GL_UNSIGNED_BYTE, GL_FLOAT etc.
+     */
+    GLenum glTypeId;
+
+    /**
+     * Whether the value is a normalized integer that maps to [0.0, 1.0] or [-1.0, 1.0]
+     */
+    bool isNormalized;
+};
+
 struct GLConversionSpec
 {
     const GLTypeSpec &glTypeSpec;
+
+    std::optional<GLScalarSpec> scalarSpec;
 
     void (*setUniform)(GLint location, const Variant &hostValue) = nullptr;
     void (*setOpaqueBinding)(int bindingIndex, const Variant &hostValue) = nullptr;
