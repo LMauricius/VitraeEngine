@@ -9,6 +9,7 @@
 
 namespace Vitrae
 {
+class ComponentRoot;
 class Mesh;
 
 /**
@@ -16,8 +17,8 @@ class Mesh;
  * @param mesh The mesh to generate the buffers for
  * @returns A map of component names to subbuffers. Will be merged into the existing buffers.
  */
-using MeshGenerator =
-    std::function<StableMap<StringId, SharedSubBufferVariantPtr>(const Mesh &mesh)>;
+using MeshGenerator = std::function<StableMap<StringId, SharedSubBufferVariantPtr>(
+    ComponentRoot &root, const Mesh &mesh)>;
 
 /**
  * A collection of functions that generate mesh data
@@ -34,9 +35,8 @@ class MeshGeneratorCollection
                                         MeshGenerator generator);
 
     /**
-     * @returns The generator for a specific component
+     * @returns The generator for a specific component, or empty function if not found
      * @param componentName The name of the component we need
-     * @throws std::out_of_range if the component is not registered
      */
     MeshGenerator getGeneratorForComponent(StringId componentName);
 

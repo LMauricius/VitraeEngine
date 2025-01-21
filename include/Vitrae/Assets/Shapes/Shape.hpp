@@ -31,6 +31,7 @@ class Shape : public dynasma::PolymorphicBase
      * @param components List of params, such as 'position', 'normal' etc.
      * @note For mesh-like shapes, it is possible to use the MeshGeneratorCollection to generate the
      * missing components
+     * @warning Call loadToGPU() after prepareComponents()
      */
     virtual void prepareComponents(const ParamList &components) = 0;
 

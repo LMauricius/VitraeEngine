@@ -12,7 +12,10 @@ void MeshGeneratorCollection::registerGeneratorForComponents(
 
 MeshGenerator MeshGeneratorCollection::getGeneratorForComponent(StringId componentName)
 {
-    return m_generators.at(componentName);
+    if (auto it = m_generators.find(componentName); it != m_generators.end()) {
+        return (*it).second;
+    }
+    return {};
 }
 
 } // namespace Vitrae

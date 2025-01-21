@@ -1,6 +1,7 @@
 #include "Vitrae/Renderers/OpenGL/Mesh.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Collections/MeshGenerator.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Renderers/OpenGL/SharedBuffer.hpp"
@@ -92,7 +93,25 @@ OpenGLMesh::~OpenGLMesh()
     unloadFromGPU();
 }
 
-void OpenGLMesh::prepareComponents(const ParamList &components) {}
+void OpenGLMesh::prepareComponents(const ParamList &components)
+{
+    MeshGeneratorCollection &meshGenerators = m_root.getComponent<MeshGeneratorCollection>();
+
+    for (auto componentname : components.getSpecNameIds()) {
+        if (m_vertexComponentBuffers.find(componentname) == m_vertexComponentBuffers.end()) {
+            MeshGenerator generator = meshGenerators.getGeneratorForComponent(componentname);
+            if (generator) {
+                unloadFromGPU();
+
+                auto newComponentBuffers = generator(m_root, *this);
+
+                for (auto [name, p_buffer] : newComponentBuffers) {
+                    m_vertexComponentBuffers[name] = p_buffer;
+                }
+            }
+        }
+    }
+}
 
 void OpenGLMesh::loadToGPU(Renderer &r)
 {
