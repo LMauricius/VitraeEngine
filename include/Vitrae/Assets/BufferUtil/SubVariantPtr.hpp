@@ -10,7 +10,7 @@
 namespace Vitrae
 {
 class SharedBufferVariantPtr;
-
+template <class THeaderT, class TElementT> class SharedBufferPtr;
 template <class TElementT> class SharedSubBufferPtr;
 
 /**
