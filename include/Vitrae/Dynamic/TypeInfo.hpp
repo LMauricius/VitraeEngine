@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vitrae/TypeConversion/VectorCvt.hpp"
+
 #include <concepts>
 #include <string>
 #include <string_view>
@@ -9,6 +11,7 @@ namespace Vitrae
 {
 
 class Variant;
+class TypeInfo;
 
 /**
  * A structure that contains type info and function pointers to compare and convert properties.
@@ -21,6 +24,18 @@ class TypeInfo
     const std::type_info *p_id;
     std::size_t size;
     std::size_t alignment;
+
+    /**
+     * For vector-like types this is the number of elements in the vector
+     * For scalars and others, this is 0
+     */
+    std::size_t numComponents;
+
+    /**
+     * If numComponents is not 0, this is the TypeInfo of the component's type.
+     * If numComponents is 0, this is the TypeInfo for void.
+     */
+    const TypeInfo &componentTypeInfo;
 
     inline std::string_view getShortTypeName() const { return shortTypeNameGetter(); }
 
@@ -40,18 +55,28 @@ class TypeInfo
     // Getter
     template <typename T> static consteval TypeInfo construct()
     {
-        TypeInfo info;
-        info.p_id = &typeid(T);
+        const std::type_info *p_id = &typeid(T);
+
+        const TypeInfo &componentTypeInfo =
+            GLOBAL_TYPE_INFO<typename VectorTypeInfo<T>::value_type>;
+        std::size_t numComponents = VectorTypeInfo<T>::NumComponents;
+
+        std::size_t size, alignment;
         if constexpr (!std::same_as<T, void>) {
-            info.size = sizeof(T);
-            info.alignment = alignof(T);
+            size = sizeof(T);
+            alignment = alignof(T);
         } else {
-            info.size = 0;
-            info.alignment = 0;
+            size = 0;
+            alignment = 0;
         }
-        info.shortTypeNameGetter = getShortTypeName<T>;
-        return info;
+
+        std::string_view (*shortTypeNameGetter)() = getShortTypeName<T>;
+
+        return TypeInfo(p_id, size, alignment, componentTypeInfo, numComponents,
+                        shortTypeNameGetter);
     }
+
+    template <typename T> static constexpr const TypeInfo GLOBAL_TYPE_INFO = construct<T>();
 
   protected:
     TypeInfo() = default;
@@ -60,6 +85,13 @@ class TypeInfo
 
     TypeInfo &operator=(const TypeInfo &) = default;
     TypeInfo &operator=(TypeInfo &&) = default;
+
+    constexpr TypeInfo(const std::type_info *p_id, std::size_t size, std::size_t alignment,
+                       const TypeInfo &componentTypeInfo, std::size_t numComponents,
+                       std::string_view (*shortTypeNameGetter)())
+        : p_id(p_id), size(size), alignment(alignment), numComponents(numComponents),
+          componentTypeInfo(componentTypeInfo), shortTypeNameGetter(shortTypeNameGetter)
+    {}
 
     // meta
     std::string_view (*shortTypeNameGetter)();
@@ -72,6 +104,6 @@ class TypeInfo
     }
 };
 
-template <typename T> constexpr TypeInfo TYPE_INFO = TypeInfo::construct<T>();
+template <typename T> constexpr const TypeInfo &TYPE_INFO = TypeInfo::GLOBAL_TYPE_INFO<T>;
 
 } // namespace Vitrae
