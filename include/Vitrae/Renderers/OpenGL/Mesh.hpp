@@ -16,12 +16,12 @@ class OpenGLRenderer;
 class OpenGLMesh : public Mesh
 {
   public:
-    OpenGLMesh();
     OpenGLMesh(const AssimpLoadParams &params);
     OpenGLMesh(const TriangleVerticesParams &params);
     ~OpenGLMesh();
 
-    void loadToGPU(Renderer &rend);
+    void prepareComponents(const ParamList &components) override;
+    void loadToGPU(Renderer &rend) override;
     void unloadFromGPU();
 
     BoundingBox getBoundingBox() const override;
@@ -33,6 +33,8 @@ class OpenGLMesh : public Mesh
     }
 
     SharedSubBufferVariantPtr getVertexComponentBuffer(StringId componentName) const override;
+    void setVertexComponentBuffer(StringId componentName,
+                                  SharedSubBufferVariantPtr p_buffer) override;
 
     SharedBufferPtr<void, Triangle> getIndexBuffer() const override;
 
@@ -41,6 +43,7 @@ class OpenGLMesh : public Mesh
     GLuint VAO;
 
   protected:
+    ComponentRoot &m_root;
     String m_friendlyname;
     BoundingBox m_aabb;
     StableMap<StringId, SharedSubBufferVariantPtr> m_vertexComponentBuffers;

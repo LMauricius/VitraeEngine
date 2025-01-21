@@ -26,6 +26,12 @@ class Shape : public dynasma::PolymorphicBase
     virtual BoundingBox getBoundingBox() const = 0;
 
     /**
+     * Ensures (preferably) that this shape has the specified components ready
+     * @param components List of params, such as 'position', 'normal' etc.
+     */
+    virtual void prepareComponents(const ParamList &components) = 0;
+
+    /**
      * Ensures that this shape is loaded to the GPU
      */
     virtual void loadToGPU(Renderer &rend) = 0;

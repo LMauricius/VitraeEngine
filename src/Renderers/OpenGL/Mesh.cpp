@@ -12,9 +12,8 @@
 
 namespace Vitrae
 {
-OpenGLMesh::OpenGLMesh() : m_sentToGPU(false), m_aabb{{}, {}} {}
-
-OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
+OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params)
+    : m_root(params.root), m_sentToGPU(false), m_aabb{{}, {}}
 {
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(params.root.getComponent<Renderer>());
 
@@ -82,12 +81,18 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params) : OpenGLMesh()
     m_friendlyname = toString(params.p_extMesh->mName);
 }
 
-OpenGLMesh::OpenGLMesh(const TriangleVerticesParams &params) {}
+OpenGLMesh::OpenGLMesh(const TriangleVerticesParams &params)
+    : m_root(params.root), m_friendlyname(params.friendlyname), m_aabb{{}, {}},
+      m_vertexComponentBuffers(params.vertexComponentBuffers), m_indexBuffer(params.indexBuffer),
+      m_sentToGPU(false)
+{}
 
 OpenGLMesh::~OpenGLMesh()
 {
     unloadFromGPU();
 }
+
+void OpenGLMesh::prepareComponents(const ParamList &components) {}
 
 void OpenGLMesh::loadToGPU(Renderer &r)
 {
@@ -176,6 +181,13 @@ BoundingBox OpenGLMesh::getBoundingBox() const
 SharedSubBufferVariantPtr OpenGLMesh::getVertexComponentBuffer(StringId componentName) const
 {
     return m_vertexComponentBuffers.at(componentName);
+}
+
+void OpenGLMesh::setVertexComponentBuffer(StringId componentName,
+                                          SharedSubBufferVariantPtr p_buffer)
+{
+    unloadFromGPU();
+    m_vertexComponentBuffers[componentName] = p_buffer;
 }
 
 SharedBufferPtr<void, Triangle> OpenGLMesh::getIndexBuffer() const

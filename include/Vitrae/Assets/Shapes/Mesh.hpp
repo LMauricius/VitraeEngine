@@ -39,6 +39,7 @@ class Mesh : public Shape
         ComponentRoot &root;
         StableMap<StringId, SharedSubBufferVariantPtr> vertexComponentBuffers;
         SharedBufferPtr<void, Triangle> indexBuffer;
+        String friendlyname;
     };
 
     virtual ~Mesh() = default;
@@ -46,8 +47,16 @@ class Mesh : public Shape
     /**
      * @returns The subbuffer of vertex components
      * @param componentName The name of the vertex component to get ("position", "normal", etc.)
+     * @throws std::out_of_range if the buffer isn't found. Best call prepareComponents(...) first
      */
     virtual SharedSubBufferVariantPtr getVertexComponentBuffer(StringId componentName) const = 0;
+
+    /**
+     * Adds or replaces the vertex component subbuffer
+     * @param componentName The name of the vertex component to get ("position", "normal", etc.)
+     */
+    virtual void setVertexComponentBuffer(StringId componentName,
+                                          SharedSubBufferVariantPtr p_buffer) = 0;
 
     /**
      * @returns The index buffer
