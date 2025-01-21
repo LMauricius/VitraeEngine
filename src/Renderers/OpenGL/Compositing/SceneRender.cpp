@@ -276,7 +276,6 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
                         p_shape = p_modelProp->p_model->getBestForm(purposeId, lodParams, lodCtx);
                     }
-                    p_shape->loadToGPU(rend);
 
                     dynasma::FirmPtr<const Material> p_nextMaterial =
                         p_modelProp->p_model->getMaterial();
@@ -374,6 +373,14 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                         if (!needsRebuild) {
                             p_currentShader->setupMaterialProperties(rend, *p_currentMaterial);
                         }
+                    }
+
+                    // Load the shape
+                    {
+                        MMETER_SCOPE_PROFILER("Shape loading");
+
+                        p_shape->prepareComponents(p_currentShader->vertexComponentSpecs);
+                        p_shape->loadToGPU(rend);
                     }
 
                     if (!needsRebuild) {

@@ -147,6 +147,7 @@ class CompiledGLSLShader : public dynasma::PolymorphicBase
 
     ParamList inputSpecs, outputSpecs, filterSpecs, consumingSpecs;
     GLuint programGLName;
+    ParamList vertexComponentSpecs;
     StableMap<StringId, LocationSpec> uniformSpecs;
     StableMap<StringId, BindingSpec> opaqueBindingSpecs;
     StableMap<StringId, BindingSpec> uboSpecs;

@@ -236,6 +236,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                         nameId,
                         LocationSpec{.srcSpec = spec,
                                      .location = (int)rend.getVertexBufferLayoutIndex(nameId)});
+                    this->vertexComponentSpecs.insert_back(spec);
                 } else {
                     // decide how to convert it
                     const GLConversionSpec &convSpec = rend.getTypeConversion(spec.typeInfo);

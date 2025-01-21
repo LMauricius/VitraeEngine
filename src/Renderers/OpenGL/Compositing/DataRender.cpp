@@ -132,7 +132,6 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
     auto p_model = m_params.p_dataPointModel.getLoaded();
     auto p_shape =
         p_model->getBestForm(m_params.rasterizing.modelFormPurpose, lodParams, lodCtx).getLoaded();
-    p_shape->loadToGPU(rend);
 
     auto p_mat = p_model->getMaterial().getLoaded();
 
@@ -199,6 +198,12 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
 
             p_compiledShader->setupProperties(rend, directProperties, *p_mat);
         }
+    }
+    {
+        MMETER_SCOPE_PROFILER("Shape loading");
+
+        p_shape->prepareComponents(p_compiledShader->vertexComponentSpecs);
+        p_shape->loadToGPU(rend);
     }
 
     // render
