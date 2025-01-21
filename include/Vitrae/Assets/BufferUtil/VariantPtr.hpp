@@ -8,11 +8,12 @@
 
 namespace Vitrae
 {
+template <class THeaderT, class TElementT> class SharedBufferPtr;
 
 /**
- * A SharedBufferVariantPtr is used to access a shared buffer, with a type-checked underlying type.
- * It has a defined header (TYPE_INFO<void> if unused),
- * and a FAM array of elements (TYPE_INFO<void> if unused).
+ * A SharedBufferVariantPtr is used to access a shared buffer, with a type-checked underlying
+ * type. It has a defined header (TYPE_INFO<void> if unused), and a FAM array of elements
+ * (TYPE_INFO<void> if unused).
  * @note It can be returned along with a constructed buffer by makeBuffer(...) functions
  */
 class SharedBufferVariantPtr
@@ -23,6 +24,11 @@ class SharedBufferVariantPtr
      */
     SharedBufferVariantPtr(dynasma::FirmPtr<RawSharedBuffer> buffer, const TypeInfo &headerTypeinfo,
                            const TypeInfo &elementTypeinfo);
+
+    template <class THeaderT, class TElementT>
+    SharedBufferVariantPtr(SharedBufferPtr<THeaderT, TElementT> p_buffer)
+        : SharedBufferVariantPtr(p_buffer.getRawBuffer(), TYPE_INFO<THeaderT>, TYPE_INFO<TElementT>)
+    {}
 
     /// Default constructor, sets type infos to void
     SharedBufferVariantPtr();
@@ -53,7 +59,7 @@ class SharedBufferVariantPtr
         }
     }
 
-    inline const TypeInfo &getHeaderTypeinfo() const { return *mp_headerTypeinfo; }
+    inline const TypeInfo &getHeaderTypeInfo() const { return *mp_headerTypeinfo; }
     inline const TypeInfo &getElementTypeInfo() const { return *mp_elementTypeinfo; }
 
     /**

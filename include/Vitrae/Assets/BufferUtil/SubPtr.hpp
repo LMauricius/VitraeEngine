@@ -2,6 +2,7 @@
 
 #include "Vitrae/Assets/BufferUtil/LayoutInfo.hpp"
 #include "Vitrae/Assets/BufferUtil/Ptr.hpp"
+#include "Vitrae/Assets/BufferUtil/SubVariantPtr.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
 #include "Vitrae/Containers/StridedSpan.hpp"
 
@@ -9,6 +10,7 @@
 
 namespace Vitrae
 {
+class SharedSubBufferVariantPtr;
 
 /**
  * A SharedSubBufferPtr is used to access a shared buffer, with a safer underlying type.
@@ -39,6 +41,25 @@ template <class TElementT> class SharedSubBufferPtr
           m_bytesOffset(BufferLayoutInfo::getFirstElementOffset<HeaderT, ElementT>()),
           m_bytesStride(sizeof(ElementT)), m_numElements(p_buffer->numElements())
     {}
+
+    /**
+     * Constructs a SharedSubBufferPtr from a SharedSubBufferVariantPtr FirmPtr
+     */
+    SharedSubBufferPtr(SharedSubBufferVariantPtr p_buffer)
+        : mp_buffer(p_buffer.getRawBuffer()), m_bytesOffset(p_buffer.getBytesOffset()),
+          m_bytesStride(p_buffer.getBytesStride()), m_numElements(p_buffer.numElements())
+    {
+        if (p_buffer.getHeaderTypeinfo() != TYPE_INFO<HeaderT>) {
+            throw std::invalid_argument(
+                "SharedBufferPtr: Header type mismatch by assigning variant's " +
+                String(p_buffer.getHeaderTypeinfo().getShortTypeName()));
+        }
+        if (p_buffer.getElementTypeinfo() != TYPE_INFO<ElementT>) {
+            throw std::invalid_argument(
+                "SharedBufferPtr: Element type mismatch by assigning variant's " +
+                String(p_buffer.getElementTypeinfo().getShortTypeName()));
+        }
+    }
 
     /**
      * @brief Default constructs a null pointer

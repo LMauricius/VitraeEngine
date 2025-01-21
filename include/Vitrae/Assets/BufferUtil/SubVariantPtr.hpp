@@ -11,6 +11,8 @@ namespace Vitrae
 {
 class SharedBufferVariantPtr;
 
+template <class TElementT> class SharedSubBufferPtr;
+
 /**
  * A SharedSubBufferVariantPtr is used to access a shared buffer, with a type-checked underlying
  * type. It has a defined header (TYPE_INFO<void> if unused), and a FAM array of elements
@@ -30,6 +32,13 @@ class SharedSubBufferVariantPtr
      * Constructor for the buffer along with explicit element type
      */
     SharedSubBufferVariantPtr(const SharedBufferVariantPtr &p_buffer);
+
+    template <class ElementT>
+    SharedSubBufferVariantPtr(SharedSubBufferPtr<ElementT> p_buffer)
+        : SharedSubBufferVariantPtr(p_buffer.getRawBuffer(), TYPE_INFO<ElementT>,
+                                    p_buffer.getBytesOffset(), p_buffer.getBytesStride(),
+                                    p_buffer.numElements())
+    {}
 
     /// Default constructor, sets type infos to void
     SharedSubBufferVariantPtr();

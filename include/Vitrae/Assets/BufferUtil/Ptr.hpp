@@ -1,10 +1,12 @@
 #pragma once
 
 #include "Vitrae/Assets/BufferUtil/LayoutInfo.hpp"
+#include "Vitrae/Assets/BufferUtil/VariantPtr.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
 
 namespace Vitrae
 {
+class SharedBufferVariantPtr;
 
 /**
  * A SharedBufferPtr is used to access a shared buffer, with a safer underlying type.
@@ -25,6 +27,23 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
      * Constructs a SharedBufferPtr from a RawSharedBuffer FirmPtr
      */
     SharedBufferPtr(dynasma::FirmPtr<RawSharedBuffer> p_buffer) : mp_buffer(p_buffer) {}
+
+    /**
+     * Constructs a SharedBufferPtr from a SharedBufferVariantPtr FirmPtr
+     */
+    SharedBufferPtr(SharedBufferVariantPtr p_buffer) : mp_buffer(p_buffer.getRawBuffer())
+    {
+        if (p_buffer.getHeaderTypeInfo() != TYPE_INFO<HeaderT>) {
+            throw std::invalid_argument(
+                "SharedBufferPtr: Header type mismatch by assigning variant's " +
+                String(p_buffer.getHeaderTypeInfo().getShortTypeName()));
+        }
+        if (p_buffer.getElementTypeInfo() != TYPE_INFO<ElementT>) {
+            throw std::invalid_argument(
+                "SharedBufferPtr: Element type mismatch by assigning variant's " +
+                String(p_buffer.getElementTypeInfo().getShortTypeName()));
+        }
+    }
 
     /**
      * @brief Default constructs a null pointer
