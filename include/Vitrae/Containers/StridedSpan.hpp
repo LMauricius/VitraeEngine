@@ -9,6 +9,8 @@ namespace Vitrae
 // StridedSpan class
 template <class T> class StridedSpan
 {
+    using buffer_pointer = std::conditional_t<std::is_const<T>::value, const char *, char *>;
+
   public:
     using value_type = T;
     using pointer = T *;
@@ -28,7 +30,7 @@ template <class T> class StridedSpan
         using pointer = T *;
         using reference = T &;
 
-        iterator(char *ptr, std::ptrdiff_t stride) : m_ptr(ptr), m_stride(stride) {}
+        iterator(buffer_pointer ptr, std::ptrdiff_t stride) : m_ptr(ptr), m_stride(stride) {}
 
         iterator &operator++()
         {
@@ -77,7 +79,7 @@ template <class T> class StridedSpan
         }
 
       private:
-        char *m_ptr;
+        buffer_pointer m_ptr;
         std::ptrdiff_t m_stride;
     };
 
@@ -89,14 +91,15 @@ template <class T> class StridedSpan
     {}
 
     constexpr StridedSpan(pointer begin, pointer end, std::ptrdiff_t stride) noexcept
-        : m_data(reinterpret_cast<char *>(begin)),
+        : m_data(reinterpret_cast<buffer_pointer>(begin)),
           m_size(static_cast<size_type>(
-              (reinterpret_cast<char *>(end) - reinterpret_cast<char *>(begin)) / stride)),
+              (reinterpret_cast<buffer_pointer>(end) - reinterpret_cast<buffer_pointer>(begin)) /
+              stride)),
           m_stride(stride)
     {}
 
     constexpr StridedSpan(pointer begin, size_type count, std::ptrdiff_t stride) noexcept
-        : m_data(reinterpret_cast<char *>(begin)), m_size(count), m_stride(stride)
+        : m_data(reinterpret_cast<buffer_pointer>(begin)), m_size(count), m_stride(stride)
     {}
 
     // Element access
@@ -127,7 +130,7 @@ template <class T> class StridedSpan
     }
 
   private:
-    char *m_data;
+    buffer_pointer m_data;
     size_type m_size;
     std::ptrdiff_t m_stride;
 };
