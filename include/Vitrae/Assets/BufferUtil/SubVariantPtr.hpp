@@ -2,6 +2,7 @@
 
 #include "Vitrae/Assets/BufferUtil/LayoutInfo.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
+#include "Vitrae/Containers/StridedSpan.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 
 #include <cstddef>
@@ -92,6 +93,28 @@ class SharedSubBufferVariantPtr
             (*mp_buffer)[{m_bytesOffset + m_bytesStride * index,
                           m_bytesOffset + m_bytesStride * index + sizeof(ElementT)}]
                 .data());
+    }
+
+    /**
+     * @returns A StridedSpan of all elements
+     */
+    template <typename ElementT> StridedSpan<ElementT> getElements()
+    {
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
+        return StridedSpan<ElementT>(
+            reinterpret_cast<ElementT *>(
+                (*mp_buffer)[{m_bytesOffset, m_bytesOffset + m_bytesStride * m_numElements}]
+                    .data()),
+            m_numElements, m_bytesStride);
+    }
+    template <typename ElementT> StridedSpan<const ElementT> getElements() const
+    {
+        throwIfElementMismatch(TYPE_INFO<ElementT>);
+        return StridedSpan<const ElementT>(
+            reinterpret_cast<const ElementT *>(
+                dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
+                m_bytesOffset),
+            m_numElements, m_bytesStride);
     }
 
     /**

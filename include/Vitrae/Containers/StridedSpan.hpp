@@ -1,12 +1,10 @@
 #pragma once
 
-namespace Vitrae
-{
-
 #include <cstddef>
 #include <iterator>
-#include <span>
-#include <stdexcept>
+
+namespace Vitrae
+{
 
 // StridedSpan class
 template <class T> class StridedSpan
@@ -95,6 +93,10 @@ template <class T> class StridedSpan
           m_size(static_cast<size_type>(
               (reinterpret_cast<char *>(end) - reinterpret_cast<char *>(begin)) / stride)),
           m_stride(stride)
+    {}
+
+    constexpr StridedSpan(pointer begin, size_type count, std::ptrdiff_t stride) noexcept
+        : m_data(reinterpret_cast<char *>(begin)), m_size(count), m_stride(stride)
     {}
 
     // Element access

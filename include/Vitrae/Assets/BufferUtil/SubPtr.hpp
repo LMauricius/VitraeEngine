@@ -3,6 +3,7 @@
 #include "Vitrae/Assets/BufferUtil/LayoutInfo.hpp"
 #include "Vitrae/Assets/BufferUtil/Ptr.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
+#include "Vitrae/Containers/StridedSpan.hpp"
 
 #include <tuple>
 
@@ -95,6 +96,26 @@ template <class TElementT> class SharedSubBufferPtr
             (*mp_buffer)[{m_bytesOffset + m_bytesStride * index,
                           m_bytesOffset + m_bytesStride * index + sizeof(ElementT)}]
                 .data());
+    }
+
+    /**
+     * @returns A StridedSpan of all elements
+     */
+    StridedSpan<ElementT> getElements()
+    {
+        return StridedSpan<ElementT>(
+            reinterpret_cast<ElementT *>(
+                (*mp_buffer)[{m_bytesOffset, m_bytesOffset + m_bytesStride * m_numElements}]
+                    .data()),
+            m_numElements, m_bytesStride);
+    }
+    StridedSpan<const ElementT> getElements() const
+    {
+        return StridedSpan<const ElementT>(
+            reinterpret_cast<const ElementT *>(
+                dynasma::const_pointer_cast<const RawSharedBuffer>(mp_buffer)->data() +
+                m_bytesOffset),
+            m_numElements, m_bytesStride);
     }
 
     /**

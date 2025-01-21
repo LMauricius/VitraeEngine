@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vitrae/Assets/BufferUtil/Ptr.hpp"
+#include "Vitrae/Assets/BufferUtil/SubVariantPtr.hpp"
 #include "Vitrae/Assets/Shapes/Shape.hpp"
 #include "Vitrae/Data/GraphicPrimitives.hpp"
 #include "Vitrae/Data/StringId.hpp"
@@ -31,6 +33,11 @@ class Mesh : public Shape
     {
         ComponentRoot &root;
         const aiMesh *p_extMesh;
+    };
+    struct TriangleVerticesParams
+    {
+        ComponentRoot &root;
+        StableMap<StringId, SharedSubBufferVariantPtr> vertexComponentBuffers;
     };
 
     virtual ~Mesh() = default;
