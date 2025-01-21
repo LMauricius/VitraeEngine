@@ -26,11 +26,16 @@ class TypeInfo
 
     // comparisons (just compare type_info)
     inline bool operator==(const TypeInfo &o) const { return *p_id == *o.p_id; }
-    inline bool operator!=(const TypeInfo &o) const { return *p_id != *o.p_id; }
-    inline bool operator<(const TypeInfo &o) const { return p_id->before(*o.p_id); }
-    inline bool operator>(const TypeInfo &o) const { return !operator<=(o); }
-    inline bool operator<=(const TypeInfo &o) const { return operator<(o) || operator==(o); }
-    inline bool operator>=(const TypeInfo &o) const { return !operator<(o); }
+    inline std::weak_ordering operator<=>(const TypeInfo &o) const
+    {
+        if (*p_id == *o.p_id) {
+            return std::weak_ordering::equivalent;
+        } else if (p_id->before(*o.p_id)) {
+            return std::weak_ordering::less;
+        } else {
+            return std::weak_ordering::greater;
+        }
+    }
 
     // Getter
     template <typename T> static consteval TypeInfo construct()
