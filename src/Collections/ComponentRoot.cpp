@@ -2,6 +2,7 @@
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Shapes/Mesh.hpp"
 #include "Vitrae/Collections/FormGenerator.hpp"
+#include "Vitrae/Collections/MeshGenerator.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 
 #include <iostream>
@@ -96,6 +97,7 @@ ComponentRoot::ComponentRoot()
     */
     setComponent<MethodCollection>(new MethodCollection);
     setComponent<FormGeneratorCollection>(new FormGeneratorCollection);
+    setComponent<MeshGeneratorCollection>(new MeshGeneratorCollection);
 }
 
 ComponentRoot::~ComponentRoot()
