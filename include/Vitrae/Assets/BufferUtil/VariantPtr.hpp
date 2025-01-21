@@ -54,7 +54,7 @@ class SharedBufferVariantPtr
     }
 
     inline const TypeInfo &getHeaderTypeinfo() const { return *mp_headerTypeinfo; }
-    inline const TypeInfo &getElementTypeinfo() const { return *mp_elementTypeinfo; }
+    inline const TypeInfo &getElementTypeInfo() const { return *mp_elementTypeinfo; }
 
     /**
      * @returns the number of FAM elements in the underlying RawSharedBuffer
@@ -153,16 +153,16 @@ class SharedBufferVariantPtr
  * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
  * with enough size for the HeaderT
  */
-static SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
-                                         const TypeInfo &elementTypeinfo, BufferUsageHints usage,
-                                         StringView friendlyName = "");
+SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
+                                  const TypeInfo &elementTypeinfo, BufferUsageHints usage,
+                                  StringView friendlyName = "");
 
 /**
  * Constructs a SharedBufferPtr with a new RawSharedBuffer allocated from the Keeper in the root
  * with the specified number of elements
  */
-static SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
-                                         const TypeInfo &elementTypeinfo, BufferUsageHints usage,
-                                         std::size_t numElements, StringView friendlyName = "");
+SharedBufferVariantPtr makeBuffer(ComponentRoot &root, const TypeInfo &headerTypeinfo,
+                                  const TypeInfo &elementTypeinfo, BufferUsageHints usage,
+                                  std::size_t numElements, StringView friendlyName = "");
 
 } // namespace Vitrae
