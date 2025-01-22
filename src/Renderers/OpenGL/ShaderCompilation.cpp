@@ -740,7 +740,7 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
 
             // debug
             String filePrefix = std::string("shaderdebug/") + p_helper->p_compSpec->outVarPrefix +
-                                getPipelineId(p_helper->pipeline);
+                                getPipelineId(p_helper->pipeline, p_helper->p_compSpec->aliases);
             {
                 std::ofstream file;
                 String filename = filePrefix + ".dot";

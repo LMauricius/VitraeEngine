@@ -17,25 +17,55 @@ namespace Vitrae
 /**
  * @returns The unique identifier for the pipeline dependant for relevant aliases
  */
-template <TaskChild BasicTask> inline String getPipelineId(const Pipeline<BasicTask> &pipeline)
+template <TaskChild BasicTask>
+inline String getPipelineId(const Pipeline<BasicTask> &pipeline, const ParamAliases &aliases)
 {
     String ret;
 
     // List of outputs
-    for (const ParamList &specs : {pipeline.outputSpecs, pipeline.filterSpecs}) {
-        for (auto &spec : specs.getSpecList()) {
+    for (auto p_task : pipeline.items) {
+        for (auto [nameId, spec] : p_task->getOutputSpecs().getMappedSpecs()) {
             String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
-            ret += "_";
-            if (spec.name == chosenName) {
-                ret += spec.name;
-            } else {
-                ret += spec.name + "-" + chosenName;
+            if (pipeline.outputSpecs.contains(chosenName)) {
+                ret += "-";
+                if (spec.name == chosenName) {
+                    ret += spec.name;
+                } else {
+                    ret += spec.name + "(" + chosenName + ")";
+                }
+            }
+        }
+    }
+
+    // List of used params
+    for (auto p_task : pipeline.items) {
+        for (auto [nameId, spec] : p_task->getInputSpecs(aliases).getMappedSpecs()) {
+            String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
+            if (spec.name != chosenName) {
+                ret += "-";
+                ret += spec.name + "(" + chosenName + ")";
+            }
+        }
+
+        for (auto [nameId, spec] : p_task->getConsumingSpecs(aliases).getMappedSpecs()) {
+            String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
+            if (spec.name != chosenName) {
+                ret += "-";
+                ret += spec.name + "(" + chosenName + ")";
+            }
+        }
+
+        for (auto [nameId, spec] : p_task->getFilterSpecs(aliases).getMappedSpecs()) {
+            String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
+            if (spec.name != chosenName) {
+                ret += "-";
+                ret += spec.name + "(" + chosenName + ")";
             }
         }
     }
 
     // Some short hash for making it clear
-    ret = std::to_string(std::hash<String>{}(ret) & 0xffffff) + ret;
+    ret = toHexString(std::hash<String>{}(ret) & 0xffffff) + ret;
 
     return ret;
 }

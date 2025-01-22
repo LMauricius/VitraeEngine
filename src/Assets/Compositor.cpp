@@ -124,7 +124,8 @@ void Compositor::rebuildPipeline()
 
     m_localProperties.clear();
 
-    String filePrefix = std::string("shaderdebug/") + "compositor_" + getPipelineId(m_pipeline);
+    String filePrefix =
+        std::string("shaderdebug/") + "compositor_" + getPipelineId(m_pipeline, m_aliases);
     {
         std::ofstream file;
         String filename = filePrefix + ".dot";
@@ -163,7 +164,8 @@ void Compositor::regenerateFrameStores()
         m_needsRebuild = true;
     }
 
-    String filePrefix = std::string("shaderdebug/") + "full_" + getPipelineId(m_pipeline);
+    String filePrefix =
+        std::string("shaderdebug/") + "full_" + getPipelineId(m_pipeline, m_aliases);
     {
         std::ofstream file;
         String filename = filePrefix + ".dot";

@@ -326,8 +326,8 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adap
                               PipelineParametrizationPolicy::ParametrizedOrDirectDependencies,
                               desiredOutputs, subAliases);
 
-    String filePrefix =
-        std::string("shaderdebug/") + "adaptor_" + String(friendlyName) + getPipelineId(pipeline);
+    String filePrefix = std::string("shaderdebug/") + "adaptor_" + String(friendlyName) +
+                        getPipelineId(pipeline, subAliases);
     {
         std::ofstream file;
         String filename = filePrefix + ".dot";
