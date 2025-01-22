@@ -181,7 +181,7 @@ std::tuple<SharedSubBufferPtr<ElementTs>...> makeBufferInterleaved(ComponentRoot
             if (alignof(ElementTs) > maxAlignment)
                 maxAlignment = alignof(ElementTs);
             ++i;
-        },
+        }(),
         ...);
     aggregateSize = (aggregateSize + maxAlignment - 1) / maxAlignment * maxAlignment;
 

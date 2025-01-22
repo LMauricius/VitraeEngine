@@ -106,7 +106,7 @@ OpenGLRenderer::OpenGLRenderer() : m_vertexBufferFreeIndex(0)
     specifyVertexBuffer(
         {.name = StandardVertexBufferNames::NORMAL, .typeInfo = TYPE_INFO<glm::vec3>});
     specifyVertexBuffer(
-        {.name = StandardVertexBufferNames::TEXTURE_COORD, .typeInfo = TYPE_INFO<glm::vec2>});
+        {.name = StandardVertexBufferNames::TEXTURE_COORD, .typeInfo = TYPE_INFO<glm::vec3>});
     specifyVertexBuffer(
         {.name = StandardVertexBufferNames::COLOR, .typeInfo = TYPE_INFO<glm::vec4>});
 }
