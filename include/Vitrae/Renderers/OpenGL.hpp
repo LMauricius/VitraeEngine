@@ -125,11 +125,7 @@ class OpenGLRenderer : public Renderer
      */
     template <SharedBufferPtrInst SharedBufferT> void specifyBufferTypeAndConversionAuto();
 
-    void specifyVertexBuffer(const ParamSpec &newElSpec);
-    template <class T> void specifyVertexBufferAuto()
-    {
-        specifyVertexBuffer(getTypeConversion(TYPE_INFO<T>.p_id->name()));
-    }
+    void specifyVertexBuffer(const ParamSpec &newElSpec) override;
     std::size_t getNumVertexBuffers() const;
     std::size_t getVertexBufferLayoutIndex(StringId name) const;
     const StableMap<StringId, const GLTypeSpec *> &getAllVertexBufferSpecs() const;

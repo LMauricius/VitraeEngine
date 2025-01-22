@@ -19,6 +19,8 @@ class Renderer
 
     virtual void anyThreadEnable() = 0;
     virtual void anyThreadDisable() = 0;
+
+    virtual void specifyVertexBuffer(const ParamSpec &newElSpec) = 0;
 };
 
 } // namespace Vitrae
