@@ -175,6 +175,10 @@ void OpenGLRenderer::mainThreadSetup(ComponentRoot &root)
          root.getComponent<TextureManager>().register_asset(
              {Texture::PureColorParams{.root = root, .color = {1.0f, 1.0f, 1.0f, 1.0f}}})});
     root.addAiMaterialTextureInfo(
+        {StandardMaterialTextureNames::NORMAL, aiTextureType_NORMALS,
+         root.getComponent<TextureManager>().register_asset(
+             {Texture::PureColorParams{.root = root, .color = {0.0f, 0.0f, 1.0f, 1.0f}}})});
+    root.addAiMaterialTextureInfo(
         {StandardMaterialTextureNames::SPECULAR, aiTextureType_SPECULAR,
          root.getComponent<TextureManager>().register_asset(
              {Texture::PureColorParams{.root = root, .color = {0.0f, 0.0f, 0.0f, 1.0f}}})});

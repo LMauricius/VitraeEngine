@@ -64,6 +64,7 @@ namespace StandardMaterialTextureNames
 static constexpr const char DIFFUSE[] = "tex_diffuse";
 static constexpr const char SPECULAR[] = "tex_specular";
 static constexpr const char EMISSIVE[] = "tex_emissive";
+static constexpr const char NORMAL[] = "tex_normal";
 } // namespace StandardMaterialTextureNames
 
 namespace StandardMaterialPropertyNames
