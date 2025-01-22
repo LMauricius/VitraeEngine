@@ -82,7 +82,7 @@ class SharedSubBufferVariantPtr
         }
     }
 
-    inline const TypeInfo &getElementTypeinfo() const { return *mp_elementTypeinfo; }
+    inline const TypeInfo &getHeaderTypeInfo() const { return *mp_elementTypeinfo; }
 
     /**
      * @returns the number of FAM elements in the underlying RawSharedBuffer subset

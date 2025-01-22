@@ -48,18 +48,13 @@ template <class TElementT> class SharedSubBufferPtr
     SharedSubBufferPtr(SharedBufferVariantPtr p_buffer)
         : mp_buffer(p_buffer.getRawBuffer()),
           m_bytesOffset(BufferLayoutInfo::getFirstElementOffset(p_buffer.getHeaderTypeInfo(),
-                                                                p_buffer.getElementTypeinfo())),
+                                                                p_buffer.getElementTypeInfo())),
           m_bytesStride(sizeof(ElementT)), m_numElements(p_buffer.numElements())
     {
-        if (p_buffer.getHeaderTypeinfo() != TYPE_INFO<HeaderT>) {
-            throw std::invalid_argument(
-                "SharedBufferPtr: Header type mismatch by assigning variant's " +
-                String(p_buffer.getHeaderTypeinfo().getShortTypeName()));
-        }
-        if (p_buffer.getElementTypeinfo() != TYPE_INFO<ElementT>) {
+        if (p_buffer.getHeaderTypeInfo() != TYPE_INFO<ElementT>) {
             throw std::invalid_argument(
                 "SharedBufferPtr: Element type mismatch by assigning variant's " +
-                String(p_buffer.getElementTypeinfo().getShortTypeName()));
+                String(p_buffer.getHeaderTypeInfo().getShortTypeName()));
         }
     }
 
@@ -70,15 +65,10 @@ template <class TElementT> class SharedSubBufferPtr
         : mp_buffer(p_buffer.getRawBuffer()), m_bytesOffset(p_buffer.getBytesOffset()),
           m_bytesStride(p_buffer.getBytesStride()), m_numElements(p_buffer.numElements())
     {
-        if (p_buffer.getHeaderTypeinfo() != TYPE_INFO<HeaderT>) {
-            throw std::invalid_argument(
-                "SharedBufferPtr: Header type mismatch by assigning variant's " +
-                String(p_buffer.getHeaderTypeinfo().getShortTypeName()));
-        }
-        if (p_buffer.getElementTypeinfo() != TYPE_INFO<ElementT>) {
+        if (p_buffer.getHeaderTypeInfo() != TYPE_INFO<ElementT>) {
             throw std::invalid_argument(
                 "SharedBufferPtr: Element type mismatch by assigning variant's " +
-                String(p_buffer.getElementTypeinfo().getShortTypeName()));
+                String(p_buffer.getHeaderTypeInfo().getShortTypeName()));
         }
     }
 

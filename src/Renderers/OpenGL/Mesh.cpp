@@ -131,7 +131,7 @@ void OpenGLMesh::loadToGPU(Renderer &r)
                 static_cast<OpenGLRawSharedBuffer &>(*(p_buffer.getRawBuffer()));
 
             // get type info and conversion
-            const TypeInfo &compType = p_buffer.getElementTypeinfo();
+            const TypeInfo &compType = p_buffer.getHeaderTypeInfo();
             const TypeInfo &subCompType = (compType.componentTypeInfo == TYPE_INFO<void>)
                                               ? compType
                                               : compType.componentTypeInfo;
