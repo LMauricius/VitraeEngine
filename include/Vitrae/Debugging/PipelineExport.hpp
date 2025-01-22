@@ -136,18 +136,21 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
         }
         out << "];\n";
     };
-    auto outputPropNode = [&](StringView id, const ParamSpec &spec, bool horizontal) {
+    auto outputPropNode = [&](StringView id, const ParamSpec &spec, bool horizontal, bool isInput,
+                              bool isOutput) {
         out << prefix << id << " [";
         if (aliases.choiceStringFor(spec.name) != spec.name)
-            out << "label=\"" << spec.name << "\n("
-                << escapedLabel(aliases.choiceStringFor(spec.name)) << ")";
+            out << "label=\""
+                << escapedLabel(spec.name + "\n(" + aliases.choiceStringFor(spec.name) + ")");
         else
             out << "label=\"" << escapedLabel(spec.name);
+        auto colorPrefix = isInput ? "dodgerblue;0.1:" : "";
+        auto colorSuffix = isOutput ? ":green;0.1" : "";
         if (spec.typeInfo == TYPE_INFO<void>) {
             out << "\", ";
             out << "shape=octagon, ";
             out << "style=\"rounded,filled\", ";
-            out << "fillcolor=\"lightgoldenrod\", ";
+            out << "fillcolor=\"" << colorPrefix << "lightgoldenrod" << colorSuffix << "\", ";
             out << "bgcolor=\"lightgoldenrod\", ";
         } else {
             if (horizontal) {
@@ -157,7 +160,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
             }
             out << "shape=box, ";
             out << "style=\"rounded,filled\", ";
-            out << "fillcolor=\"lightyellow\", ";
+            out << "fillcolor=\"" << colorPrefix << "lightyellow" << colorSuffix << "\", ";
             out << "bgcolor=\"lightyellow\", ";
         }
         out << "];\n";
@@ -319,11 +322,11 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
             }
 
             activeNodeIdsPerNameId.emplace(realName, id);
-            outputPropNode(id, spec, horizontalInputsOutputs);
+            outputPropNode(id, spec, horizontalInputsOutputs, false, false);
         }
     };
 
-    auto addPropertyNodeHere = [&](const ParamSpec &spec) {
+    auto addPropertyNodeHere = [&](const ParamSpec &spec, bool isInput, bool isOutput) {
         String realName = aliases.choiceStringFor(spec.name);
 
         if (auto it = activeNodeIdsPerNameId.find(realName); it != activeNodeIdsPerNameId.end()) {
@@ -332,7 +335,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
             String newId = currentPropertyNodeReference(spec);
             pendingNodeIdsPerNameId.erase(realName);
             activeNodeIdsPerNameId[realName] = newId;
-            outputPropNode(newId, spec, horizontalInputsOutputs);
+            outputPropNode(newId, spec, horizontalInputsOutputs, isInput, isOutput);
             outputEquivalence(prevId, newId, true);
         } else {
             String id;
@@ -346,7 +349,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
             }
 
             activeNodeIdsPerNameId.emplace(realName, id);
-            outputPropNode(id, spec, horizontalInputsOutputs);
+            outputPropNode(id, spec, horizontalInputsOutputs, isInput, isOutput);
         }
     };
 
@@ -363,20 +366,13 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
     }
 
     // inputs
-    out << "\tsubgraph cluster_" << prefix << "inputs {\n";
-    out << "\t\tlabel=\"Inputs\";\n";
-    out << "\t\tcluster=true;\n";
-    out << "\t\tstyle=dashed;\n";
-    out << "\t\tcolor=\"black\";\n";
-
     for (const ParamList *p_specs : {&pipeline.inputSpecs, &pipeline.filterSpecs,
                                      &pipeline.consumingSpecs, &pipeline.pipethroughSpecs}) {
         for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
             out << "\t\t";
-            addPropertyNodeHere(spec);
+            addPropertyNodeHere(spec, true, false);
         }
     }
-    out << "\t}\n";
 
     // tasks
     std::size_t ordinalI = 0;
@@ -400,7 +396,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
 
         for (auto [nameId, spec] : p_task->getFilterSpecs(aliases).getMappedSpecs()) {
             out << "\t";
-            addPropertyNodeHere(spec);
+            addPropertyNodeHere(spec, false, false);
             String curPropNodeId = currentPropertyNodeReference(spec);
 
             outputModification(curPropNodeId, getTaskId(*p_task), false);
@@ -424,21 +420,13 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
     }
 
     // outputs
-    out << "\tsubgraph cluster_" << prefix << "outputs {\n";
-    out << "\t\tlabel=\"Outputs\";\n";
-    out << "\t\tcluster=true;\n";
-    out << "\t\tstyle=dashed;\n";
-    out << "\t\tcolor=\"black\";\n";
-
     for (const ParamList *p_specs :
          {&pipeline.outputSpecs, &pipeline.filterSpecs, &pipeline.pipethroughSpecs}) {
         for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
             out << "\t\t";
-            addPropertyNodeHere(spec);
+            addPropertyNodeHere(spec, false, true);
         }
     }
-
-    out << "\t}\n";
 
     out << connectionsSS.str() << "\n";
 
