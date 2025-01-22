@@ -258,8 +258,13 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                 for (auto p_modelProp : m_sortedModelProps) {
                     // Setup the shape to render
                     dynasma::FirmPtr<Shape> p_shape;
-                    glm::mat4 mat_model = p_modelProp->transform.getModelMatrix();
-                    glm::mat4 mat_mvp = mat_display * mat_model;
+                    glm::mat4 mat_model;
+                    glm::mat4 mat_mvp;
+                    {
+                        MMETER_SCOPE_PROFILER("Matrix calculation");
+                        mat_model = p_modelProp->transform.getModelMatrix();
+                        mat_mvp = mat_display * mat_model;
+                    }
                     {
                         MMETER_SCOPE_PROFILER("LoD selection");
 
