@@ -44,6 +44,15 @@ class Mesh : public Shape
 
     virtual ~Mesh() = default;
 
+    /// @subsection Mesh properties
+
+    /**
+     * @returns how we decide the front side of a polygon
+     */
+    virtual FrontSideOrientation getFrontSideOrientation() const = 0;
+
+    /// @subsection Vertex components
+
     /**
      * @returns The subbuffer of vertex components
      * @param componentName The name of the vertex component to get ("position", "normal", etc.)

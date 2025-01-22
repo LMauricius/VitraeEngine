@@ -24,6 +24,8 @@ class OpenGLMesh : public Mesh
     void loadToGPU(Renderer &rend) override;
     void unloadFromGPU();
 
+    FrontSideOrientation getFrontSideOrientation() const override;
+
     BoundingBox getBoundingBox() const override;
 
     inline std::size_t memory_cost() const override
@@ -45,6 +47,7 @@ class OpenGLMesh : public Mesh
   protected:
     ComponentRoot &m_root;
     String m_friendlyname;
+    FrontSideOrientation m_frontSideOrientation;
     BoundingBox m_aabb;
     StableMap<StringId, SharedSubBufferVariantPtr> m_vertexComponentBuffers;
     SharedBufferPtr<void, Triangle> m_indexBuffer;

@@ -18,6 +18,9 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params)
 {
     OpenGLRenderer &rend = static_cast<OpenGLRenderer &>(params.root.getComponent<Renderer>());
 
+    // properties
+    m_frontSideOrientation = FrontSideOrientation::CounterClockwise;
+
     // prepare vertices
     m_indexBuffer = makeBuffer<void, Triangle>(
         params.root, BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW,
@@ -83,7 +86,8 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params)
 }
 
 OpenGLMesh::OpenGLMesh(const TriangleVerticesParams &params)
-    : m_root(params.root), m_friendlyname(params.friendlyname), m_aabb{{}, {}},
+    : m_root(params.root), m_friendlyname(params.friendlyname),
+      m_frontSideOrientation(FrontSideOrientation::CounterClockwise), m_aabb{{}, {}},
       m_vertexComponentBuffers(params.vertexComponentBuffers), m_indexBuffer(params.indexBuffer),
       m_sentToGPU(false)
 {}
@@ -190,6 +194,11 @@ void OpenGLMesh::unloadFromGPU()
         m_sentToGPU = false;
         glDeleteVertexArrays(1, &VAO);
     }
+}
+
+FrontSideOrientation OpenGLMesh::getFrontSideOrientation() const
+{
+    return m_frontSideOrientation;
 }
 
 BoundingBox OpenGLMesh::getBoundingBox() const
