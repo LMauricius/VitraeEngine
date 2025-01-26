@@ -66,7 +66,7 @@ class Model : public dynasma::PolymorphicBase
      * @param lodMeasure The level of detail measure of the form
      * @param p_shape The shape of the form
      */
-    void addForm(StringId purpose, std::unique_ptr<LoDMeasure> lodMeasure,
+    void addForm(StringId purpose, std::shared_ptr<LoDMeasure> lodMeasure,
                  dynasma::LazyPtr<Shape> p_shape);
 
     /**

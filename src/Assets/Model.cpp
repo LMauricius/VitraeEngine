@@ -32,7 +32,7 @@ Model::Model(const AssimpLoadParams &params) : m_root(params.root)
     }
 
     addForm("visual",
-            std::unique_ptr<Vitrae::LoDMeasure>(new SmallestElementSizeMeasure(minEdgeLength)),
+            std::shared_ptr<Vitrae::LoDMeasure>(new SmallestElementSizeMeasure(minEdgeLength)),
             p_mesh);
 }
 
@@ -99,7 +99,7 @@ DetailFormSpan Model::getFormsWithPurpose(StringId purpose) const
     } else {
         const FormGeneratorCollection &generators = m_root.getComponent<FormGeneratorCollection>();
         if (auto genIt = generators.find(purpose); genIt != generators.end()) {
-            it = m_formsByPurpose.emplace(purpose, (*genIt).second(*this)).first;
+            it = m_formsByPurpose.emplace(purpose, (*genIt).second(m_root, *this)).first;
             return (*it).second;
         } else {
             throw std::out_of_range("Form not found and genarator for it doesn't exist");
@@ -107,10 +107,10 @@ DetailFormSpan Model::getFormsWithPurpose(StringId purpose) const
     }
 }
 
-void Model::addForm(StringId purpose, std::unique_ptr<LoDMeasure> lodMeasure,
+void Model::addForm(StringId purpose, std::shared_ptr<LoDMeasure> lodMeasure,
                     dynasma::LazyPtr<Shape> p_shape)
 {
-    m_formsByPurpose[purpose].emplace_back(std::move(lodMeasure), p_shape);
+    m_formsByPurpose[purpose].emplace_back(lodMeasure, p_shape);
 }
 
 void Model::setFormsWithPurpose(StringId purpose, DetailFormVector forms)
