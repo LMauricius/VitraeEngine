@@ -100,10 +100,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
         specsIt = m_specsPerKey.emplace(specsKey, new SpecsPerAliases()).first;
         SpecsPerAliases &specsContainer = *(*specsIt).second;
 
-        for (auto &tokenName : m_params.inputTokenNames) {
-            specsContainer.inputSpecs.insert_back({.name = tokenName, .typeInfo = TYPE_INFO<void>});
-        }
-
+        specsContainer.inputSpecs.merge(m_params.inputSpecs);
         specsContainer.inputSpecs.insert_back(StandardParam::mat_display);
         specsContainer.filterSpecs.insert_back(StandardParam::fs_target);
 

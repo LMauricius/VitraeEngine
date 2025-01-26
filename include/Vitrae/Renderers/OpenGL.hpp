@@ -214,30 +214,30 @@ void OpenGLRenderer::specifyBufferTypeAndConversionAuto()
                 elementGlTypeSpec.layout.std140Alignment;
         }
 
-        if (typeSpec.layout.std140Size != SharedBufferT::getFirstElementOffset()) {
+        if (typeSpec.layout.std140Size !=
+            BufferLayoutInfo::getFirstElementOffset(TYPE_INFO<HeaderT>, TYPE_INFO<ElementT>)) {
             throw GLSpecificationError(
                 "Buffer elements do not start at the same offset between host and GLSL types");
         }
-        if (elementGlTypeSpec.std140Size != sizeof(ElementT)) {
+        if (elementGlTypeSpec.layout.std140Size != sizeof(ElementT)) {
             throw GLSpecificationError(
                 "Buffer elements not trivially convertible between host and GLSL types");
         }
 
         typeSpec.memberTypeDependencies.push_back(&elementGlTypeSpec);
     }
-    GLTypeSpec &registeredTypeSpec = specifyGlType(std::move(typeSpec));
+    const GLTypeSpec &registeredTypeSpec = specifyGlType(std::move(typeSpec));
 
-    GLConversionSpec convSpec = GLConversionSpec{
-        .glTypeSpec = registeredTypeSpec,
-        .setUniform = nullptr,
-        .setOpaqueConstBinding = nullptr,
-        .setOpaqueMutableBinding = nullptr,
-        .setUBOBinding = nullptr,
-        .setSSBOBinding = [](int bindingIndex, const Variant &hostValue) {
-            setRawBufferBinding(*hostValue.get<SharedBufferT>().getRawBuffer(), bindingIndex);
-        }};
-
-    specifyTypeConversion(TYPE_INFO<SharedBufferT>, convSpec);
+    registerTypeConversion(
+        TYPE_INFO<SharedBufferT>,
+        GLConversionSpec{.glTypeSpec = registeredTypeSpec,
+                         .setUniform = nullptr,
+                         .setOpaqueBinding = nullptr,
+                         .setUBOBinding = nullptr,
+                         .setSSBOBinding = [](int bindingIndex, const Variant &hostValue) {
+                             setRawBufferBinding(*hostValue.get<SharedBufferT>().getRawBuffer(),
+                                                 bindingIndex);
+                         }});
 }
 
 } // namespace Vitrae

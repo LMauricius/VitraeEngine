@@ -46,7 +46,7 @@ OpenGLFrameStore::OpenGLFrameStore(const FrameStore::TextureBindParams &params)
         width = p_texture->getSize().x;
         height = p_texture->getSize().y;
 
-        renderComponents.emplace_back(StandardParam::shade);
+        renderComponents.emplace_back(StandardParam::fragment_color);
 
         colorAttachmentUnusedIndex++;
     }

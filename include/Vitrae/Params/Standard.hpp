@@ -35,6 +35,9 @@ inline const ParamSpec mat_display = {"mat_display", TYPE_INFO<glm::mat4>};
 /// @brief Combined matrix of model, view and projection
 inline const ParamSpec mat_mvp     = {"mat_mvp",     TYPE_INFO<glm::mat4>};
 
+/// @brief The surface visible color 
+inline const ParamSpec fragment_color = {"fragment_color",       TYPE_INFO<glm::vec4>};
+
 /// @brief The surface color with lights applied to it
 inline const ParamSpec shade       = {"shade",       TYPE_INFO<glm::vec4>};
 

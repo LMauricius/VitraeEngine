@@ -21,7 +21,7 @@ class ComposeDataRender : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        std::vector<String> inputTokenNames;
+        ParamList inputSpecs;
         std::vector<String> outputTokenNames;
         dynasma::LazyPtr<Model> p_dataPointModel;
         DataGeneratorFunction dataGenerator;
