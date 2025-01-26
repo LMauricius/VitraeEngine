@@ -443,6 +443,10 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                     p_task->extractUsedTypes(usedTypeSet, p_helper->p_compSpec->aliases);
                 }
 
+                for (auto &spec : p_helper->pipeline.pipethroughSpecs.getSpecList()) {
+                    usedTypeSet.insert(&spec.typeInfo);
+                }
+
                 std::set<const GLTypeSpec *> mentionedTypes;
 
                 std::function<void(const GLTypeSpec &)> processTypeNameId =
@@ -748,8 +752,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 exportPipeline(p_helper->pipeline, p_helper->p_compSpec->aliases, file);
                 file.close();
 
-                root.getInfoStream() << "Graph stored to: '" << std::filesystem::current_path()
-                                     << "/" << filename << "'" << std::endl;
+                root.getInfoStream()
+                    << "Graph stored to: '" << (std::filesystem::current_path() / filename) << "'"
+                    << std::endl;
             }
             {
                 std::ofstream file;
@@ -758,8 +763,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 file << srcCode;
                 file.close();
 
-                root.getInfoStream() << "Shader stored to: '" << std::filesystem::current_path()
-                                     << "/" << filename << "'" << std::endl;
+                root.getInfoStream()
+                    << "Shader stored to: '" << (std::filesystem::current_path() / filename) << "'"
+                    << std::endl;
             }
 
             // compile

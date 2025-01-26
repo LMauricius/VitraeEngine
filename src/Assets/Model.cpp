@@ -34,6 +34,9 @@ Model::Model(const AssimpLoadParams &params) : m_root(params.root)
     addForm("visual",
             std::shared_ptr<Vitrae::LoDMeasure>(new SmallestElementSizeMeasure(minEdgeLength)),
             p_mesh);
+
+    // metadata
+    m_boundingBox = p_mesh->getBoundingBox();
 }
 
 Model::~Model() {}

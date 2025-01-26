@@ -87,7 +87,7 @@ OpenGLFrameStore::OpenGLFrameStore(const WindowDisplayParams &params)
 
     // setup members
     mp_renderComponents = dynasma::makeStandalone<ParamList, std::span<const Vitrae::ParamSpec>>(
-        {{StandardParam::shade}});
+        {{StandardParam::fragment_color}});
     m_contextSwitcher = WindowContextSwitcher{window, params.onClose, params.onDrag};
 
     // register callbacks
