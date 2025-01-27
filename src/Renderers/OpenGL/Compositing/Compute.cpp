@@ -112,7 +112,7 @@ void OpenGLComposeCompute::run(RenderComposeContext args) const
                     args.properties.get(nameId) !=
                         programPerAliases.cachedDependencies.at(nameId)) {
                     needsToRun = true;
-                    programPerAliases.cachedDependencies.at(nameId) = args.properties.get(nameId);
+                    programPerAliases.cachedDependencies[nameId] = args.properties.get(nameId);
                 }
             }
         }

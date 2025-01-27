@@ -859,7 +859,8 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             if (this->uniformSpecs.find(nameId) != this->uniformSpecs.end() ||
                 this->opaqueBindingSpecs.find(nameId) != this->opaqueBindingSpecs.end() ||
                 this->uboSpecs.find(nameId) != this->uboSpecs.end() ||
-                this->ssboSpecs.find(nameId) != this->ssboSpecs.end()) {
+                this->ssboSpecs.find(nameId) != this->ssboSpecs.end() ||
+                spec.typeInfo == TYPE_INFO<void>) {
                 // the property is used
                 bool wasConsumed = false;
                 bool wasModified = false;
