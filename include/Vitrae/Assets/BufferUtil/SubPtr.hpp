@@ -83,6 +83,9 @@ template <class TElementT> class SharedSubBufferPtr
     SharedSubBufferPtr &operator=(SharedSubBufferPtr &&other) = default;
     SharedSubBufferPtr &operator=(const SharedSubBufferPtr &other) = default;
 
+    bool operator==(const SharedSubBufferPtr &other) const = default;
+    auto operator<=>(const SharedSubBufferPtr &other) const = default;
+
     /**
      * @returns the number of FAM elements in the underlying RawSharedBuffer subset
      */

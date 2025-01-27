@@ -77,8 +77,14 @@ class SharedSubBufferVariantPtr
         } else if (auto c = *mp_elementTypeinfo <=> *o.mp_elementTypeinfo;
                    c != std::weak_ordering::equivalent) {
             return c;
-        } else {
+        } else if (auto c = m_bytesOffset <=> o.m_bytesOffset;
+                   c != std::strong_ordering::equivalent) {
             return m_bytesOffset <=> o.m_bytesOffset;
+        } else if (auto c = m_bytesStride <=> o.m_bytesStride;
+                   c != std::strong_ordering::equivalent) {
+            return m_bytesStride <=> o.m_bytesStride;
+        } else {
+            return m_numElements <=> o.m_numElements;
         }
     }
 

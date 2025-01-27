@@ -57,6 +57,9 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
     SharedBufferPtr &operator=(SharedBufferPtr &&other) = default;
     SharedBufferPtr &operator=(const SharedBufferPtr &other) = default;
 
+    bool operator==(const SharedBufferPtr &other) const = default;
+    auto operator<=>(const SharedBufferPtr &other) const = default;
+
     /**
      * Resizes the underlying RawSharedBuffer to contain the given number of FAM elements
      */
