@@ -90,6 +90,29 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
     */
     std::unordered_map<String, const PipelineContainer *> subpipelines;
 
+    /*
+    This references the nodes that are currently active, i.e. added to the graph and not consumed
+    */
+    std::map<StringId, String> activeNodeIdsPerNameId;
+
+    /*
+    This references nodes for whichwe know their IDs, but weren't added to the graph yet
+    */
+    std::map<StringId, String> pendingNodeIdsPerNameId;
+
+    /*
+    Counts the number of times we re-added a node for the same property
+    */
+    std::map<StringId, std::size_t> repetitionCounterPerNameId;
+
+    /*
+    Minimum node rank difference for this node
+    */
+    std::map<StringId, std::size_t> spacingPerNameId;
+
+    bool horizontalInputsOutputs = pipeline.inputSpecs.count() > pipeline.items.size() ||
+                                   pipeline.outputSpecs.count() > pipeline.items.size();
+
     auto colorFromHash = [&](std::size_t hash) {
         hash = (hash & 0xffffff) ^ ((hash >> 24) & 0xffffff) ^ (hash >> 48);
         int r = hash & 0xff;
@@ -126,14 +149,17 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
         out << "shape=box, ";
         out << "style=\"filled\", ";
         if (const PipelineContainer *p_container = dynamic_cast<const PipelineContainer *>(&task);
-            expandSubGraphs && p_container) {
+            p_container) {
             out << "fillcolor=\"" + colorFromName(task.getFriendlyName()) + "\", ";
             out << "bgcolor=\"" + colorFromName(task.getFriendlyName()) + "\", ";
-            subpipelines.emplace(String(task.getFriendlyName()), p_container);
+            if (expandSubGraphs) {
+                subpipelines.emplace(String(task.getFriendlyName()), p_container);
+            }
         } else {
             out << "fillcolor=\"lightblue\", ";
             out << "bgcolor=\"lightblue\", ";
         }
+        out << "rankjustify=c,";
         out << "];\n";
     };
     auto outputPropNode = [&](StringView id, const ParamSpec &spec, bool horizontal, bool isInput,
@@ -163,6 +189,11 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
             out << "fillcolor=\"" << colorPrefix << "lightyellow" << colorSuffix << "\", ";
             out << "bgcolor=\"lightyellow\", ";
         }
+        if (isInput) {
+            out << "rankjustify=max,";
+        } else {
+            out << "rankjustify=min,";
+        }
         out << "];\n";
     };
     auto outputInvisNode = [&](StringView id) {
@@ -180,6 +211,10 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
         connectionsSS << " [";
         if (!changeRank) {
             connectionsSS << "minlen=0,";
+        } else if (auto it = spacingPerNameId.find(from); it != spacingPerNameId.end()) {
+            connectionsSS << "minlen=" + std::to_string(it->second) + ",";
+        } else {
+            connectionsSS << "minlen=1,";
         }
         connectionsSS << "dir=back,";
         connectionsSS << "arrowtail=dot,";
@@ -253,24 +288,6 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
         }
         connectionsSS << "];\n";
     };
-
-    /*
-    This references the nodes that are currently active, i.e. added to the graph and not consumed
-    */
-    std::map<StringId, String> activeNodeIdsPerNameId;
-
-    /*
-    This references nodes for whichwe know their IDs, but weren't added to the graph yet
-    */
-    std::map<StringId, String> pendingNodeIdsPerNameId;
-
-    /*
-    Counts the number of times we re-added a node for the same property
-    */
-    std::map<StringId, std::size_t> repetitionCounterPerNameId;
-
-    bool horizontalInputsOutputs = pipeline.inputSpecs.count() > pipeline.items.size() ||
-                                   pipeline.outputSpecs.count() > pipeline.items.size();
 
     auto currentPropertyNodeReference = [&](const ParamSpec &spec) {
         String realName = aliases.choiceStringFor(spec.name);
@@ -362,7 +379,12 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
         out << "\trankdir=\"LR\"\n";
         out << "\tranksep=0.25\n";
         out << "\tnodesep=0.13\n";
-        out << "\tcompound=true;\n";
+        out << "\tclusterrank=local;\n";
+        out << "\tsubgraph cluster_pipeline_" << (std::size_t)&pipeline << " {\n";
+        out << "\t\tcluster=true;\n";
+        out << "\t\tclusterrank=local;\n";
+        out << "\t\tstyle=\"invis\";\n";
+        out << "\t\tcolor=\"black\";\n";
     }
 
     // inputs
@@ -370,6 +392,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
                                      &pipeline.consumingSpecs, &pipeline.pipethroughSpecs}) {
         for (auto [nameId, spec] : p_specs->getMappedSpecs()) {
             out << "\t\t";
+            spacingPerNameId[currentPropertyNodeReference(spec)] = 2;
             addPropertyNodeHere(spec, true, false);
         }
     }
@@ -383,7 +406,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
         for (auto [nameId, spec] : p_task->getInputSpecs(aliases).getMappedSpecs()) {
             out << "\t";
             addPropertyNodeBefore(spec);
-            outputUsage(currentPropertyNodeReference(spec), getTaskId(*p_task), true);
+            outputUsage(currentPropertyNodeReference(spec) + ":e", getTaskId(*p_task), true);
         }
 
         for (auto [nameId, spec] : p_task->getConsumingSpecs(aliases).getMappedSpecs()) {
@@ -391,7 +414,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
             addPropertyNodeBefore(spec);
             String propNodeId = currentPropertyNodeReference(spec);
             consumePropertyNode(spec);
-            outputConsumption(propNodeId, getTaskId(*p_task), true);
+            outputConsumption(propNodeId + ":e", getTaskId(*p_task), true);
         }
 
         for (auto [nameId, spec] : p_task->getFilterSpecs(aliases).getMappedSpecs()) {
@@ -430,6 +453,10 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
 
     out << connectionsSS.str() << "\n";
 
+    if (isMainGraph) {
+        out << "\t}\n";
+    }
+
     // subpipelines
     for (auto [name, p] : subpipelines) {
         String newPref = String(prefix) + "sub" + std::to_string((std::size_t)p) + "_";
@@ -437,6 +464,7 @@ void exportPipeline(const Pipeline<BasicTask> &pipeline, const ParamAliases &ali
         out << "\tsubgraph cluster_" << newPref << "pipeline" << " {\n";
         out << "\t\tlabel=\"" << escapedLabel(name) << "\";\n";
         out << "\t\tcluster=true;\n";
+        out << "\t\tclusterrank=local;\n";
         out << "\t\tstyle=\"dashed,filled\";\n";
         out << "\t\tcolor=\"black\";\n";
         out << "\t\tfillcolor=\"" + colorFromName(name) + "\";\n";
