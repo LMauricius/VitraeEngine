@@ -839,9 +839,9 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
         nameIdSpecPair.second.bindingIndex = namedBindings.at(nameIdSpecPair.first);
     }
     for (auto nameIdSpecPair : this->ssboSpecs) {
-        nameIdSpecPair.second.location =
-            glGetProgramResourceIndex(programGLName, GL_SHADER_STORAGE_BLOCK,
-                                      (ssboVarPrefix + nameIdSpecPair.second.srcSpec.name).c_str());
+        nameIdSpecPair.second.location = glGetProgramResourceIndex(
+            programGLName, GL_SHADER_STORAGE_BLOCK,
+            (ssboBlockPrefix + nameIdSpecPair.second.srcSpec.name).c_str());
         nameIdSpecPair.second.bindingIndex = namedBindings.at(nameIdSpecPair.first);
     }
 
@@ -907,21 +907,21 @@ void CompiledGLSLShader::setupProperties(OpenGLRenderer &rend, VariantScope &env
     for (auto [propertyNameId, bindSpec] : this->opaqueBindingSpecs) {
         if (env.has(propertyNameId)) {
             rend.getTypeConversion(bindSpec.srcSpec.typeInfo)
-                .setOpaqueBinding(bindSpec.location, env.get(propertyNameId));
+                .setOpaqueBinding(bindSpec.bindingIndex, env.get(propertyNameId));
         }
     }
 
     for (auto [propertyNameId, uboSpec] : this->uboSpecs) {
         if (env.has(propertyNameId)) {
             rend.getTypeConversion(uboSpec.srcSpec.typeInfo)
-                .setUBOBinding(uboSpec.location, env.get(propertyNameId));
+                .setUBOBinding(uboSpec.bindingIndex, env.get(propertyNameId));
         }
     }
 
     for (auto [propertyNameId, ssboSpec] : this->ssboSpecs) {
         if (env.has(propertyNameId)) {
             rend.getTypeConversion(ssboSpec.srcSpec.typeInfo)
-                .setSSBOBinding(ssboSpec.location, env.get(propertyNameId));
+                .setSSBOBinding(ssboSpec.bindingIndex, env.get(propertyNameId));
         }
     }
 }
