@@ -35,12 +35,17 @@ class Material : public dynasma::PolymorphicBase
     void setParamAliases(const ParamAliases &aliases);
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
+    void setTexture(StringView colorName, dynasma::FirmPtr<Texture> texture,
+                    StringView coordPropertyName);
+    void setTexture(StringView colorName, glm::vec4 uniformColor);
 
     const ParamAliases &getParamAliases() const;
     const StableMap<StringId, Variant> &getProperties() const;
 
   protected:
-    ParamAliases m_aliases;
+    ComponentRoot &m_root;
+    ParamAliases m_externalAliases, m_aliases;
+    StableMap<StringId, String> m_tobeInternalAliases;
     StableMap<StringId, Variant> m_properties;
 };
 

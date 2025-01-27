@@ -1,6 +1,7 @@
 #include "Vitrae/Renderers/OpenGL.hpp"
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/ClearRender.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/Compute.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/DataRender.hpp"
@@ -25,7 +26,7 @@
 
 namespace Vitrae
 {
-OpenGLRenderer::OpenGLRenderer() : m_vertexBufferFreeIndex(0)
+OpenGLRenderer::OpenGLRenderer(ComponentRoot &root) : m_root(root), m_vertexBufferFreeIndex(0)
 {
     /*
     Standard GLSL ypes
@@ -272,6 +273,30 @@ void OpenGLRenderer::specifyVertexBuffer(const ParamSpec &newElSpec)
     m_vertexBufferIndices.emplace(StringId(newElSpec.name), m_vertexBufferFreeIndex);
     m_vertexBufferFreeIndex += glTypeSpec.layout.indexSize;
     m_vertexBufferSpecs.emplace(StringId(newElSpec.name), &glTypeSpec);
+}
+
+void OpenGLRenderer::specifyTextureSampler(StringView colorName)
+{
+    StringId id = StringId(colorName);
+    if (m_specifiedColorNames.find(id) == m_specifiedColorNames.end()) {
+        m_specifiedColorNames.insert(id);
+
+        m_root.getComponent<MethodCollection>().registerShaderTask(
+            m_root.getComponent<ShaderSnippetKeeper>().new_asset_k<ShaderSnippet::StringParams>({
+                .inputSpecs =
+                    {
+                        {"tex_" + std::string(colorName), TYPE_INFO<dynasma::FirmPtr<Texture>>},
+                        {"coord_" + std::string(colorName), TYPE_INFO<glm::vec3>},
+                    },
+                .outputSpecs =
+                    {
+                        {"sample_" + std::string(colorName), TYPE_INFO<glm::vec4>},
+                    },
+                .snippet = "sample_" + std::string(colorName) + " = texture(tex_" +
+                           std::string(colorName) + ", coord_" + std::string(colorName) + ");",
+            }),
+            ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
+    }
 }
 
 std::size_t OpenGLRenderer::getNumVertexBuffers() const

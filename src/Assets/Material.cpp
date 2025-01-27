@@ -1,12 +1,13 @@
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Renderer.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 
 namespace Vitrae
 {
 
-Material::Material(const AssimpLoadParams &params)
+Material::Material(const AssimpLoadParams &params) : m_root(params.root)
 {
     TextureManager &textureManager = params.root.getComponent<TextureManager>();
 
@@ -18,7 +19,8 @@ Material::Material(const AssimpLoadParams &params)
         aiMode = aiShadingMode_Phong;
     }
 
-    m_aliases = params.root.getAiMaterialParamAliases(aiMode);
+    m_externalAliases = params.root.getAiMaterialParamAliases(aiMode);
+    m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
 
     // Get all textures
     for (auto &textureInfo : params.root.getAiMaterialTextureInfos()) {
@@ -62,7 +64,8 @@ std::size_t Material::memory_cost() const
 
 void Material::setParamAliases(const ParamAliases &aliases)
 {
-    m_aliases = aliases;
+    m_externalAliases = aliases;
+    m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
 }
 
 void Material::setProperty(StringId key, const Variant &value)
@@ -73,6 +76,36 @@ void Material::setProperty(StringId key, const Variant &value)
 void Material::setProperty(StringId key, Variant &&value)
 {
     m_properties[key] = std::move(value);
+}
+
+void Material::setTexture(StringView colorName, dynasma::FirmPtr<Texture> texture,
+                          StringView coordPropertyName)
+{
+    // erase alias for texture sample
+    m_tobeInternalAliases.erase("sample_" + std::string(colorName));
+
+    // add alias for texture coordinate
+    m_tobeInternalAliases["coord_" + std::string(colorName)] = std::string(coordPropertyName);
+
+    m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
+
+    // set texture
+    m_root.getComponent<Renderer>().specifyTextureSampler(colorName);
+    m_properties["tex_" + std::string(colorName)] = std::move(texture);
+}
+
+void Material::setTexture(StringView colorName, glm::vec4 uniformColor)
+{
+    // erase alias for texture coordinate
+    m_tobeInternalAliases.erase("coord_" + std::string(colorName));
+
+    // add alias for texture sample
+    m_tobeInternalAliases["sample_" + std::string(colorName)] = "color_" + std::string(colorName);
+
+    m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
+
+    // set color of all samples
+    m_properties["color_" + std::string(colorName)] = uniformColor;
 }
 const ParamAliases &Material::getParamAliases() const
 {

@@ -88,7 +88,7 @@ struct GLSpecificationError : public std::invalid_argument
 class OpenGLRenderer : public Renderer
 {
   public:
-    OpenGLRenderer();
+    OpenGLRenderer(ComponentRoot &root);
     ~OpenGLRenderer();
 
     void mainThreadSetup(ComponentRoot &root) override;
@@ -126,11 +126,15 @@ class OpenGLRenderer : public Renderer
     template <SharedBufferPtrInst SharedBufferT> void specifyBufferTypeAndConversionAuto();
 
     void specifyVertexBuffer(const ParamSpec &newElSpec) override;
+    void specifyTextureSampler(StringView colorName) override;
+
     std::size_t getNumVertexBuffers() const;
     std::size_t getVertexBufferLayoutIndex(StringId name) const;
     const StableMap<StringId, const GLTypeSpec *> &getAllVertexBufferSpecs() const;
 
   protected:
+    ComponentRoot &m_root;
+
     std::thread::id m_mainThreadId;
     std::mutex m_contextMutex;
     GLFWwindow *mp_mainWindow;
@@ -142,6 +146,8 @@ class OpenGLRenderer : public Renderer
     StableMap<StringId, std::size_t> m_vertexBufferIndices;
     std::size_t m_vertexBufferFreeIndex;
     StableMap<StringId, const GLTypeSpec *> m_vertexBufferSpecs;
+
+    std::unordered_set<StringId> m_specifiedColorNames;
 
     mutable StableMap<std::size_t, StableMap<StringId, ParamSpec>> m_sceneRenderInputDependencies;
 
