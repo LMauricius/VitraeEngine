@@ -11,10 +11,10 @@ OpenGLShaderSnippet::OpenGLShaderSnippet(const StringParams &params)
       m_filterSpecs(params.filterSpecs), m_consumingSpecs(params.consumingSpecs),
       m_snippet(clearIndents(params.snippet))
 {
-    m_friendlyName = String(GLSL_SHADER_INTERNAL_FUNCTION_PREFIX) + "calc";
+    m_friendlyName = "Produce\n";
 
     for (const auto &spec : params.outputSpecs.getSpecList()) {
-        m_friendlyName += "_" + spec.name;
+        m_friendlyName += ",\n" + spec.name;
     }
 }
 
