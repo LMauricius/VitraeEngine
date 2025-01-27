@@ -144,9 +144,9 @@ class ComponentRoot
 
     struct AiMaterialTextureInfo
     {
-        StringId textureNameId;
+        String colorName;
         aiTextureType aiTextureId;
-        dynasma::LazyPtr<Texture> defaultTexture;
+        glm::vec4 defaultColor;
     };
 
     void addAiMaterialTextureInfo(AiMaterialTextureInfo newInfo);

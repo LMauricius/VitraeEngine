@@ -61,31 +61,4 @@ struct MaterialKeeperSeed
 // using MaterialManager = dynasma::AbstractManager<MaterialSeed>;
 using MaterialKeeper = dynasma::AbstractKeeper<MaterialKeeperSeed>;
 
-/**
- * Namespace containing all standard material texture names
- */
-namespace StandardMaterialTextureNames
-{
-static constexpr const char DIFFUSE[] = "tex_diffuse";
-static constexpr const char SPECULAR[] = "tex_specular";
-static constexpr const char EMISSIVE[] = "tex_emissive";
-static constexpr const char NORMAL[] = "tex_normal";
-} // namespace StandardMaterialTextureNames
-
-namespace StandardMaterialPropertyNames
-{
-static constexpr const char COL_DIFFUSE[] = "color_diffuse";
-static constexpr const char COL_SPECULAR[] = "color_specular";
-static constexpr const char COL_EMISSIVE[] = "color_emissive";
-static constexpr const char SHININESS[] = "shininess";
-} // namespace StandardMaterialPropertyNames
-
-namespace StandardMaterialPropertyTypes
-{
-static constexpr const TypeInfo &COL_DIFFUSE = TYPE_INFO<glm::vec4>;
-static constexpr const TypeInfo &COL_SPECULAR = TYPE_INFO<glm::vec4>;
-static constexpr const TypeInfo &COL_EMISSIVE = TYPE_INFO<glm::vec4>;
-static constexpr const TypeInfo &SHININESS = TYPE_INFO<float>;
-} // namespace StandardMaterialPropertyTypes
-
 } // namespace Vitrae

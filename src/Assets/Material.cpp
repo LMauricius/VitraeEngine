@@ -1,6 +1,7 @@
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Renderer.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
 
@@ -13,15 +14,6 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
 
     std::filesystem::path parentDirPath = params.sceneFilepath.parent_path();
 
-    // get shading type
-    aiShadingMode aiMode;
-    if (params.p_extMaterial->Get(AI_MATKEY_SHADING_MODEL, aiMode) != aiReturn_SUCCESS) {
-        aiMode = aiShadingMode_Phong;
-    }
-
-    m_externalAliases = params.root.getAiMaterialParamAliases(aiMode);
-    m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
-
     // Get all textures
     for (auto &textureInfo : params.root.getAiMaterialTextureInfos()) {
         if (params.p_extMaterial->GetTextureCount(textureInfo.aiTextureId) > 0) {
@@ -32,16 +24,25 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
                 String relconvPath =
                     searchAndReplace(searchAndReplace(path.C_Str(), "\\", "/"), "//", "/");
 
-                m_properties.emplace(textureInfo.textureNameId,
-                                     textureManager
-                                         .register_asset({Texture::FileLoadParams{
-                                             .root = params.root,
-                                             .filepath = parentDirPath / relconvPath,
-                                             .useMipMaps = true}})
-                                         .getLoaded());
+                // add alias for texture coordinate
+                m_tobeInternalAliases["coord_" + textureInfo.colorName] = textureInfo.colorName;
+
+                // add alias for texture color
+                m_tobeInternalAliases["color_" + textureInfo.colorName] =
+                    "sample_" + textureInfo.colorName;
+
+                // set texture
+                m_root.getComponent<Renderer>().specifyTextureSampler(textureInfo.colorName);
+                m_properties["tex_" + textureInfo.colorName] =
+                    textureManager
+                        .register_asset(
+                            {Texture::FileLoadParams{.root = params.root,
+                                                     .filepath = parentDirPath / relconvPath,
+                                                     .useMipMaps = true}})
+                        .getLoaded();
             }
         } else {
-            m_properties.emplace(textureInfo.textureNameId, textureInfo.defaultTexture.getLoaded());
+            m_properties["color_" + textureInfo.colorName] = textureInfo.defaultColor;
         }
     }
 
@@ -52,6 +53,15 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
             m_properties[propertyInfo.nameId] = std::move(value.value());
         }
     }
+
+    // get shading type
+    aiShadingMode aiMode;
+    if (params.p_extMaterial->Get(AI_MATKEY_SHADING_MODEL, aiMode) != aiReturn_SUCCESS) {
+        aiMode = aiShadingMode_Phong;
+    }
+
+    m_externalAliases = params.root.getAiMaterialParamAliases(aiMode);
+    m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
 }
 
 Material::~Material() {}
@@ -81,11 +91,11 @@ void Material::setProperty(StringId key, Variant &&value)
 void Material::setTexture(StringView colorName, dynasma::FirmPtr<Texture> texture,
                           StringView coordPropertyName)
 {
-    // erase alias for texture sample
-    m_tobeInternalAliases.erase("sample_" + std::string(colorName));
-
     // add alias for texture coordinate
     m_tobeInternalAliases["coord_" + std::string(colorName)] = std::string(coordPropertyName);
+
+    // add alias for texture color
+    m_tobeInternalAliases["color_" + std::string(colorName)] = "sample_" + std::string(colorName);
 
     m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
 
@@ -99,8 +109,8 @@ void Material::setTexture(StringView colorName, glm::vec4 uniformColor)
     // erase alias for texture coordinate
     m_tobeInternalAliases.erase("coord_" + std::string(colorName));
 
-    // add alias for texture sample
-    m_tobeInternalAliases["sample_" + std::string(colorName)] = "color_" + std::string(colorName);
+    // erase alias for texture sample
+    m_tobeInternalAliases.erase("color_" + std::string(colorName));
 
     m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
 

@@ -44,7 +44,7 @@ inline const ParamSpec shade       = {"shade",       TYPE_INFO<glm::vec4>};
 /// @subsection Vertex properties
 inline const ParamSpec position    = {"position",    TYPE_INFO<glm::vec3>};
 inline const ParamSpec normal      = {"normal",      TYPE_INFO<glm::vec3>};
-inline const ParamSpec textureCoord0   = {"textureCoord0",   TYPE_INFO<glm::vec3>};
+inline const ParamSpec coord_base  = {"coord_base",   TYPE_INFO<glm::vec3>};
 
 // clang-format on
 
