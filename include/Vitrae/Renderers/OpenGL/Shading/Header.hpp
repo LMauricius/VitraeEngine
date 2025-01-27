@@ -12,9 +12,7 @@ namespace Vitrae
 
 class OpenGLShaderHeader : public ShaderHeader
 {
-    String m_friendlyName;
-    String m_fileSnippet;
-    ParamList m_inputSpecs, m_outputSpecs;
+    StringParams m_params;
 
   public:
     OpenGLShaderHeader(const FileLoadParams &params);

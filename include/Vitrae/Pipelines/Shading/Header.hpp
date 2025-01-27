@@ -22,15 +22,19 @@ class ShaderHeader : public ShaderTask
   public:
     struct FileLoadParams
     {
-        std::vector<String> inputTokenNames;
-        std::vector<String> outputTokenNames;
+        ParamList inputSpecs;
+        ParamList outputSpecs;
+        ParamList filterSpecs;
+        ParamList consumingSpecs;
         std::filesystem::path filepath;
         String friendlyName;
     };
     struct StringParams
     {
-        std::vector<String> inputTokenNames;
-        std::vector<String> outputTokenNames;
+        ParamList inputSpecs;
+        ParamList outputSpecs;
+        ParamList filterSpecs;
+        ParamList consumingSpecs;
         String snippet;
         String friendlyName;
     };

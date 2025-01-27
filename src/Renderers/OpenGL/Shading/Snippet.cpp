@@ -11,10 +11,15 @@ OpenGLShaderSnippet::OpenGLShaderSnippet(const StringParams &params)
       m_filterSpecs(params.filterSpecs), m_consumingSpecs(params.consumingSpecs),
       m_snippet(clearIndents(params.snippet))
 {
-    m_friendlyName = "Produce\n";
+    m_friendlyName = "Produce:\n";
 
+    bool first = true;
     for (const auto &spec : params.outputSpecs.getSpecList()) {
-        m_friendlyName += ",\n" + spec.name;
+        if (!first) {
+            m_friendlyName += ",\n";
+        }
+        m_friendlyName += spec.name;
+        first = false;
     }
 }
 

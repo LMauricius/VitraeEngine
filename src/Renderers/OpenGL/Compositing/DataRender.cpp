@@ -19,10 +19,12 @@ OpenGLComposeDataRender::OpenGLComposeDataRender(const SetupParams &params)
     : m_root(params.root), m_params(params)
 {
     m_friendlyName = "Render data:";
-    for (const auto &spec : params.outputTokenNames) {
-        m_friendlyName += "\n- " + spec;
-        m_outputSpecs.insert_back({.name = spec, .typeInfo = TYPE_INFO<void>});
+    for (const auto &spec : params.outputSpecs.getSpecList()) {
+        m_friendlyName += "\n- " + spec.name;
     }
+
+    m_params.inputSpecs.insert_back(StandardParam::mat_display);
+    m_params.filterSpecs.insert_back(StandardParam::fs_target);
 }
 
 std::size_t OpenGLComposeDataRender::memory_cost() const
@@ -36,13 +38,13 @@ const ParamList &OpenGLComposeDataRender::getInputSpecs(const ParamAliases &alia
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->inputSpecs;
     } else {
-        return EMPTY_PROPERTY_LIST;
+        return m_params.inputSpecs;
     }
 }
 
 const ParamList &OpenGLComposeDataRender::getOutputSpecs() const
 {
-    return m_outputSpecs;
+    return m_params.outputSpecs;
 }
 
 const ParamList &OpenGLComposeDataRender::getFilterSpecs(const ParamAliases &aliases) const
@@ -50,7 +52,7 @@ const ParamList &OpenGLComposeDataRender::getFilterSpecs(const ParamAliases &ali
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->filterSpecs;
     } else {
-        return EMPTY_PROPERTY_LIST;
+        return m_params.filterSpecs;
     }
 }
 
@@ -59,7 +61,7 @@ const ParamList &OpenGLComposeDataRender::getConsumingSpecs(const ParamAliases &
     if (auto it = m_specsPerKey.find(getSpecsKey(aliases)); it != m_specsPerKey.end()) {
         return (*it).second->consumingSpecs;
     } else {
-        return EMPTY_PROPERTY_LIST;
+        return m_params.consumingSpecs;
     }
 }
 
@@ -70,7 +72,7 @@ void OpenGLComposeDataRender::extractUsedTypes(std::set<const TypeInfo *> &typeS
         const SpecsPerAliases &specsPerAliases = *(*it).second;
 
         for (const ParamList *p_specs :
-             {&specsPerAliases.inputSpecs, &m_outputSpecs, &specsPerAliases.filterSpecs,
+             {&specsPerAliases.inputSpecs, &m_params.outputSpecs, &specsPerAliases.filterSpecs,
               &specsPerAliases.consumingSpecs}) {
             for (const ParamSpec &spec : p_specs->getSpecList()) {
                 typeSet.insert(&spec.typeInfo);
@@ -101,8 +103,8 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
         SpecsPerAliases &specsContainer = *(*specsIt).second;
 
         specsContainer.inputSpecs.merge(m_params.inputSpecs);
-        specsContainer.inputSpecs.insert_back(StandardParam::mat_display);
-        specsContainer.filterSpecs.insert_back(StandardParam::fs_target);
+        specsContainer.filterSpecs.merge(m_params.filterSpecs);
+        specsContainer.consumingSpecs.merge(m_params.consumingSpecs);
 
         needsRebuild = true;
     }

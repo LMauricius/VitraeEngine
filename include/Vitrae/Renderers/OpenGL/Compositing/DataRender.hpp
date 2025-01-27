@@ -37,7 +37,6 @@ class OpenGLComposeDataRender : public ComposeDataRender
     ComponentRoot &m_root;
 
     SetupParams m_params;
-    ParamList m_outputSpecs;
     String m_friendlyName;
 
     struct SpecsPerAliases

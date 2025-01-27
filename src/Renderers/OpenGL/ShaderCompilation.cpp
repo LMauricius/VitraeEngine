@@ -507,12 +507,6 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
                 }
             }
 
-            // p_task function declarations
-            for (auto p_task : p_helper->pipeline.items) {
-                p_task->outputDeclarationCode(context);
-                ss << "\n";
-            }
-
             // Receiving values
 
             // uniforms
@@ -645,6 +639,12 @@ CompiledGLSLShader::CompiledGLSLShader(MovableSpan<CompilationSpec> compilationS
             }
 
             ss << "\n";
+
+            // p_task function declarations
+            for (auto p_task : p_helper->pipeline.items) {
+                p_task->outputDeclarationCode(context);
+                ss << "\n";
+            }
 
             // Main function
 

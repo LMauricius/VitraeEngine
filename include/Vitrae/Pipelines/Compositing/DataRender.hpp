@@ -22,7 +22,9 @@ class ComposeDataRender : public ComposeTask
     {
         ComponentRoot &root;
         ParamList inputSpecs;
-        std::vector<String> outputTokenNames;
+        ParamList filterSpecs;
+        ParamList consumingSpecs;
+        ParamList outputSpecs;
         dynasma::LazyPtr<Model> p_dataPointModel;
         DataGeneratorFunction dataGenerator;
         RasterizingSetupParams rasterizing;
