@@ -46,7 +46,6 @@ class OpenGLComposeSceneRender : public ComposeSceneRender
     };
 
     mutable StableMap<std::size_t, std::unique_ptr<SpecsPerAliases>> m_specsPerKey;
-    mutable std::vector<const ModelProp *> m_sortedModelProps;
 
     std::size_t getSpecsKey(const ParamAliases &aliases) const;
 };

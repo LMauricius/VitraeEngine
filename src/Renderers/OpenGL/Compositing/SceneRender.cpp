@@ -173,24 +173,25 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
     glm::vec2 frameSize = p_frame->getSize();
 
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
+    std::vector<const ModelProp *> sortedModelProps;
     {
         MMETER_SCOPE_PROFILER("Sorting meshes");
 
         auto [modelFilter, modelComparator] = m_params.ordering.generateFilterAndSort(scene, args);
 
-        m_sortedModelProps.clear();
-        m_sortedModelProps.reserve(scene.modelProps.size());
+        sortedModelProps.clear();
+        sortedModelProps.reserve(scene.modelProps.size());
 
         for (auto &modelProp : scene.modelProps) {
             if (modelFilter(modelProp)) {
-                m_sortedModelProps.push_back(&modelProp);
+                sortedModelProps.push_back(&modelProp);
             }
         }
 
-        /*std::sort(m_sortedModelProps.begin(), m_sortedModelProps.end(),
+        std::sort(sortedModelProps.begin(), sortedModelProps.end(),
                   [modelComparator](const ModelProp *l, const ModelProp *r) {
                       return modelComparator(*l, *r);
-                  });*/
+                  });
     }
 
     // check for whether we have all input deps or whether we need to update the pipeline
@@ -257,7 +258,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
                 GLint glMVPMatrixUniformLocation;
                 GLint glDisplayMatrixUniformLocation;
 
-                for (auto p_modelProp : m_sortedModelProps) {
+                for (auto p_modelProp : sortedModelProps) {
                     // Setup the shape to render
                     dynasma::FirmPtr<Shape> p_shape;
                     glm::mat4 mat_model;
