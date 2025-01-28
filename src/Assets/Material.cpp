@@ -25,7 +25,8 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
                     searchAndReplace(searchAndReplace(path.C_Str(), "\\", "/"), "//", "/");
 
                 // add alias for texture coordinate
-                m_tobeInternalAliases["coord_" + textureInfo.colorName] = textureInfo.colorName;
+                m_tobeInternalAliases["coord_" + textureInfo.colorName] =
+                    StandardParam::coord_base.name;
 
                 // add alias for texture color
                 m_tobeInternalAliases["color_" + textureInfo.colorName] =
@@ -40,6 +41,8 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
                                                      .filepath = parentDirPath / relconvPath,
                                                      .useMipMaps = true}})
                         .getLoaded();
+            } else {
+                m_properties["color_" + textureInfo.colorName] = textureInfo.defaultColor;
             }
         } else {
             m_properties["color_" + textureInfo.colorName] = textureInfo.defaultColor;

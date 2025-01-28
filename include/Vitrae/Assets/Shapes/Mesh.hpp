@@ -99,17 +99,6 @@ struct MeshKeeperSeed
     inline std::size_t load_cost() const { return 1; }
 };
 
-/**
- * Namespace containing all standard vertex buffer names
- */
-namespace StandardVertexBufferNames
-{
-inline constexpr const char POSITION[] = "position";
-inline constexpr const char NORMAL[] = "normal";
-inline constexpr const char TEXTURE_COORD[] = "textureCoord0";
-inline constexpr const char COLOR[] = "color0";
-} // namespace StandardVertexBufferNames
-
 // using MeshManager = dynasma::AbstractManager<MeshSeed>;
 using MeshKeeper = dynasma::AbstractKeeper<MeshKeeperSeed>;
 } // namespace Vitrae

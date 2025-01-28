@@ -2,6 +2,7 @@
 #include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/ClearRender.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/Compute.hpp"
 #include "Vitrae/Renderers/OpenGL/Compositing/DataRender.hpp"
@@ -102,14 +103,9 @@ OpenGLRenderer::OpenGLRenderer(ComponentRoot &root) : m_root(root), m_vertexBuff
     /*
     Mesh vertex buffers for standard components
     */
-    specifyVertexBuffer(
-        {.name = StandardVertexBufferNames::POSITION, .typeInfo = TYPE_INFO<glm::vec3>});
-    specifyVertexBuffer(
-        {.name = StandardVertexBufferNames::NORMAL, .typeInfo = TYPE_INFO<glm::vec3>});
-    specifyVertexBuffer(
-        {.name = StandardVertexBufferNames::TEXTURE_COORD, .typeInfo = TYPE_INFO<glm::vec3>});
-    specifyVertexBuffer(
-        {.name = StandardVertexBufferNames::COLOR, .typeInfo = TYPE_INFO<glm::vec4>});
+    specifyVertexBuffer({.name = StandardParam::position.name, .typeInfo = TYPE_INFO<glm::vec3>});
+    specifyVertexBuffer({.name = StandardParam::normal.name, .typeInfo = TYPE_INFO<glm::vec3>});
+    specifyVertexBuffer({.name = StandardParam::coord_base.name, .typeInfo = TYPE_INFO<glm::vec3>});
 }
 
 OpenGLRenderer::~OpenGLRenderer() {}
@@ -272,8 +268,8 @@ void OpenGLRenderer::specifyTextureSampler(StringView colorName)
                     {
                         {"sample_" + std::string(colorName), TYPE_INFO<glm::vec4>},
                     },
-                .snippet = "sample_" + std::string(colorName) + " = texture(tex_" +
-                           std::string(colorName) + ", coord_" + std::string(colorName) + ");",
+                .snippet = "\nsample_" + std::string(colorName) + " = texture(tex_" +
+                           std::string(colorName) + ", coord_" + std::string(colorName) + ".xy);\n",
             }),
             ShaderStageFlag::Fragment | ShaderStageFlag::Compute);
     }

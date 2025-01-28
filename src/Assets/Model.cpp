@@ -1,6 +1,7 @@
 #include "Vitrae/Assets/Model.hpp"
 #include "Vitrae/Assets/Shapes/Mesh.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/TypeConversion/StringCvt.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
@@ -22,13 +23,20 @@ Model::Model(const AssimpLoadParams &params) : m_root(params.root)
 
     std::span<const Triangle> triangles = p_mesh->getTriangles();
     StridedSpan<const glm::vec3> positions =
-        p_mesh->getVertexComponentData<glm::vec3>(StandardVertexBufferNames::POSITION);
+        p_mesh->getVertexComponentData<glm::vec3>(StandardParam::position.name);
     for (const auto &tri : triangles) {
-        float e0 = glm::distance(positions[tri.ind[0]], positions[tri.ind[1]]);
-        float e1 = glm::distance(positions[tri.ind[1]], positions[tri.ind[2]]);
-        float e2 = glm::distance(positions[tri.ind[2]], positions[tri.ind[0]]);
+        unsigned int i0 = tri.ind[0];
+        unsigned int i1 = tri.ind[1];
+        unsigned int i2 = tri.ind[2];
+        if (i0 < positions.size() && i1 < positions.size() && i2 < positions.size()) {
+            float e0 = glm::distance(positions[i0], positions[i1]);
+            float e1 = glm::distance(positions[i1], positions[i2]);
+            float e2 = glm::distance(positions[i2], positions[i0]);
 
-        minEdgeLength = std::min(minEdgeLength, std::min(e0, std::min(e1, e2)));
+            minEdgeLength = std::min(minEdgeLength, std::min(e0, std::min(e1, e2)));
+        } else {
+            throw std::runtime_error{"Invalid triangle index for model"};
+        }
     }
 
     addForm("visual",

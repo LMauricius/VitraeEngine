@@ -24,15 +24,21 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params)
     // prepare vertices
     m_indexBuffer = makeBuffer<void, Triangle>(
         params.root, BufferUsageHint::HOST_INIT | BufferUsageHint::GPU_DRAW,
-        3 * params.p_extMesh->mNumFaces);
+        params.p_extMesh->mNumFaces);
 
     auto cpuTriangles = m_indexBuffer.getMutableElements();
 
     // load triangles
     if (params.p_extMesh->HasFaces()) {
         for (int i = 0; i < params.p_extMesh->mNumFaces; i++) {
-            for (int j = 0; j < params.p_extMesh->mFaces[i].mNumIndices; j++) {
-                cpuTriangles[i].ind[j] = params.p_extMesh->mFaces[i].mIndices[j];
+            if (params.p_extMesh->mFaces[i].mNumIndices == 3) {
+                for (int j = 0; j < params.p_extMesh->mFaces[i].mNumIndices; j++) {
+                    cpuTriangles[i].ind[j] = params.p_extMesh->mFaces[i].mIndices[j];
+                }
+            } else {
+                cpuTriangles[i].ind[0] = 0;
+                cpuTriangles[i].ind[1] = 0;
+                cpuTriangles[i].ind[2] = 0;
             }
         }
     }
@@ -83,6 +89,15 @@ OpenGLMesh::OpenGLMesh(const AssimpLoadParams &params)
 
     // debug
     m_friendlyname = toString(params.p_extMesh->mName);
+
+    // sanity check
+    for (auto &tri : cpuTriangles) {
+        if (tri.ind[0] > params.p_extMesh->mNumVertices ||
+            tri.ind[1] > params.p_extMesh->mNumVertices ||
+            tri.ind[2] > params.p_extMesh->mNumVertices) {
+            throw std::runtime_error("invalid triangle index in mesh " + m_friendlyname);
+        }
+    }
 }
 
 OpenGLMesh::OpenGLMesh(const TriangleVerticesParams &params)

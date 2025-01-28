@@ -187,8 +187,10 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
             }
         }
 
-        std::sort(m_sortedModelProps.begin(), m_sortedModelProps.end(),
-                  [&](const ModelProp *l, const ModelProp *r) { return modelComparator(*l, *r); });
+        /*std::sort(m_sortedModelProps.begin(), m_sortedModelProps.end(),
+                  [modelComparator](const ModelProp *l, const ModelProp *r) {
+                      return modelComparator(*l, *r);
+                  });*/
     }
 
     // check for whether we have all input deps or whether we need to update the pipeline
@@ -390,7 +392,7 @@ void OpenGLComposeSceneRender::run(RenderComposeContext args) const
 
                     if (!needsRebuild) {
                         MMETER_SCOPE_PROFILER("Mesh draw");
-                        
+
                         if (glModelMatrixUniformLocation != -1) {
                             glUniformMatrix4fv(glModelMatrixUniformLocation, 1, GL_FALSE,
                                                &(mat_model[0][0]));
