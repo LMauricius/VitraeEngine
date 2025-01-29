@@ -30,7 +30,7 @@ class ComposeFrameToTexture : public ComposeTask
         String outputColorTextureName;
         String outputDepthTextureName;
         std::vector<OutputTextureParamSpec> outputs;
-        ArgumentGetter<glm::vec2> size;
+        ArgumentGetter<glm::uvec2> size;
         Texture::ChannelType channelType = Texture::ChannelType::RGB;
         Texture::WrappingType horWrap = Texture::WrappingType::REPEAT;
         Texture::WrappingType verWrap = Texture::WrappingType::REPEAT;
@@ -69,7 +69,7 @@ class ComposeFrameToTexture : public ComposeTask
     String m_outputColorTextureName, m_outputDepthTextureName;
     StringId m_outputColorTextureNameId, m_outputDepthTextureNameId;
     std::vector<OutputTextureParamSpec> m_outputTextureParamSpecs;
-    ArgumentGetter<glm::vec2> m_size;
+    ArgumentGetter<glm::uvec2> m_size;
     Texture::ChannelType m_channelType;
     Texture::WrappingType m_horWrap;
     Texture::WrappingType m_verWrap;

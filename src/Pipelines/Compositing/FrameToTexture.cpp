@@ -113,7 +113,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
         .p_depthTexture = {},
         .outputTextureSpecs = {},
         .friendlyName = ctx.aliases.choiceStringFor(StandardParam::fs_target.name)};
-    glm::vec2 retrSize = m_size.get(ctx.properties);
+    glm::uvec2 retrSize = m_size.get(ctx.properties);
 
     if (m_outputColorTextureNameId != "") {
         auto p_texture =

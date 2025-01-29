@@ -73,7 +73,7 @@ class Texture : public dynasma::PolymorphicBase
     struct EmptyParams
     {
         ComponentRoot &root;
-        glm::vec2 size;
+        glm::uvec2 size;
         ChannelType channelType = ChannelType::RGB;
         WrappingType horWrap = WrappingType::REPEAT;
         WrappingType verWrap = WrappingType::REPEAT;
