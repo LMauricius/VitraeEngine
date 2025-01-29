@@ -25,19 +25,18 @@ class OpenGLFrameStore : public FrameStore
     glm::vec2 getSize() const override;
     dynasma::FirmPtr<const ParamList> getRenderComponents() const override;
 
-    void sync() override;
+    void sync(bool vsync) override;
 
-    void enterRender(const ArgumentScope &properties, glm::vec2 topLeft, glm::vec2 bottomRight);
+    void enterRender(glm::vec2 topLeft, glm::vec2 bottomRight);
     void exitRender();
 
   protected:
     dynasma::FirmPtr<const ParamList> mp_renderComponents;
     struct FramebufferContextSwitcher
     {
-        void enterContext(const ArgumentScope &properties, glm::vec2 topLeft,
-                          glm::vec2 bottomRight);
+        void enterContext(glm::vec2 topLeft, glm::vec2 bottomRight);
         void exitContext();
-        void sync();
+        void sync(bool vsync);
         void destroyContext();
         glm::vec2 getSize() const;
 
@@ -46,10 +45,9 @@ class OpenGLFrameStore : public FrameStore
     };
     struct WindowContextSwitcher
     {
-        void enterContext(const ArgumentScope &properties, glm::vec2 topLeft,
-                          glm::vec2 bottomRight);
+        void enterContext(glm::vec2 topLeft, glm::vec2 bottomRight);
         void exitContext();
-        void sync();
+        void sync(bool vsync);
         void destroyContext();
         glm::vec2 getSize() const;
 

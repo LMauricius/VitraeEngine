@@ -19,6 +19,8 @@ namespace StandardParam
 
 // clang-format off
 
+inline const ParamSpec vsync       = {"vsync",       TYPE_INFO<bool>};
+
 inline const ParamSpec scene       = {"scene",       TYPE_INFO<dynasma::FirmPtr<Scene>>};
 inline const ParamSpec camera      = {"camera",      TYPE_INFO<dynasma::FirmPtr<Camera>>};
 inline const ParamSpec fs_target   = {"fs_target",   TYPE_INFO<dynasma::FirmPtr<FrameStore>>};

@@ -145,21 +145,17 @@ dynasma::FirmPtr<const ParamList> OpenGLFrameStore::getRenderComponents() const
     return mp_renderComponents;
 }
 
-void OpenGLFrameStore::sync()
+void OpenGLFrameStore::sync(bool vsync)
 {
     MMETER_SCOPE_PROFILER("OpenGLFrameStore::sync");
 
-    std::visit([](auto &contextSwitcher) { contextSwitcher.sync(); }, m_contextSwitcher);
+    std::visit([&](auto &contextSwitcher) { contextSwitcher.sync(vsync); }, m_contextSwitcher);
 }
 
-void OpenGLFrameStore::enterRender(const ArgumentScope &properties, glm::vec2 topLeft,
-                                   glm::vec2 bottomRight)
+void OpenGLFrameStore::enterRender(glm::vec2 topLeft, glm::vec2 bottomRight)
 {
-    std::visit(
-        [&](auto &contextSwitcher) {
-            contextSwitcher.enterContext(properties, topLeft, bottomRight);
-        },
-        m_contextSwitcher);
+    std::visit([&](auto &contextSwitcher) { contextSwitcher.enterContext(topLeft, bottomRight); },
+               m_contextSwitcher);
 }
 
 void OpenGLFrameStore::exitRender()
@@ -179,8 +175,7 @@ glm::vec2 OpenGLFrameStore::FramebufferContextSwitcher::getSize() const
 {
     return glm::vec2(width, height);
 }
-void OpenGLFrameStore::FramebufferContextSwitcher::enterContext(const ArgumentScope &properties,
-                                                                glm::vec2 topLeft,
+void OpenGLFrameStore::FramebufferContextSwitcher::enterContext(glm::vec2 topLeft,
                                                                 glm::vec2 bottomRight)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, glFramebufferId);
@@ -192,7 +187,7 @@ void OpenGLFrameStore::FramebufferContextSwitcher::exitContext()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void OpenGLFrameStore::FramebufferContextSwitcher::sync() {}
+void OpenGLFrameStore::FramebufferContextSwitcher::sync(bool vsync) {}
 
 /*
 Window drawing
@@ -205,11 +200,8 @@ glm::vec2 OpenGLFrameStore::WindowContextSwitcher::getSize() const
     glfwGetFramebufferSize(window, &width, &height);
     return glm::vec2(width, height);
 }
-void OpenGLFrameStore::WindowContextSwitcher::enterContext(const ArgumentScope &properties,
-                                                           glm::vec2 topLeft, glm::vec2 bottomRight)
+void OpenGLFrameStore::WindowContextSwitcher::enterContext(glm::vec2 topLeft, glm::vec2 bottomRight)
 {
-    glfwSwapInterval(properties.get("vsync").get<bool>() ? 1 : 0);
-
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
@@ -218,8 +210,10 @@ void OpenGLFrameStore::WindowContextSwitcher::enterContext(const ArgumentScope &
 }
 void OpenGLFrameStore::WindowContextSwitcher::exitContext() {}
 
-void OpenGLFrameStore::WindowContextSwitcher::sync()
+void OpenGLFrameStore::WindowContextSwitcher::sync(bool vsync)
 {
+    glfwSwapInterval(vsync ? 1 : 0);
+
     glfwSwapBuffers(window);
 
     // wait (for profiling)

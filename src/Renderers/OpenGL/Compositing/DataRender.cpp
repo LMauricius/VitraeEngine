@@ -217,7 +217,7 @@ void OpenGLComposeDataRender::run(RenderComposeContext args) const
         case RasterizingMode::DerivationalTraceEdges:
         case RasterizingMode::DerivationalTraceVertices:
         case RasterizingMode::DerivationalDotVertices: {
-            frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});
+            frame.enterRender({0.0f, 0.0f}, {1.0f, 1.0f});
 
             {
                 MMETER_SCOPE_PROFILER("OGL setup");

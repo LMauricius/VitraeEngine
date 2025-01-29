@@ -85,7 +85,7 @@ void OpenGLComposeClearRender::run(RenderComposeContext args) const
         args.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
     OpenGLFrameStore &frame = static_cast<OpenGLFrameStore &>(*p_frame);
 
-    frame.enterRender(args.properties, {0.0f, 0.0f}, {1.0f, 1.0f});
+    frame.enterRender({0.0f, 0.0f}, {1.0f, 1.0f});
 
     glClearColor(m_color.r, m_color.g, m_color.b, m_color.a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

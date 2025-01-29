@@ -55,7 +55,7 @@ class FrameStore : public dynasma::PolymorphicBase
     virtual glm::vec2 getSize() const = 0;
     virtual dynasma::FirmPtr<const ParamList> getRenderComponents() const = 0;
 
-    virtual void sync() = 0;
+    virtual void sync(bool vsync) = 0;
 };
 
 struct FrameStoreSeed

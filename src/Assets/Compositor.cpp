@@ -91,7 +91,7 @@ void Compositor::compose()
 
                 parameters.get(StandardParam::fs_display.name)
                     .get<dynasma::FirmPtr<FrameStore>>()
-                    ->sync();
+                    ->sync(parameters.get(StandardParam::vsync.name).get<bool>());
             }
         }
         catch (ComposeTaskRequirementsChangedException) {
@@ -141,6 +141,9 @@ void Compositor::rebuildPipeline()
         m_root.getInfoStream() << "Compositor graph stored to: '"
                                << (std::filesystem::current_path() / filename) << "'" << std::endl;
     }
+
+    // add compositor properties, so they are visible from the outside
+    m_pipeline.inputSpecs.insert_back(StandardParam::vsync);
 
     // Set default values
     for (auto p_specs :
