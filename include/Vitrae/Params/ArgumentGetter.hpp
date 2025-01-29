@@ -19,13 +19,23 @@ template <class T> class ArgumentGetter
     struct DynamicSpec
     {
         StringId nameId;
-        String name;
+        ParamSpec spec;
     };
 
     std::variant<DynamicSpec, T> m_nameOrValue;
 
   public:
-    ArgumentGetter(String name) : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name, name}) {}
+    ArgumentGetter(String name)
+        : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name, {name, TYPE_INFO<T>}})
+    {}
+    ArgumentGetter(String name, const T &defaultValue)
+        : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name,
+                                                            {
+                                                                .name = name,
+                                                                .typeInfo = TYPE_INFO<T>,
+                                                                .defaultValue = defaultValue,
+                                                            }})
+    {}
     ArgumentGetter(const T &value) : m_nameOrValue(std::in_place_index<1>, value) {}
     ArgumentGetter(T &&value) : m_nameOrValue(std::in_place_index<1>, std::move(value)) {}
 
@@ -86,10 +96,7 @@ template <class T> class ArgumentGetter
      * @returns ParamSpec for a dynamic property
      * @note throws std::bad_variant_access if isFixed()
      */
-    ParamSpec getSpec() const
-    {
-        return ParamSpec{.name = std::get<0>(m_nameOrValue).name, .typeInfo = TYPE_INFO<T>};
-    }
+    const ParamSpec &getSpec() const { return std::get<0>(m_nameOrValue).spec; }
 
     /**
      * @returns ParamSpec for a dynamic property

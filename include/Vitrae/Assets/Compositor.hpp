@@ -24,8 +24,26 @@ class Compositor : public dynasma::PolymorphicBase
     void setParamAliases(const ParamAliases &aliases);
     void setDesiredProperties(const ParamList &properties);
 
+    /**
+     * @returns the input specs required by the built pipeline
+     */
+    const ParamList &getInputSpecs() const;
+
+    /**
+     * Composes and displays the result by running the pipeline
+     */
     void compose();
 
+    /**
+     * Rebuilds the pipeline after changes
+     */
+    void rebuildPipeline();
+
+    /**
+     * Parameters for the pipeline run. Modifying them might not affect the run until the pipeline
+     * is rebuilt, depending on the tasks used
+     * @note This member is only modified externally. The compositor can internally cache some data.
+     */
     VariantScope parameters;
 
   protected:
@@ -37,8 +55,6 @@ class Compositor : public dynasma::PolymorphicBase
     bool m_needsFrameStoreRegeneration;
     Pipeline<ComposeTask> m_pipeline;
     VariantScope m_localProperties;
-
-    void rebuildPipeline();
     void regenerateFrameStores();
 };
 

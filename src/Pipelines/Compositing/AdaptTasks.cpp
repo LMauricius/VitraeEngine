@@ -345,6 +345,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adap
             p_targetSpecs->insert_back(ParamSpec{
                 .name = subAliases.choiceStringFor(spec.name),
                 .typeInfo = spec.typeInfo,
+                .defaultValue = spec.defaultValue,
             });
         }
     }

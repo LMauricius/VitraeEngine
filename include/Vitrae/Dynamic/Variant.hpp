@@ -146,7 +146,7 @@ class Variant
         } else {
             table.isEqual = [](const Variant &lhs, const Variant &rhs) -> bool {
                 std::stringstream ss;
-                ss << "operator== is not implemented for type " << typeid(T).name();
+                ss << "operator== is not implemented for type " << TYPE_INFO<T>.getShortTypeName();
                 throw std::runtime_error(ss.str());
             };
         }
@@ -415,6 +415,17 @@ class Variant
 
     template <class T> void allocateBuffer() { allocateTBuffer(&V_TABLE<std::decay_t<T>>); }
 };
+
+/**
+ * A constant referring to a global Variant containing the value
+ * @tparam V The value
+ */
+template <auto V> constexpr Variant GLOBAL_VALUE = V;
+
+/**
+ * Empty/unset value
+ */
+inline const Variant EMPTY_VALUE{};
 
 } // namespace Vitrae
 

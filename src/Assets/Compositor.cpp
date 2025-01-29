@@ -39,6 +39,11 @@ void Compositor::setDesiredProperties(const ParamList &properties)
     m_needsRebuild = true;
 }
 
+const ParamList &Compositor::getInputSpecs() const
+{
+    return m_pipeline.inputSpecs;
+}
+
 void Compositor::compose()
 {
     MMETER_SCOPE_PROFILER("Compositor::compose");
@@ -133,8 +138,19 @@ void Compositor::rebuildPipeline()
         exportPipeline(m_pipeline, m_aliases, file);
         file.close();
 
-        m_root.getInfoStream() << "Compositor graph stored to: '" << std::filesystem::current_path()
-                               << "/" << filename << "'" << std::endl;
+        m_root.getInfoStream() << "Compositor graph stored to: '"
+                               << (std::filesystem::current_path() / filename) << "'" << std::endl;
+    }
+
+    // Set default values
+    for (auto p_specs :
+         {&m_pipeline.inputSpecs, &m_pipeline.filterSpecs, &m_pipeline.consumingSpecs}) {
+        for (auto &spec : p_specs->getSpecList()) {
+            if (spec.defaultValue.getAssignedTypeInfo() != TYPE_INFO<void> &&
+                !parameters.has(spec.name)) {
+                parameters.set(spec.name, spec.defaultValue);
+            }
+        }
     }
 
     m_needsFrameStoreRegeneration = true;
@@ -159,22 +175,23 @@ void Compositor::regenerateFrameStores()
         for (auto p_task : std::ranges::reverse_view{m_pipeline.items}) {
             p_task->prepareRequiredLocalAssets(context);
         }
+
+        String filePrefix =
+            std::string("shaderdebug/") + "full_" + getPipelineId(m_pipeline, m_aliases);
+        {
+            std::ofstream file;
+            String filename = filePrefix + ".dot";
+            file.open(filename);
+            exportPipeline(m_pipeline, m_aliases, file, "", true, true);
+            file.close();
+
+            m_root.getInfoStream()
+                << "Compositor graph stored to: '" << (std::filesystem::current_path() / filename)
+                << "'" << std::endl;
+        }
     }
     catch (ComposeTaskRequirementsChangedException) {
         m_needsRebuild = true;
-    }
-
-    String filePrefix =
-        std::string("shaderdebug/") + "full_" + getPipelineId(m_pipeline, m_aliases);
-    {
-        std::ofstream file;
-        String filename = filePrefix + ".dot";
-        file.open(filename);
-        exportPipeline(m_pipeline, m_aliases, file, "", true, true);
-        file.close();
-
-        m_root.getInfoStream() << "Compositor graph stored to: '" << std::filesystem::current_path()
-                               << "/" << filename << "'" << std::endl;
     }
 }
 

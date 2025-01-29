@@ -53,6 +53,7 @@ template <TaskChild BasicTask> class Pipeline
             actualDesiredOutputSpecs.insert_back({
                 .name = choiceStr,
                 .typeInfo = outputSpec.typeInfo,
+                .defaultValue = outputSpec.defaultValue,
             });
         }
 
@@ -105,6 +106,7 @@ template <TaskChild BasicTask> class Pipeline
             actualDesiredOutputSpecs.insert_back({
                 .name = choiceStr,
                 .typeInfo = outputSpec.typeInfo,
+                .defaultValue = outputSpec.defaultValue,
             });
         }
 
@@ -354,6 +356,7 @@ template <TaskChild BasicTask> class Pipeline
             ParamSpec actualSpec = {
                 .name = actualName,
                 .typeInfo = propertySpec.typeInfo,
+                .defaultValue = propertySpec.defaultValue,
             };
 
             auto it = everUsedProperties.find(actualName);
