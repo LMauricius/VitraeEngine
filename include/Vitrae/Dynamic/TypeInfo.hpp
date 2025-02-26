@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Vitrae/Dynamic/TypeMeta.hpp"
 #include "Vitrae/TypeConversion/VectorCvt.hpp"
 
 #include <concepts>
@@ -24,6 +25,13 @@ class TypeInfo
     const std::type_info *p_id;
     std::size_t size;
     std::size_t alignment;
+
+    /**
+     * A TypeMeta for this type.
+     * It can be used to test the functionality of the type, retrieve metadata and perform
+     * operations on instances of it, by dynamic_casting this value to desired Meta.
+     */
+    const PolymorphicTypeMeta &metaDetail;
 
     /**
      * For vector-like types this is the number of elements in the vector
@@ -72,7 +80,7 @@ class TypeInfo
 
         std::string_view (*shortTypeNameGetter)() = getShortTypeName<T>;
 
-        return TypeInfo(p_id, size, alignment, componentTypeInfo, numComponents,
+        return TypeInfo(p_id, size, alignment, TYPE_META<T>, componentTypeInfo, numComponents,
                         shortTypeNameGetter);
     }
 
@@ -87,10 +95,11 @@ class TypeInfo
     TypeInfo &operator=(TypeInfo &&) = default;
 
     constexpr TypeInfo(const std::type_info *p_id, std::size_t size, std::size_t alignment,
-                       const TypeInfo &componentTypeInfo, std::size_t numComponents,
-                       std::string_view (*shortTypeNameGetter)())
-        : p_id(p_id), size(size), alignment(alignment), numComponents(numComponents),
-          componentTypeInfo(componentTypeInfo), shortTypeNameGetter(shortTypeNameGetter)
+                       const PolymorphicTypeMeta &metaDetail, const TypeInfo &componentTypeInfo,
+                       std::size_t numComponents, std::string_view (*shortTypeNameGetter)())
+        : p_id(p_id), size(size), alignment(alignment), metaDetail(metaDetail),
+          numComponents(numComponents), componentTypeInfo(componentTypeInfo),
+          shortTypeNameGetter(shortTypeNameGetter)
     {}
 
     // meta
@@ -107,3 +116,6 @@ class TypeInfo
 template <typename T> constexpr const TypeInfo &TYPE_INFO = TypeInfo::GLOBAL_TYPE_INFO<T>;
 
 } // namespace Vitrae
+
+// Include so that we can't get TypeMeta of types for which it is defined in this header
+#include "Vitrae/Dynamic/TypeMetaStd.hpp"

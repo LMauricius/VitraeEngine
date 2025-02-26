@@ -27,9 +27,9 @@ template <class T> class TypeMeta : public PolymorphicTypeMeta
 /**
  * @brief A global instance of the TypeMeta class for type T
  */
-template <class T> constexpr TypeMeta<T> TYPE_META = {};
+template <class T> inline const TypeMeta<T> TYPE_META = {};
 
 } // namespace Vitrae
 
-// Include so that we can't get TypeMeta of types for which it is defined in this header
-#include "Vitrae/Dynamic/TypeMetaStd.hpp"
+// Include because it includes TypeMetaStd.hpp, which depends on TypeInfo
+#include "Vitrae/Dynamic/TypeInfo.hpp"
