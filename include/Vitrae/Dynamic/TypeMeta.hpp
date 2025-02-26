@@ -24,6 +24,11 @@ class PolymorphicTypeMeta
 template <class T> class TypeMeta : public PolymorphicTypeMeta
 {};
 
+/**
+ * @brief A global instance of the TypeMeta class for type T
+ */
+template <class T> constexpr TypeMeta<T> TYPE_META = {};
+
 } // namespace Vitrae
 
 // Include so that we can't get TypeMeta of types for which it is defined in this header
