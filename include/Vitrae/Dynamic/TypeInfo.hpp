@@ -33,18 +33,6 @@ class TypeInfo
      */
     const PolymorphicTypeMeta &metaDetail;
 
-    /**
-     * For vector-like types this is the number of elements in the vector
-     * For scalars and others, this is 0
-     */
-    std::size_t numComponents;
-
-    /**
-     * If numComponents is not 0, this is the TypeInfo of the component's type.
-     * If numComponents is 0, this is the TypeInfo for void.
-     */
-    const TypeInfo &componentTypeInfo;
-
     inline std::string_view getShortTypeName() const { return shortTypeNameGetter(); }
 
     // comparisons (just compare type_info)
@@ -65,10 +53,6 @@ class TypeInfo
     {
         const std::type_info *p_id = &typeid(T);
 
-        const TypeInfo &componentTypeInfo =
-            GLOBAL_TYPE_INFO<typename VectorTypeInfo<T>::value_type>;
-        std::size_t numComponents = VectorTypeInfo<T>::NumComponents;
-
         std::size_t size, alignment;
         if constexpr (!std::same_as<T, void>) {
             size = sizeof(T);
@@ -80,8 +64,7 @@ class TypeInfo
 
         std::string_view (*shortTypeNameGetter)() = getShortTypeName<T>;
 
-        return TypeInfo(p_id, size, alignment, TYPE_META<T>, componentTypeInfo, numComponents,
-                        shortTypeNameGetter);
+        return TypeInfo(p_id, size, alignment, TYPE_META<T>, shortTypeNameGetter);
     }
 
     template <typename T> static constexpr const TypeInfo GLOBAL_TYPE_INFO = construct<T>();
@@ -95,10 +78,9 @@ class TypeInfo
     TypeInfo &operator=(TypeInfo &&) = default;
 
     constexpr TypeInfo(const std::type_info *p_id, std::size_t size, std::size_t alignment,
-                       const PolymorphicTypeMeta &metaDetail, const TypeInfo &componentTypeInfo,
-                       std::size_t numComponents, std::string_view (*shortTypeNameGetter)())
+                       const PolymorphicTypeMeta &metaDetail,
+                       std::string_view (*shortTypeNameGetter)())
         : p_id(p_id), size(size), alignment(alignment), metaDetail(metaDetail),
-          numComponents(numComponents), componentTypeInfo(componentTypeInfo),
           shortTypeNameGetter(shortTypeNameGetter)
     {}
 
