@@ -153,9 +153,8 @@ void OpenGLMesh::loadToGPU(Renderer &r)
             const TypeInfo &compType = p_buffer.getHeaderTypeInfo();
             const VectorMeta *const p_vectorMeta =
                 dynamic_cast<const VectorMeta *>(&compType.metaDetail);
-            const TypeInfo &subCompType =
-                p_vectorMeta ? p_vectorMeta->getComponentTypeInfo() : compType;
-            std::size_t numSubComponents = p_vectorMeta ? p_vectorMeta->getNumComponents() : 1;
+            const TypeInfo &subCompType = p_vectorMeta ? p_vectorMeta->componentTypeInfo : compType;
+            std::size_t numSubComponents = p_vectorMeta ? p_vectorMeta->numComponents : 1;
 
             const GLConversionSpec &convSpec = rend.getTypeConversion(subCompType);
 

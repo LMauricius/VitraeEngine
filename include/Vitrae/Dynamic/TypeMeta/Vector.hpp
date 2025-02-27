@@ -9,8 +9,8 @@ class TypeInfo;
 
 struct VectorMeta
 {
-    virtual std::size_t getNumComponents() const = 0;
-    virtual const TypeInfo &getComponentTypeInfo() const = 0;
+    const TypeInfo &componentTypeInfo;
+    std::size_t numComponents;
 };
 
 } // namespace Vitrae

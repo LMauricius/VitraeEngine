@@ -7,27 +7,29 @@ namespace Vitrae
  * @brief A polymorphic base class of all TypeMeta classes
  * @note It isn't a pure virtual class, thus it can be instanced as-is
  */
-class PolymorphicTypeMeta
+struct PolymorphicTypeMeta
 {
-  public:
     virtual ~PolymorphicTypeMeta() = default;
 };
 
 /**
- * A template depending on the type T, for which this TypeMeta decribes properties
- * This class can be specialized for various types so it inherits other Meta component types
- * specific for the type's features
- * @tparam T The type
- * @note All specializations have to inherit from PolymorphicTypeMeta, so it can be dynamic_casted
- * to specific Meta components
+ * @brief A template depending on the type T, for which this value decribes properties
+ * It can be specialized for various types so its class inherits other Meta component types specific
+ * for the type's features
+ * @note All instances' classes have to inherit from PolymorphicTypeMeta, so it can be
+ * dynamic_casted to specific Meta components
  */
-template <class T> class TypeMeta : public PolymorphicTypeMeta
-{};
+template <class T> inline const PolymorphicTypeMeta TYPE_META = {};
 
 /**
- * @brief A global instance of the TypeMeta class for type T
+ * @brief A shortcut for defining a TypeMeta class that inherits from multiple Metas,
+ * along with PolymorphicTypeMeta
  */
-template <class T> inline const TypeMeta<T> TYPE_META = {};
+template <class... CompMeta>
+struct CompoundTypeMeta : public PolymorphicTypeMeta, public CompMeta...
+{
+    CompoundTypeMeta(const CompMeta &&...metaInit) : PolymorphicTypeMeta(), CompMeta(metaInit)... {}
+};
 
 } // namespace Vitrae
 
