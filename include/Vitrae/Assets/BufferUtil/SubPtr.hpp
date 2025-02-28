@@ -148,6 +148,31 @@ template <class TElementT> class SharedSubBufferPtr
     std::size_t m_numElements;
 };
 
+// Specialize TYPE_META for SharedSubBufferPtr
+template <class TElementT>
+inline const CompoundTypeMeta<BufferPtrMeta> TYPE_META<SharedSubBufferPtr<TElementT>> = {{
+    .getRawBuffer =
+        [](const Variant &variant) {
+            return variant.get<SharedSubBufferPtr<TElementT>>().getRawBuffer();
+        },
+
+    .getNumElements =
+        [](const Variant &variant) {
+            return variant.get<SharedSubBufferPtr<TElementT>>().numElements();
+        },
+    .getBytesOffset =
+        [](const Variant &variant) {
+            return variant.get<SharedSubBufferPtr<TElementT>>().getBytesOffset();
+        },
+    .getBytesStride =
+        [](const Variant &variant) {
+            return variant.get<SharedSubBufferPtr<TElementT>>().getBytesStride();
+        },
+
+    .headerTypeInfo = TYPE_INFO<void>,
+    .elementTypeInfo = TYPE_INFO<TElementT>,
+}};
+
 // Buffer constructions
 
 /**

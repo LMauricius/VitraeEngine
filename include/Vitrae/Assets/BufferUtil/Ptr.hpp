@@ -3,6 +3,8 @@
 #include "Vitrae/Assets/BufferUtil/LayoutInfo.hpp"
 #include "Vitrae/Assets/BufferUtil/VariantPtr.hpp"
 #include "Vitrae/Assets/SharedBuffer.hpp"
+#include "Vitrae/Dynamic/TypeMeta.hpp"
+#include "Vitrae/Dynamic/TypeMeta/BufferPtr.hpp"
 
 namespace Vitrae
 {
@@ -157,6 +159,25 @@ template <class THeaderT, class TElementT> class SharedBufferPtr
   protected:
     dynasma::FirmPtr<RawSharedBuffer> mp_buffer;
 };
+
+// Specialize TYPE_META for SharedBufferPtr
+template <class THeaderT, class TElementT>
+inline const CompoundTypeMeta<BufferPtrMeta> TYPE_META<SharedBufferPtr<THeaderT, TElementT>> = {{
+    .getRawBuffer =
+        [](const Variant &variant) {
+            return variant.get<SharedBufferPtr<THeaderT, TElementT>>().getRawBuffer();
+        },
+
+    .getNumElements =
+        [](const Variant &variant) {
+            return variant.get<SharedBufferPtr<THeaderT, TElementT>>().numElements();
+        },
+    .getBytesOffset = [](const Variant &variant) { return (std::size_t)0; },
+    .getBytesStride = [](const Variant &variant) { return (std::size_t)0; },
+
+    .headerTypeInfo = TYPE_INFO<THeaderT>,
+    .elementTypeInfo = TYPE_INFO<TElementT>,
+}};
 
 /**
  * An instance of SharedBufferPtr<>
