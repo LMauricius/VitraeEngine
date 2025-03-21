@@ -10,16 +10,14 @@ set(VITRAE_ENABLE_DETERMINISTIC_RENDERING_TIMES OFF CACHE BOOL "Whether CPU shou
 
 file(GLOB_RECURSE SrcFiles CONFIGURE_DEPENDS src/*.cpp)
 file(GLOB_RECURSE HeaderFiles CONFIGURE_DEPENDS include/*.h include/*.hpp)
-set(GLAD_SrcFile dependencies/glad/src/glad.c)
 
-add_library(VitraeEngine ${SrcFiles} ${HeaderFiles} ${GLAD_SrcFile})
+add_library(VitraeEngine ${SrcFiles} ${HeaderFiles})
 target_compile_features(VitraeEngine PUBLIC cxx_std_20)
 target_include_directories(VitraeEngine PUBLIC include)
 target_include_directories(VitraeEngine PUBLIC dependencies/)
-target_include_directories(VitraeEngine PUBLIC dependencies/glad/include)
 target_include_directories(VitraeEngine PUBLIC dependencies/DynAsMa/include)
 target_include_directories(VitraeEngine PUBLIC dependencies/MMeter/include)
-target_link_libraries(VitraeEngine PUBLIC assimp glfw)
+target_link_libraries(VitraeEngine PUBLIC assimp)
 
 if(VITRAE_ENABLE_STRINGID_DEBUGGING)
     target_compile_definitions(VitraeEngine PUBLIC VITRAE_DEBUG_STRINGIDS)
