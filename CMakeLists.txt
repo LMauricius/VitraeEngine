@@ -11,7 +11,7 @@ set(VITRAE_ENABLE_DETERMINISTIC_RENDERING_TIMES OFF CACHE BOOL "Whether CPU shou
 file(GLOB_RECURSE SrcFiles CONFIGURE_DEPENDS src/*.cpp)
 file(GLOB_RECURSE HeaderFiles CONFIGURE_DEPENDS include/*.h include/*.hpp)
 
-add_library(VitraeEngine ${SrcFiles} ${HeaderFiles})
+add_library(VitraeEngine SHARED ${SrcFiles} ${HeaderFiles})
 target_compile_features(VitraeEngine PUBLIC cxx_std_20)
 target_include_directories(VitraeEngine PUBLIC include)
 target_include_directories(VitraeEngine PUBLIC dependencies/)
