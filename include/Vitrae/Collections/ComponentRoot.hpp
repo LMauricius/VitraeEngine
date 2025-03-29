@@ -207,7 +207,8 @@ class ComponentRoot
             return mCustomComponents.at(getClassID<T>());
         }
         catch (std::out_of_range) {
-            throw std::out_of_range("Component not registered");
+            throw std::out_of_range("Component " + std::string(TYPE_INFO<T *>.getShortTypeName()) +
+                                    " not registered");
         }
     }
 
