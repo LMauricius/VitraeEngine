@@ -25,6 +25,7 @@ inline const ParamSpec scene       = {"scene",       TYPE_INFO<dynasma::FirmPtr<
 inline const ParamSpec camera      = {"camera",      TYPE_INFO<dynasma::FirmPtr<Camera>>};
 inline const ParamSpec fs_target   = {"fs_target",   TYPE_INFO<dynasma::FirmPtr<FrameStore>>};
 inline const ParamSpec fs_display  = {"fs_display",  TYPE_INFO<dynasma::FirmPtr<FrameStore>>};
+inline const ParamSpec index4data  = {"index4data",  TYPE_INFO<std::uint32_t>};
 inline const ParamSpec LoDParams   = {"LoDParams",   TYPE_INFO<LoDSelectionParams>};
     
 inline const ParamSpec mat_model   = {"mat_model",   TYPE_INFO<glm::mat4>};
