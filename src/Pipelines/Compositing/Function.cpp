@@ -54,7 +54,7 @@ void ComposeFunction::extractSubTasks(std::set<const Task *> &taskSet,
 
 void ComposeFunction::run(RenderComposeContext args) const
 {
-    MMETER_SCOPE_PROFILER("ComposeFunction::run");
+    MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
     mp_function(args);
 }

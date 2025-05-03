@@ -97,7 +97,7 @@ void ComposeFrameToTexture::extractSubTasks(std::set<const Task *> &taskSet,
 
 void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 {
-    MMETER_SCOPE_PROFILER("ComposeFrameToTexture::run");
+    MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
     // Everything should already be set
 }

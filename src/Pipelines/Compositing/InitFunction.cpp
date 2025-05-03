@@ -56,7 +56,7 @@ void ComposeInitFunction::run(RenderComposeContext args) const {}
 
 void ComposeInitFunction::prepareRequiredLocalAssets(RenderComposeContext args) const
 {
-    MMETER_SCOPE_PROFILER("ComposeInitFunction::prepareRequiredLocalAssets");
+    MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
     mp_function(args);
 }

@@ -31,7 +31,7 @@ const ParamList &ComposeConstant::getConsumingSpecs(const ParamAliases &) const
 
 void ComposeConstant::run(RenderComposeContext ctx) const
 {
-    MMETER_SCOPE_PROFILER("ComposeConstant::run");
+    MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
     // we have only 1 output spec
     StringId outputNameId = m_outputSpecs.getSpecNameIds().front();

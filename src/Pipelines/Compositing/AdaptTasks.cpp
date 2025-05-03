@@ -121,7 +121,7 @@ void ComposeAdaptTasks::rebuildContainedPipeline(const ParamAliases &aliases) co
 
 void ComposeAdaptTasks::run(RenderComposeContext ctx) const
 {
-    MMETER_SCOPE_PROFILER("ComposeAdaptTasks::run");
+    MMETER_SCOPE_PROFILER(m_params.friendlyName.c_str());
 
     auto it = m_adaptorPerSelectionHash.find(ctx.aliases.hash());
     if (it == m_adaptorPerSelectionHash.end()) {
