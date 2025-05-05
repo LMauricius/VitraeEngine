@@ -102,7 +102,7 @@ class ComposeCacheTasks : public ComposeTask, public PipelineContainer<ComposeTa
 
     struct MyMemory
     {
-        const AdaptorPerAliases *adaptor;
+        const AdaptorPerAliases *adaptor = nullptr;
         RestartablePipelineMemory subPipelineMemory;
         StableMap<StringId, Variant> cachedProperties;
     };

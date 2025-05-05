@@ -17,7 +17,7 @@ namespace Vitrae {
 
       template<typename T>
       T &next() {
-          return std::any_cast<T &>(nextAny());
+          return std::any_cast<T&>(nextAny());
       }
 
     protected:

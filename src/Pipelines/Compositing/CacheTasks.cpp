@@ -127,7 +127,7 @@ void ComposeCacheTasks::run(RenderComposeContext ctx) const
     auto &myMemory = ctx.pipelineMemory.next<MyMemory>();
 
     // check if any output is missing
-    if (myMemory.cachedProperties.size() == 0) {
+    if (myMemory.cachedProperties.size() == 0 && myMemory.adaptor != nullptr) {
         const AdaptorPerAliases &adaptor = *myMemory.adaptor;
 
         // VariantScope encapsulatedScope(&ctx.properties.getUnaliasedScope());
