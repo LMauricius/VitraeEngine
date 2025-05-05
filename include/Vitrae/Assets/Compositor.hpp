@@ -3,6 +3,7 @@
 #include "Vitrae/Params/ParamList.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
 #include "Vitrae/Pipelines/Pipeline.hpp"
+#include "Vitrae/Pipelines/PipelineMemory.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 #include "dynasma/managers/abstract.hpp"
@@ -54,6 +55,7 @@ class Compositor : public dynasma::PolymorphicBase
     bool m_needsRebuild;
     bool m_needsFrameStoreRegeneration;
     Pipeline<ComposeTask> m_pipeline;
+    RestartablePipelineMemory m_pipelineMemory;
     VariantScope m_localProperties;
     void regenerateFrameStores();
 };

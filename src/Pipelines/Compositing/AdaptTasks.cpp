@@ -150,6 +150,7 @@ void ComposeAdaptTasks::run(RenderComposeContext ctx) const
         .properties = encapsulatedArgumentScope,
         .root = ctx.root,
         .aliases = subAliases,
+        .pipelineMemory = ctx.pipelineMemory,
     };
 
     // map from external scope to internal scope
@@ -212,6 +213,7 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
         .properties = encapsulatedArgumentScope,
         .root = ctx.root,
         .aliases = subAliases,
+        .pipelineMemory = ctx.pipelineMemory,
     };
 
     // execute the pipeline

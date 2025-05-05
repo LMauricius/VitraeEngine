@@ -34,5 +34,6 @@ namespace Vitrae {
       ~RestartablePipelineMemory() = default;
 
       void restart();
+      void clear();
     };
 }

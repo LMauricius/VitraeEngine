@@ -21,4 +21,10 @@ void RestartablePipelineMemory::restart() {
     m_nextAnyIndex = 0;
 }
 
+void RestartablePipelineMemory::clear()
+{
+    m_nextAnyIndex = 0;
+    m_anyPool.clear();
+}
+
 } // namespace Vitrae

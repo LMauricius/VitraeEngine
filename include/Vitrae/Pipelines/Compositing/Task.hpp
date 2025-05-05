@@ -5,6 +5,7 @@
 #include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Pipelines/Task.hpp"
+#include "Vitrae/Pipelines/PipelineMemory.hpp"
 
 namespace Vitrae
 {
@@ -35,6 +36,7 @@ struct RenderComposeContext
     ArgumentScope &properties;
     ComponentRoot &root;
     const ParamAliases &aliases;
+    PipelineMemory &pipelineMemory;
 };
 
 class ComposeTask : public Task

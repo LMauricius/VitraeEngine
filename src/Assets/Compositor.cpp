@@ -56,6 +56,7 @@ void Compositor::compose()
         .properties = scope,
         .root = m_root,
         .aliases = m_aliases,
+        .pipelineMemory = m_pipelineMemory,
     };
 
     bool tryExecute = true;
@@ -71,12 +72,14 @@ void Compositor::compose()
                 rebuildPipeline();
             }
             if (m_needsFrameStoreRegeneration) {
+                m_pipelineMemory.clear();
                 regenerateFrameStores();
             }
         }
 
         try {
             // execute the pipeline
+            m_pipelineMemory.restart();
             {
                 MMETER_SCOPE_PROFILER("Pipeline execution");
 
@@ -122,6 +125,7 @@ void Compositor::rebuildPipeline()
         .properties = scope,
         .root = m_root,
         .aliases = m_aliases,
+        .pipelineMemory = m_pipelineMemory,
     };
 
     m_pipeline = Pipeline<ComposeTask>(m_root.getComponent<MethodCollection>().getComposeMethod(),
@@ -171,6 +175,7 @@ void Compositor::regenerateFrameStores()
         .properties = scope,
         .root = m_root,
         .aliases = m_aliases,
+        .pipelineMemory = m_pipelineMemory,
     };
 
     // process
