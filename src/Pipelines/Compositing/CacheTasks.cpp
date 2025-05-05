@@ -11,7 +11,7 @@
 namespace Vitrae
 {
 
-ComposeCacheTasks::ComposeCacheTasks(const CacheParams &params) : m_params(params) {}
+ComposeCacheTasks::ComposeCacheTasks(const SetupParams &params) : m_params(params) {}
 
 std::size_t ComposeCacheTasks::memory_cost() const
 {

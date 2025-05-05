@@ -24,7 +24,7 @@ class MethodCollection;
 class ComposeCacheTasks : public ComposeTask, public PipelineContainer<ComposeTask>
 {
   public:
-    struct CacheParams {
+    struct SetupParams {
         ComponentRoot &root;
 
         /**
@@ -43,7 +43,7 @@ class ComposeCacheTasks : public ComposeTask, public PipelineContainer<ComposeTa
         String friendlyName;
     };
 
-    ComposeCacheTasks(const CacheParams &params);
+    ComposeCacheTasks(const SetupParams &params);
     ~ComposeCacheTasks() = default;
 
     std::size_t memory_cost() const override;
@@ -70,7 +70,7 @@ class ComposeCacheTasks : public ComposeTask, public PipelineContainer<ComposeTa
     StringView getFriendlyName() const override;
 
   private:
-    CacheParams m_params;
+    SetupParams m_params;
 
     struct AdaptorPerAliases
     {
@@ -110,7 +110,7 @@ class ComposeCacheTasks : public ComposeTask, public PipelineContainer<ComposeTa
 
 struct ComposeCacheTasksKeeperSeed {
     using Asset = ComposeCacheTasks;
-    std::variant<ComposeCacheTasks::CacheParams> kernel;
+    std::variant<ComposeCacheTasks::SetupParams> kernel;
     inline std::size_t load_cost() const { return 1; }
 };
 
