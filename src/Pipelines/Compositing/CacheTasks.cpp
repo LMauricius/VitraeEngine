@@ -180,7 +180,9 @@ void ComposeCacheTasks::run(RenderComposeContext ctx) const
     }
 
     for (auto propertyCache : myMemory.cachedProperties) {
-        ctx.properties.set(propertyCache.first, propertyCache.second);
+        if (!ctx.properties.has(propertyCache.first)) {
+            ctx.properties.set(propertyCache.first, propertyCache.second);
+        }
     }
 }
 
