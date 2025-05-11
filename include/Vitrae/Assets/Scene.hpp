@@ -31,10 +31,9 @@ class DirectionalLight
   public:
     glm::vec3 direction = {0.3, -0.7, 0.15};
     glm::vec3 color_primary = {0.6, 0.5, 0.4}, color_ambient = {0.3, 0.35, 0.4};
-    float shadow_above = 80.0, shadow_below = 80.0, shadow_distance = 80.0;
 
-    glm::mat4 getViewMatrix(const Camera &cam, float positionRounding = 0.0);
-    glm::mat4 getProjectionMatrix();
+    glm::mat4 getViewMatrix(const Camera &cam, float shadow_distance, float positionRounding = 0.0);
+    glm::mat4 getProjectionMatrix(float shadow_distance, float shadow_above, float shadow_below);
 };
 
 struct ModelProp

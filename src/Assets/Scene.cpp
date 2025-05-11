@@ -79,16 +79,15 @@ void Scene::loadFromAssimp(const AssimpLoadParams &params)
 
             current.Decompose(aiScaling, aiRotation, aiPosition);
 
-            SimpleTransformation transf = {
-                .position = {aiPosition.x, aiPosition.y, aiPosition.z},
-                .rotation =
-                    {
-                        aiRotation.w,
-                        aiRotation.x,
-                        aiRotation.y,
-                        aiRotation.z,
-                    },
-                .scaling = {aiScaling.x, aiScaling.y, aiScaling.z}};
+            SimpleTransformation transf = {.position = {aiPosition.x, aiPosition.y, aiPosition.z},
+                                           .rotation =
+                                               {
+                                                   aiRotation.w,
+                                                   aiRotation.x,
+                                                   aiRotation.y,
+                                                   aiRotation.z,
+                                               },
+                                           .scaling = {aiScaling.x, aiScaling.y, aiScaling.z}};
 
             for (std::size_t i = 0; i < p_node->mNumMeshes; ++i) {
                 dynasma::FirmPtr<Model> p_model = modelById[p_node->mMeshes[i]];
@@ -107,19 +106,18 @@ void Scene::loadFromAssimp(const AssimpLoadParams &params)
     if (params.p_extScene->HasCameras()) {
         const aiCamera *p_ext_camera = params.p_extScene->mCameras[0];
 
-        camera.position =
-            glm::vec3(p_ext_camera->mPosition.x, p_ext_camera->mPosition.y,
-                      p_ext_camera->mPosition.z);
-        camera.rotation =
-            glm::lookAt(camera.position,
-                        camera.position + glm::vec3(p_ext_camera->mLookAt.x,
-                                                    p_ext_camera->mLookAt.y,
-                                                    p_ext_camera->mLookAt.z),
-                        glm::vec3(0, 1, 0));
+        camera.position = glm::vec3(p_ext_camera->mPosition.x, p_ext_camera->mPosition.y,
+                                    p_ext_camera->mPosition.z);
+        camera.rotation = glm::lookAt(camera.position,
+                                      camera.position + glm::vec3(p_ext_camera->mLookAt.x,
+                                                                  p_ext_camera->mLookAt.y,
+                                                                  p_ext_camera->mLookAt.z),
+                                      glm::vec3(0, 1, 0));
     }
 }
 
-glm::mat4 DirectionalLight::getViewMatrix(const Camera &cam, float roundingStep)
+glm::mat4 DirectionalLight::getViewMatrix(const Camera &cam, float shadow_distance,
+                                          float roundingStep)
 {
     float worldRoundingStep = shadow_distance * 2 * roundingStep;
 
@@ -138,7 +136,8 @@ glm::mat4 DirectionalLight::getViewMatrix(const Camera &cam, float roundingStep)
     return glm::lookAt(cameraRoundedPos, cameraRoundedPos + direction, glm::vec3(0, 1, 0));
 }
 
-glm::mat4 DirectionalLight::getProjectionMatrix()
+glm::mat4 DirectionalLight::getProjectionMatrix(float shadow_distance, float shadow_above,
+                                                float shadow_below)
 {
     return glm::ortho(-shadow_distance, shadow_distance, -shadow_distance, shadow_distance,
                       -shadow_above, shadow_below);
