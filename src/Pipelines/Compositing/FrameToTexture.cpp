@@ -14,9 +14,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
       m_outputColorTextureNameId(params.outputColorTextureName),
       m_outputDepthTextureNameId(params.outputDepthTextureName),
       m_outputTextureParamSpecs(params.outputs), m_size(params.size),
-      m_channelType(params.channelType), m_horWrap(params.horWrap), m_verWrap(params.verWrap),
-      m_minFilter(params.minFilter), m_magFilter(params.magFilter), m_useMipMaps(params.useMipMaps),
-      m_borderColor(params.borderColor)
+      m_horWrap(params.horWrap), m_verWrap(params.verWrap)
 
 {
     m_friendlyName = "To texture:";
@@ -120,13 +118,13 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
             textureManager
                 .register_asset({Texture::EmptyParams{.root = m_root,
                                                       .size = retrSize,
-                                                      .channelType = m_channelType,
+                                                      .channelType = Texture::ChannelType::RGBA,
                                                       .horWrap = m_horWrap,
                                                       .verWrap = m_verWrap,
-                                                      .minFilter = m_minFilter,
-                                                      .magFilter = m_magFilter,
-                                                      .useMipMaps = m_useMipMaps,
-                                                      .borderColor = m_borderColor,
+                                                      .minFilter = Texture::FilterType::LINEAR,
+                                                      .magFilter = Texture::FilterType::LINEAR,
+                                                      .useMipMaps = false,
+                                                      .borderColor = {0.0f, 0.0f, 0.0f, 0.0f},
                                                       .friendlyName = m_outputColorTextureName}})
                 .getLoaded();
         ;
@@ -141,9 +139,9 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
                                                       .channelType = Texture::ChannelType::DEPTH,
                                                       .horWrap = m_horWrap,
                                                       .verWrap = m_verWrap,
-                                                      .minFilter = m_minFilter,
-                                                      .magFilter = m_magFilter,
-                                                      .useMipMaps = m_useMipMaps,
+                                                      .minFilter = Texture::FilterType::NEAREST,
+                                                      .magFilter = Texture::FilterType::NEAREST,
+                                                      .useMipMaps = false,
                                                       .borderColor = {1.0f, 1.0f, 1.0f, 1.0f},
                                                       .friendlyName = m_outputDepthTextureName}})
                 .getLoaded();
@@ -155,13 +153,13 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
             textureManager
                 .register_asset({Texture::EmptyParams{.root = m_root,
                                                       .size = retrSize,
-                                                      .channelType = m_channelType,
+                                                      .channelType = spec.channelType,
                                                       .horWrap = m_horWrap,
                                                       .verWrap = m_verWrap,
-                                                      .minFilter = m_minFilter,
-                                                      .magFilter = m_magFilter,
-                                                      .useMipMaps = m_useMipMaps,
-                                                      .borderColor = m_borderColor,
+                                                      .minFilter = spec.minFilter,
+                                                      .magFilter = spec.magFilter,
+                                                      .useMipMaps = spec.useMipMaps,
+                                                      .borderColor = spec.borderColor,
                                                       .friendlyName = spec.textureName}})
                 .getLoaded();
         ;

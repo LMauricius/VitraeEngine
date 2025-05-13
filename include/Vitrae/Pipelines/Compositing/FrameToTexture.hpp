@@ -21,6 +21,11 @@ class ComposeFrameToTexture : public ComposeTask
     {
         String textureName;
         ParamSpec fragmentSpec;
+        Texture::ChannelType channelType = Texture::ChannelType::RGB;
+        glm::vec4 borderColor = {0.0f, 0.0f, 0.0f, 0.0f};
+        Texture::FilterType minFilter = Texture::FilterType::LINEAR;
+        Texture::FilterType magFilter = Texture::FilterType::LINEAR;
+        bool useMipMaps = false;
     };
 
     struct SetupParams
@@ -31,13 +36,8 @@ class ComposeFrameToTexture : public ComposeTask
         String outputDepthTextureName;
         std::vector<OutputTextureParamSpec> outputs;
         ArgumentGetter<glm::uvec2> size;
-        Texture::ChannelType channelType = Texture::ChannelType::RGB;
         Texture::WrappingType horWrap = Texture::WrappingType::REPEAT;
         Texture::WrappingType verWrap = Texture::WrappingType::REPEAT;
-        Texture::FilterType minFilter = Texture::FilterType::LINEAR;
-        Texture::FilterType magFilter = Texture::FilterType::LINEAR;
-        bool useMipMaps = true;
-        glm::vec4 borderColor = {0.0f, 0.0f, 0.0f, 0.0f};
     };
 
     ComposeFrameToTexture(const SetupParams &params);
@@ -70,13 +70,8 @@ class ComposeFrameToTexture : public ComposeTask
     StringId m_outputColorTextureNameId, m_outputDepthTextureNameId;
     std::vector<OutputTextureParamSpec> m_outputTextureParamSpecs;
     ArgumentGetter<glm::uvec2> m_size;
-    Texture::ChannelType m_channelType;
     Texture::WrappingType m_horWrap;
     Texture::WrappingType m_verWrap;
-    Texture::FilterType m_minFilter;
-    Texture::FilterType m_magFilter;
-    bool m_useMipMaps;
-    glm::vec4 m_borderColor;
     String m_friendlyName;
 };
 
