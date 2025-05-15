@@ -36,12 +36,9 @@ class ParamList : public dynasma::PolymorphicBase
                  std::convertible_to<std::ranges::range_value_t<ContainerT>, const ParamSpec &>)
     {
         for (const auto &spec : specs) {
-            m_mappedSpecs.emplace(spec.name, spec);
-        }
-
-        for (auto [nameId, spec] : m_mappedSpecs) {
-            m_specNameIds.push_back(nameId);
+            m_specNameIds.push_back(spec.name);
             m_specList.push_back(spec);
+            m_mappedSpecs.emplace(spec.name, spec);
         }
 
         recalculateHash();
