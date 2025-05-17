@@ -9,39 +9,36 @@
 
 namespace Vitrae
 {
-ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
-    : m_root(params.root), m_outputTextureParamSpecs(params.outputs), m_size(params.size)
-
+ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params) : m_params(params)
 {
-    m_friendlyName = "To texture:";
-    for (auto &texSpec : m_outputTextureParamSpecs) {
-        m_outputSpecs.insert_back({
-            texSpec.textureName,
-            TYPE_INFO<dynasma::FirmPtr<Texture>>,
-        });
-        m_friendlyName += String("\n- ");
-        std::visit(
-            Overloaded{
-                [&](const FixedRenderComponent &comp) {
-                    switch (comp) {
-                    case FixedRenderComponent::Depth:
-                        m_friendlyName += String("\n- depth");
-                        break;
-                    }
-                },
-                [&](const ParamSpec &spec) { m_friendlyName += String("\n- ") + spec.name; },
-            },
-            texSpec.shaderComponent);
-    }
+    m_friendlyName += "Fragment ";
+    std::visit(Overloaded{
+                   [&](const FixedRenderComponent &comp) {
+                       switch (comp) {
+                       case FixedRenderComponent::Depth:
+                           m_friendlyName += String("depth");
+                           break;
+                       }
+                   },
+                   [&](const ParamSpec &spec) { m_friendlyName += String(spec.name); },
+               },
+               params.shaderComponent);
 
-    m_consumeSpecs.insert_back(StandardParam::fs_target);
+    m_friendlyName += " to texture";
+
+    m_inputSpecs.insert_back(StandardParam::fs_target);
 
     for (auto &tokenName : params.inputTokenNames) {
         m_inputSpecs.insert_back({tokenName, TYPE_INFO<void>});
     }
 
-    if (!m_size.isFixed()) {
-        m_inputSpecs.insert_back(m_size.getSpec());
+    m_outputSpecs.insert_back({
+        params.textureName,
+        TYPE_INFO<dynasma::FirmPtr<Texture>>,
+    });
+
+    if (!m_params.size.isFixed()) {
+        m_inputSpecs.insert_back(m_params.size.getSpec());
     }
 }
 
@@ -95,35 +92,47 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 
 void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx) const
 {
-    FrameStoreManager &frameManager = m_root.getComponent<FrameStoreManager>();
-    TextureManager &textureManager = m_root.getComponent<TextureManager>();
+    FrameStoreManager &frameManager = m_params.root.getComponent<FrameStoreManager>();
+    TextureManager &textureManager = m_params.root.getComponent<TextureManager>();
 
-    FrameStore::TextureBindParams frameParams = {
-        .root = m_root,
-        .outputTextureSpecs = {},
-        .friendlyName = ctx.aliases.choiceStringFor(StandardParam::fs_target.name)};
-    glm::uvec2 retrSize = m_size.get(ctx.properties);
+    glm::uvec2 retrSize = m_params.size.get(ctx.properties);
 
-    for (auto &texSpec : m_outputTextureParamSpecs) {
-        auto p_texture =
-            textureManager
-                .register_asset({Texture::EmptyParams{.root = m_root,
-                                                      .size = retrSize,
-                                                      .format = texSpec.format,
-                                                      .filtering = texSpec.filtering,
-                                                      .friendlyName = texSpec.textureName}})
+    auto p_texture =
+        textureManager
+            .register_asset({Texture::EmptyParams{.root = m_params.root,
+                                                  .size = retrSize,
+                                                  .format = m_params.format,
+                                                  .filtering = m_params.filtering,
+                                                  .friendlyName = m_params.textureName}})
+            .getLoaded();
+    FrameStore::OutputTextureSpec outputSpec = {
+        .p_texture = p_texture,
+        .shaderComponent = m_params.shaderComponent,
+        .clearColor = m_params.clearColor,
+    };
+    ctx.properties.set(m_params.textureName, p_texture);
+
+    /*
+    Now create the FB only if it didn't exist beforehand
+    */
+    if (!ctx.properties.has(StandardParam::fs_target.name) ||
+        ctx.properties.get(StandardParam::fs_target.name).getAssignedTypeInfo() ==
+            TYPE_INFO<void>) {
+        auto p_frame =
+            frameManager
+                .register_asset_k(FrameStore::TextureBindParams{
+                    .root = m_params.root,
+                    .outputTextureSpecs = {outputSpec},
+                    .friendlyName = ctx.aliases.choiceStringFor(StandardParam::fs_target.name),
+                })
                 .getLoaded();
-        ;
-        frameParams.outputTextureSpecs.emplace_back(FrameStore::OutputTextureSpec{
-            .p_texture = p_texture,
-            .shaderComponent = texSpec.shaderComponent,
-            .clearColor = texSpec.clearColor,
-        });
-        ctx.properties.set(texSpec.textureName, p_texture);
+        ctx.properties.set(StandardParam::fs_target.name, p_frame);
+    } else {
+        auto p_frame =
+            ctx.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
+        p_frame->bindOutput(outputSpec);
+        ctx.properties.set(StandardParam::fs_target.name, p_frame);
     }
-
-    auto frame = frameManager.register_asset({frameParams}).getLoaded();
-    ctx.properties.set(StandardParam::fs_target.name, frame);
 }
 
 StringView ComposeFrameToTexture::getFriendlyName() const

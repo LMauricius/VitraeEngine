@@ -19,20 +19,15 @@ namespace Vitrae
 class ComposeFrameToTexture : public ComposeTask
 {
   public:
-    struct OutputTextureParamSpec
+    struct SetupParams
     {
+        ComponentRoot &root;
+        std::vector<String> inputTokenNames;
         String textureName;
         RenderComponent shaderComponent;
         BufferFormat format;
         ClearColor clearColor = glm::vec4{0.0f, 0.0f, 0.0f, 0.0f};
         TextureFilteringParams filtering;
-    };
-
-    struct SetupParams
-    {
-        ComponentRoot &root;
-        std::vector<String> inputTokenNames;
-        std::vector<OutputTextureParamSpec> outputs;
         ArgumentGetter<glm::uvec2> size;
     };
 
@@ -57,13 +52,11 @@ class ComposeFrameToTexture : public ComposeTask
     StringView getFriendlyName() const override;
 
   protected:
-    ComponentRoot &m_root;
+    SetupParams m_params;
     ParamList m_inputSpecs;
     ParamList m_consumeSpecs;
     ParamList m_outputSpecs;
 
-    std::vector<OutputTextureParamSpec> m_outputTextureParamSpecs;
-    ArgumentGetter<glm::uvec2> m_size;
     String m_friendlyName;
 };
 
