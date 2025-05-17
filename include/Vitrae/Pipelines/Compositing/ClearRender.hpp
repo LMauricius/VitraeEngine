@@ -10,7 +10,7 @@ namespace Vitrae
 {
 
 /**
- * Clears the frame with the background color
+ * Clears the frame with the default clear colors for each render component
  *
  */
 class ComposeClearRender : public ComposeTask
@@ -19,7 +19,6 @@ class ComposeClearRender : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        glm::vec4 backgroundColor;
         std::vector<String> outputTokenNames;
     };
 };

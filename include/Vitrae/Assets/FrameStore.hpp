@@ -1,6 +1,8 @@
 #pragma once
 
+#include "Vitrae/Data/RenderComponents.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
+#include "Vitrae/Data/ClearColor.hpp"
 #include "Vitrae/Params/ParamSpec.hpp"
 
 #include "dynasma/managers/abstract.hpp"
@@ -9,6 +11,7 @@
 #include "glm/glm.hpp"
 
 #include <optional>
+#include <span>
 
 namespace Vitrae
 {
@@ -17,22 +20,21 @@ class Texture;
 class ParamList;
 
 /**
- * A FrameStore is a single image-like resource
+ * A FrameStore is a target for rendering, binding pixel output and processing data together
  */
 class FrameStore : public dynasma::PolymorphicBase
 {
   public:
     struct OutputTextureSpec
     {
-        ParamSpec fragmentSpec;
-        dynasma::FirmPtr<Texture> p_texture;
+        std::optional<dynasma::FirmPtr<Texture>> p_texture;
+        RenderComponent shaderComponent;
+        ClearColor clearColor = glm::vec4{0.0f, 0.0f, 0.0f, 0.0f};
     };
 
     struct TextureBindParams
     {
         ComponentRoot &root;
-        std::optional<dynasma::FirmPtr<Texture>> p_colorTexture;
-        std::optional<dynasma::FirmPtr<Texture>> p_depthTexture;
         std::vector<OutputTextureSpec> outputTextureSpecs;
         String friendlyName = "";
     };
@@ -44,6 +46,9 @@ class FrameStore : public dynasma::PolymorphicBase
         String title;
         bool isFullscreen;
 
+        ClearColor clearColor = FixedClearColor::Default;
+        ClearColor clearDepth = FixedClearColor::Default;
+
         std::function<void()> onClose;
         std::function<void(glm::vec2 motion, bool bLeft, bool bRight, bool bMiddle)> onDrag;
     };
@@ -54,6 +59,7 @@ class FrameStore : public dynasma::PolymorphicBase
 
     virtual glm::vec2 getSize() const = 0;
     virtual dynasma::FirmPtr<const ParamList> getRenderComponents() const = 0;
+    virtual std::span<const OutputTextureSpec> getOutputTextureSpecs() const = 0;
 
     virtual void sync(bool vsync) = 0;
 };

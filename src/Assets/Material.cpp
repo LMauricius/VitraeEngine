@@ -39,7 +39,10 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
                         .register_asset(
                             {Texture::FileLoadParams{.root = params.root,
                                                      .filepath = parentDirPath / relconvPath,
-                                                     .useMipMaps = true}})
+                                                     .filtering =
+                                                         {
+                                                             .useMipMaps = true,
+                                                         }}})
                         .getLoaded();
             } else {
                 m_properties["color_" + textureInfo.colorName] = textureInfo.defaultColor;

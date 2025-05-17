@@ -4,6 +4,8 @@
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
+#include "Vitrae/Data/RenderComponents.hpp"
+#include "Vitrae/Data/ClearColor.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 
@@ -20,24 +22,18 @@ class ComposeFrameToTexture : public ComposeTask
     struct OutputTextureParamSpec
     {
         String textureName;
-        ParamSpec fragmentSpec;
-        Texture::ChannelType channelType = Texture::ChannelType::RGB;
-        glm::vec4 borderColor = {0.0f, 0.0f, 0.0f, 0.0f};
-        Texture::FilterType minFilter = Texture::FilterType::LINEAR;
-        Texture::FilterType magFilter = Texture::FilterType::LINEAR;
-        bool useMipMaps = false;
+        RenderComponent shaderComponent;
+        BufferFormat format;
+        ClearColor clearColor = glm::vec4{0.0f, 0.0f, 0.0f, 0.0f};
+        TextureFilteringParams filtering;
     };
 
     struct SetupParams
     {
         ComponentRoot &root;
         std::vector<String> inputTokenNames;
-        String outputColorTextureName;
-        String outputDepthTextureName;
         std::vector<OutputTextureParamSpec> outputs;
         ArgumentGetter<glm::uvec2> size;
-        Texture::WrappingType horWrap = Texture::WrappingType::REPEAT;
-        Texture::WrappingType verWrap = Texture::WrappingType::REPEAT;
     };
 
     ComposeFrameToTexture(const SetupParams &params);
@@ -66,12 +62,8 @@ class ComposeFrameToTexture : public ComposeTask
     ParamList m_consumeSpecs;
     ParamList m_outputSpecs;
 
-    String m_outputColorTextureName, m_outputDepthTextureName;
-    StringId m_outputColorTextureNameId, m_outputDepthTextureNameId;
     std::vector<OutputTextureParamSpec> m_outputTextureParamSpecs;
     ArgumentGetter<glm::uvec2> m_size;
-    Texture::WrappingType m_horWrap;
-    Texture::WrappingType m_verWrap;
     String m_friendlyName;
 };
 

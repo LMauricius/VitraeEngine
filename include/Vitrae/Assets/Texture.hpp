@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Vitrae/Data/Typedefs.hpp"
+#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Setup/ImageFiltering.hpp"
 
 #include "dynasma/core_concepts.hpp"
 #include "dynasma/keepers/abstract.hpp"
@@ -21,39 +23,6 @@ class ComponentRoot;
 class Texture : public dynasma::PolymorphicBase
 {
   public:
-    enum class ChannelType {
-        GRAYSCALE,
-        GRAYSCALE_ALPHA,
-        RGB,
-        RGBA,
-        DEPTH,
-        SCALAR_SNORM8,
-        VEC2_SNORM8,
-        VEC3_SNORM8,
-        VEC4_SNORM8,
-        SCALAR_UNORM8,
-        VEC2_UNORM8,
-        VEC3_UNORM8,
-        VEC4_UNORM8,
-        SCALAR_FLOAT16,
-        VEC2_FLOAT16,
-        VEC3_FLOAT16,
-        VEC4_FLOAT16,
-        SCALAR_FLOAT32,
-        VEC2_FLOAT32,
-        VEC3_FLOAT32,
-        VEC4_FLOAT32,
-    };
-    enum class WrappingType {
-        BORDER_COLOR,
-        CLAMP,
-        REPEAT,
-        MIRROR
-    };
-    enum class FilterType {
-        NEAREST,
-        LINEAR
-    };
 
     struct TextureStats
     {
@@ -64,23 +33,14 @@ class Texture : public dynasma::PolymorphicBase
     {
         ComponentRoot &root;
         std::filesystem::path filepath;
-        WrappingType horWrap = WrappingType::REPEAT;
-        WrappingType verWrap = WrappingType::REPEAT;
-        FilterType minFilter = FilterType::LINEAR;
-        FilterType magFilter = FilterType::LINEAR;
-        bool useMipMaps = true;
+        TextureFilteringParams filtering;
     };
     struct EmptyParams
     {
         ComponentRoot &root;
         glm::uvec2 size;
-        ChannelType channelType = ChannelType::RGB;
-        WrappingType horWrap = WrappingType::REPEAT;
-        WrappingType verWrap = WrappingType::REPEAT;
-        FilterType minFilter = FilterType::LINEAR;
-        FilterType magFilter = FilterType::LINEAR;
-        bool useMipMaps = true;
-        glm::vec4 borderColor = {0.0f, 0.0f, 0.0f, 0.0f};
+        BufferFormat format = BufferFormat::RGB_STANDARD;
+        TextureFilteringParams filtering;
         String friendlyName = "";
     };
     struct PureColorParams

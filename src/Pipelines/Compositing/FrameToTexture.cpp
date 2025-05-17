@@ -1,5 +1,6 @@
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
+#include "Vitrae/Data/Overloaded.hpp"
 #include "Vitrae/Params/Standard.hpp"
 
 #include "MMeter.h"
@@ -9,36 +10,28 @@
 namespace Vitrae
 {
 ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params)
-    : m_root(params.root), m_outputColorTextureName(params.outputColorTextureName),
-      m_outputDepthTextureName(params.outputDepthTextureName),
-      m_outputColorTextureNameId(params.outputColorTextureName),
-      m_outputDepthTextureNameId(params.outputDepthTextureName),
-      m_outputTextureParamSpecs(params.outputs), m_size(params.size),
-      m_horWrap(params.horWrap), m_verWrap(params.verWrap)
+    : m_root(params.root), m_outputTextureParamSpecs(params.outputs), m_size(params.size)
 
 {
     m_friendlyName = "To texture:";
-    if (params.outputColorTextureName != "") {
+    for (auto &texSpec : m_outputTextureParamSpecs) {
         m_outputSpecs.insert_back({
-            params.outputColorTextureName,
-            TYPE_INFO<dynasma::FirmPtr<Texture>>,
-        });
-        m_friendlyName += String("\n- shade");
-    }
-    if (params.outputDepthTextureName != "") {
-        m_outputSpecs.insert_back({
-            params.outputDepthTextureName,
-            TYPE_INFO<dynasma::FirmPtr<Texture>>,
-        });
-        m_friendlyName += String("\n- depth");
-    }
-    for (auto &spec : m_outputTextureParamSpecs) {
-        m_outputSpecs.insert_back({
-            spec.textureName,
+            texSpec.textureName,
             TYPE_INFO<dynasma::FirmPtr<Texture>>,
         });
         m_friendlyName += String("\n- ");
-        m_friendlyName += spec.fragmentSpec.name;
+        std::visit(
+            Overloaded{
+                [&](const FixedRenderComponent &comp) {
+                    switch (comp) {
+                    case FixedRenderComponent::Depth:
+                        m_friendlyName += String("\n- depth");
+                        break;
+                    }
+                },
+                [&](const ParamSpec &spec) { m_friendlyName += String("\n- ") + spec.name; },
+            },
+            texSpec.shaderComponent);
     }
 
     m_consumeSpecs.insert_back(StandardParam::fs_target);
@@ -107,67 +100,26 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
 
     FrameStore::TextureBindParams frameParams = {
         .root = m_root,
-        .p_colorTexture = {},
-        .p_depthTexture = {},
         .outputTextureSpecs = {},
         .friendlyName = ctx.aliases.choiceStringFor(StandardParam::fs_target.name)};
     glm::uvec2 retrSize = m_size.get(ctx.properties);
 
-    if (m_outputColorTextureNameId != "") {
+    for (auto &texSpec : m_outputTextureParamSpecs) {
         auto p_texture =
             textureManager
                 .register_asset({Texture::EmptyParams{.root = m_root,
                                                       .size = retrSize,
-                                                      .channelType = Texture::ChannelType::RGBA,
-                                                      .horWrap = m_horWrap,
-                                                      .verWrap = m_verWrap,
-                                                      .minFilter = Texture::FilterType::LINEAR,
-                                                      .magFilter = Texture::FilterType::LINEAR,
-                                                      .useMipMaps = false,
-                                                      .borderColor = {0.0f, 0.0f, 0.0f, 0.0f},
-                                                      .friendlyName = m_outputColorTextureName}})
-                .getLoaded();
-        ;
-        frameParams.p_colorTexture = p_texture;
-        ctx.properties.set(m_outputColorTextureNameId, p_texture);
-    }
-    if (m_outputDepthTextureNameId != "") {
-        auto p_texture =
-            textureManager
-                .register_asset({Texture::EmptyParams{.root = m_root,
-                                                      .size = retrSize,
-                                                      .channelType = Texture::ChannelType::DEPTH,
-                                                      .horWrap = m_horWrap,
-                                                      .verWrap = m_verWrap,
-                                                      .minFilter = Texture::FilterType::NEAREST,
-                                                      .magFilter = Texture::FilterType::NEAREST,
-                                                      .useMipMaps = false,
-                                                      .borderColor = {1.0f, 1.0f, 1.0f, 1.0f},
-                                                      .friendlyName = m_outputDepthTextureName}})
-                .getLoaded();
-        frameParams.p_depthTexture = p_texture;
-        ctx.properties.set(m_outputDepthTextureNameId, p_texture);
-    }
-    for (auto &spec : m_outputTextureParamSpecs) {
-        auto p_texture =
-            textureManager
-                .register_asset({Texture::EmptyParams{.root = m_root,
-                                                      .size = retrSize,
-                                                      .channelType = spec.channelType,
-                                                      .horWrap = m_horWrap,
-                                                      .verWrap = m_verWrap,
-                                                      .minFilter = spec.minFilter,
-                                                      .magFilter = spec.magFilter,
-                                                      .useMipMaps = spec.useMipMaps,
-                                                      .borderColor = spec.borderColor,
-                                                      .friendlyName = spec.textureName}})
+                                                      .format = texSpec.format,
+                                                      .filtering = texSpec.filtering,
+                                                      .friendlyName = texSpec.textureName}})
                 .getLoaded();
         ;
         frameParams.outputTextureSpecs.emplace_back(FrameStore::OutputTextureSpec{
-            .fragmentSpec = spec.fragmentSpec,
             .p_texture = p_texture,
+            .shaderComponent = texSpec.shaderComponent,
+            .clearColor = texSpec.clearColor,
         });
-        ctx.properties.set(spec.textureName, p_texture);
+        ctx.properties.set(texSpec.textureName, p_texture);
     }
 
     auto frame = frameManager.register_asset({frameParams}).getLoaded();
