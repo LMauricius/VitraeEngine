@@ -34,7 +34,15 @@ class Model : public dynasma::PolymorphicBase
         const aiMesh *p_extMesh;
     };
 
+    struct FormParams
+    {
+        ComponentRoot &root;
+        StableMap<StringId, DetailFormVector> formsByPurpose;
+        dynasma::LazyPtr<Material> p_material;
+    };
+
     Model(const AssimpLoadParams &params);
+    Model(const FormParams &params);
     virtual ~Model();
 
     void setMaterial(dynasma::LazyPtr<Material> p_mat);
@@ -91,7 +99,7 @@ struct ModelSeed
 
     inline std::size_t load_cost() const { return 1; }
 
-    std::variant<Model::AssimpLoadParams> kernel;
+    std::variant<Model::AssimpLoadParams, Model::FormParams> kernel;
 };
 
 using ModelKeeper = dynasma::AbstractKeeper<ModelSeed>;

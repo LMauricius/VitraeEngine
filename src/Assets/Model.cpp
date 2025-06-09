@@ -47,6 +47,10 @@ Model::Model(const AssimpLoadParams &params) : m_root(params.root)
     m_boundingBox = p_mesh->getBoundingBox();
 }
 
+Model::Model(const FormParams &params)
+    : m_root(params.root), m_formsByPurpose(params.formsByPurpose), mp_material(params.p_material)
+{}
+
 Model::~Model() {}
 
 void Model::setMaterial(dynasma::LazyPtr<Material> p_mat)
