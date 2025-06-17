@@ -70,6 +70,7 @@ struct RasterizingSetupParams
     BlendingFunction sourceBlending = BlendingFunction::One;
     BlendingFunction destinationBlending = BlendingFunction::Zero;
     RasterizingMode rasterizingMode = RasterizingMode::DerivationalFillCenters;
+    float lineWidth = 1.0f;
     bool writeDepth : 1 = true;
     bool smoothFilling : 1 = false;
     bool smoothTracing : 1 = false;
