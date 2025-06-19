@@ -36,14 +36,20 @@ class Compositor : public dynasma::PolymorphicBase
     void compose();
 
     /**
-     * Rebuilds the pipeline after changes
+     * Clears any stored local properties across pipeline runs and marks it for rebuild
+     */
+    void resetPipeline();
+
+    /**
+     * Rebuilds the pipeline after changes, while keeping any local properties
      */
     void rebuildPipeline();
 
     /**
      * Parameters for the pipeline run. Modifying them might not affect the run until the pipeline
-     * is rebuilt, depending on the tasks used
-     * @note This member is only modified externally. The compositor can internally cache some data.
+     * is reset, depending on the tasks used
+     * @note This member is only modified externally. The compositor can internally cache some data
+     * across pipeline runs
      */
     VariantScope parameters;
 

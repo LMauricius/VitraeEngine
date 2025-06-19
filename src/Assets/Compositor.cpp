@@ -72,7 +72,6 @@ void Compositor::compose()
                 rebuildPipeline();
             }
             if (m_needsFrameStoreRegeneration) {
-                m_pipelineMemory.clear();
                 regenerateFrameStores();
             }
         }
@@ -104,6 +103,12 @@ void Compositor::compose()
     }
 }
 
+void Compositor::resetPipeline()
+{
+    m_localProperties.clear();
+    m_needsRebuild = true;
+}
+
 void Compositor::rebuildPipeline()
 {
     MMETER_SCOPE_PROFILER("Compositor::rebuildPipeline");
@@ -130,8 +135,6 @@ void Compositor::rebuildPipeline()
 
     m_pipeline = Pipeline<ComposeTask>(m_root.getComponent<MethodCollection>().getComposeMethod(),
                                        m_desiredProperties, m_aliases);
-
-    m_localProperties.clear();
 
     String filePrefix =
         std::string("shaderdebug/") + "compositor_" + getPipelineId(m_pipeline, m_aliases);
@@ -168,6 +171,8 @@ void Compositor::regenerateFrameStores()
     MMETER_SCOPE_PROFILER("Compositor::regenerateFrameStores");
 
     m_needsFrameStoreRegeneration = false;
+
+    m_pipelineMemory.clear();
 
     // setup the rendering context
     ArgumentScope scope(&m_localProperties, &m_aliases);

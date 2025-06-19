@@ -130,52 +130,65 @@ void ComposeCacheTasks::run(RenderComposeContext ctx) const
     if (myMemory.cachedProperties.size() == 0 && myMemory.adaptor != nullptr) {
         const AdaptorPerAliases &adaptor = *myMemory.adaptor;
 
-        // VariantScope encapsulatedScope(&ctx.properties.getUnaliasedScope());
-
-        // Note: we will use only the pipeline's usedSelection in the subpipeline,
-        // because anything else is unused and potential performance hog
-        ArgumentScope encapsulatedArgumentScope(&ctx.properties.getUnaliasedScope(),
-                                                &adaptor.pipeline.usedSelection);
-
-        // construct the encapsulated context
-        const ParamAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
-        ParamAliases subAliases(aliasArray);
-        RenderComposeContext subCtx{
-            .properties = encapsulatedArgumentScope,
-            .root = ctx.root,
-            .aliases = subAliases,
-            .pipelineMemory = myMemory.subPipelineMemory,
-        };
-
-        // map from external scope to internal scope
+        // Try to load the cache from existing properties
+        bool cacheFullyLoaded = true;
         for (const auto &entry : adaptor.finishingMapping) {
             if (ctx.properties.has(entry.second)) {
-                encapsulatedArgumentScope.set(entry.first, ctx.properties.get(entry.second));
+                myMemory.cachedProperties.emplace(entry.second, ctx.properties.get(entry.second));
+            } else {
+                cacheFullyLoaded = false;
+                break;
             }
         }
 
-        // execute the pipeline
-        try {
-            {
-                MMETER_SCOPE_PROFILER("Pipeline execution");
+        if (!cacheFullyLoaded) {
+            // VariantScope encapsulatedScope(&ctx.properties.getUnaliasedScope());
 
-                myMemory.subPipelineMemory.restart();
+            // Note: we will use only the pipeline's usedSelection in the subpipeline,
+            // because anything else is unused and potential performance hog
+            ArgumentScope encapsulatedArgumentScope(&ctx.properties.getUnaliasedScope(),
+                                                    &adaptor.pipeline.usedSelection);
 
-                for (auto &pipeitem : adaptor.pipeline.items) {
-                    pipeitem->run(subCtx);
+            // construct the encapsulated context
+            const ParamAliases *aliasArray[] = {&m_params.adaptorAliases, &ctx.aliases};
+            ParamAliases subAliases(aliasArray);
+            RenderComposeContext subCtx{
+                .properties = encapsulatedArgumentScope,
+                .root = ctx.root,
+                .aliases = subAliases,
+                .pipelineMemory = myMemory.subPipelineMemory,
+            };
+
+            // map from external scope to internal scope
+            for (const auto &entry : adaptor.finishingMapping) {
+                if (ctx.properties.has(entry.second)) {
+                    encapsulatedArgumentScope.set(entry.first, ctx.properties.get(entry.second));
                 }
             }
-        }
-        catch (const ComposeTaskRequirementsChangedException &) {
-            // Prepare for rebuild and notify parent runner to rebuild
-            forgetAdaptorPerAliases(ctx.aliases);
-            throw;
-        }
 
-        // map from internal scope to external scope
-        for (const auto &entry : adaptor.finishingMapping) {
-            myMemory.cachedProperties.emplace(entry.second,
-                                              encapsulatedArgumentScope.move(entry.first));
+            // execute the pipeline
+            try {
+                {
+                    MMETER_SCOPE_PROFILER("Pipeline execution");
+
+                    myMemory.subPipelineMemory.restart();
+
+                    for (auto &pipeitem : adaptor.pipeline.items) {
+                        pipeitem->run(subCtx);
+                    }
+                }
+            }
+            catch (const ComposeTaskRequirementsChangedException &) {
+                // Prepare for rebuild and notify parent runner to rebuild
+                forgetAdaptorPerAliases(ctx.aliases);
+                throw;
+            }
+
+            // map from internal scope to external scope
+            for (const auto &entry : adaptor.finishingMapping) {
+                myMemory.cachedProperties.emplace(entry.second,
+                                                  encapsulatedArgumentScope.move(entry.first));
+            }
         }
     }
 
