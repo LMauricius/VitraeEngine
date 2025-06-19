@@ -126,11 +126,11 @@ void ComposeCacheTasks::run(RenderComposeContext ctx) const
 
     auto &myMemory = ctx.pipelineMemory.next<MyMemory>();
 
-    // check if any output is missing
+    // check if the cache exists
     if (myMemory.cachedProperties.size() == 0 && myMemory.adaptor != nullptr) {
         const AdaptorPerAliases &adaptor = *myMemory.adaptor;
 
-        // Try to load the cache from existing properties
+        // Try to load the cache from existing properties, rebuilding if needed
         bool cacheFullyLoaded = true;
         for (const auto &entry : adaptor.finishingMapping) {
             if (ctx.properties.has(entry.second)) {
@@ -192,6 +192,7 @@ void ComposeCacheTasks::run(RenderComposeContext ctx) const
         }
     }
 
+    // check if any output is missing
     for (auto propertyCache : myMemory.cachedProperties) {
         if (!ctx.properties.has(propertyCache.first)) {
             ctx.properties.set(propertyCache.first, propertyCache.second);
