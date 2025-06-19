@@ -59,7 +59,7 @@ class FrameStore : public dynasma::PolymorphicBase
     virtual void resize(glm::vec2 size) = 0;
     virtual void bindOutput(const OutputTextureSpec &spec) = 0;
 
-    virtual glm::vec2 getSize() const = 0;
+    virtual glm::uvec2 getSize() const = 0;
     virtual dynasma::FirmPtr<const ParamList> getRenderComponents() const = 0;
     virtual std::span<const OutputTextureSpec> getOutputTextureSpecs() const = 0;
 

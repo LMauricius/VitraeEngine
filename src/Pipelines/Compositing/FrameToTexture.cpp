@@ -87,6 +87,18 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 {
     MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
+    glm::uvec2 retrSize = m_params.size.get(ctx.properties);
+
+    // reset the whole pipeline if the FrameStore size is invalid
+    if (ctx.properties.get(StandardParam::fs_target.name)
+            .get<dynasma::FirmPtr<FrameStore>>()
+            ->getSize() != retrSize) {
+        // Ensure the FrameStore gets deleted
+        ctx.properties.set(StandardParam::fs_target.name, Variant());
+
+        throw ComposeTaskRequirementsChangedException();
+    }
+
     // Everything should already be set
 }
 
