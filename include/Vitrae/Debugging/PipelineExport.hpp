@@ -27,11 +27,11 @@ inline String getPipelineId(const Pipeline<BasicTask> &pipeline, const ParamAlia
         for (auto [nameId, spec] : p_task->getOutputSpecs().getMappedSpecs()) {
             String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
             if (pipeline.outputSpecs.contains(chosenName)) {
-                ret += "-";
+                ret += "__";
                 if (spec.name == chosenName) {
                     ret += spec.name;
                 } else {
-                    ret += spec.name + "(" + chosenName + ")";
+                    ret += spec.name + "-" + chosenName;
                 }
             }
         }
@@ -42,24 +42,24 @@ inline String getPipelineId(const Pipeline<BasicTask> &pipeline, const ParamAlia
         for (auto [nameId, spec] : p_task->getInputSpecs(aliases).getMappedSpecs()) {
             String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
             if (spec.name != chosenName) {
-                ret += "-";
-                ret += spec.name + "(" + chosenName + ")";
+                ret += "__";
+                ret += spec.name + "-" + chosenName;
             }
         }
 
         for (auto [nameId, spec] : p_task->getConsumingSpecs(aliases).getMappedSpecs()) {
             String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
             if (spec.name != chosenName) {
-                ret += "-";
-                ret += spec.name + "(" + chosenName + ")";
+                ret += "__";
+                ret += spec.name + "-" + chosenName;
             }
         }
 
         for (auto [nameId, spec] : p_task->getFilterSpecs(aliases).getMappedSpecs()) {
             String chosenName = pipeline.usedSelection.choiceStringFor(spec.name);
             if (spec.name != chosenName) {
-                ret += "-";
-                ret += spec.name + "(" + chosenName + ")";
+                ret += "__";
+                ret += spec.name + "-" + chosenName;
             }
         }
     }
