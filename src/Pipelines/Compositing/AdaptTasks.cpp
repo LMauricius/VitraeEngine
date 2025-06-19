@@ -216,6 +216,13 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
         .pipelineMemory = ctx.pipelineMemory,
     };
 
+    // map from external scope to internal scope
+    for (const auto &entry : adaptor.finishingMapping) {
+        if (ctx.properties.has(entry.second)) {
+            encapsulatedArgumentScope.set(entry.first, ctx.properties.move(entry.second));
+        }
+    }
+
     // execute the pipeline
     try {
         {
@@ -231,26 +238,6 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
         forgetAdaptorPerAliases(ctx.aliases);
         throw;
     }
-
-    // map from external scope to internal scope
-    for (const auto &entry : adaptor.finishingMapping) {
-        if (ctx.properties.has(entry.second)) {
-            encapsulatedArgumentScope.set(entry.first, ctx.properties.move(entry.second));
-        }
-    }
-
-    // map from internal scope to external scope
-    // since we are running in reverse, map input specs of the pipeline
-    /*for (auto p_specs : {&adaptor.pipeline.inputSpecs, &adaptor.pipeline.filterSpecs,
-                         &adaptor.pipeline.pipethroughSpecs}) {
-        for (const auto &[specNameId, spec] : p_specs->getMappedSpecs()) {
-            if (spec.typeInfo != TYPE_INFO<void> &&
-                encapsulatedArgumentScope.has(specNameId)) {
-                ctx.properties.set(subAliases.choiceFor(specNameId),
-                                   encapsulatedArgumentScope.move(specNameId));
-            }
-        }
-    }*/
 
     // map from internal scope to external scope
     for (const auto &entry : adaptor.finishingMapping) {
