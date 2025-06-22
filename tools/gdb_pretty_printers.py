@@ -1,6 +1,81 @@
-def toRefName(val):
-    return f"(*(const {val.type.name}*){int(val.address)})"
+def toRefString(val):
+    return f"(*static_cast<const {val.type}*>({int(val.address)}))"
 
+
+def dbgPrint(str):
+    with open("gdbdbg.log", "a") as f:
+        f.write(str + "\n")
+
+
+class Variant_Printer:
+    def __init__(self, val):
+        self.val = val
+
+    def getContainedPtr(self):
+        # print("Variant getContainedPtr!")
+        if self.val["m_table"].referenced_value()["hasShortObjectOptimization"] == 1:
+            return self.val["m_val"]["m_shortBufferVal"]
+        else:
+            return self.val["m_val"]["mp_longVal"]
+
+    def getContainedValue(self):
+        try:
+            # print("Variant getContainedValue!")
+            contained_type = gdb.lookup_type(self.getTypeName())
+            # print(f"Found type: {contained_type}")
+            return (
+                self.getContainedPtr()
+                .reinterpret_cast(contained_type.pointer())
+                .referenced_value()
+            )
+        except Exception as e:
+            print("getContainedValue failed!")
+            print(e)
+            return
+
+    def getTypeInfoPtr(self):
+        # print("Variant getTypeInfo!")
+        return (
+            self.val["m_table"]
+            .referenced_value()["p_typeinfo"]
+            .referenced_value()["p_id"]
+        )
+
+    def getTypeName(self):
+        # print("Variant getTypeName!")
+        p_type_info = self.getTypeInfoPtr()
+        type_info_str = str(p_type_info)
+        MATCH_STR = "<typeinfo for "
+        # print(str(p_type_info))
+        return type_info_str[type_info_str.find(MATCH_STR) + len(MATCH_STR) : -1]
+
+    def to_string(self):
+        try:
+            # print("Variant to_string!")
+            return f"Variant: {self.getTypeName()} = {str(self.getContainedValue())}"
+        except Exception as e:
+            print("Variant failed!")
+            print(e)
+            return
+
+    def children(self):
+        try:
+            yield "table", self.val["m_table"]
+            yield "contained value", self.getContainedValue()
+        except Exception as e:
+            print("Variant failed!")
+            print(e)
+            return
+
+
+def Variant_Printer_func(val):
+    if val.type.name is not None and val.type.unqualified().name.startswith(
+        "Vitrae::Variant"
+    ):
+        return Variant_Printer(val)
+
+
+gdb.pretty_printers.append(Variant_Printer_func)
 
 # StringId
 
@@ -63,21 +138,26 @@ class StableMap_Printer:
         return f"{count}-sized StableMap"
 
     def children(self):
-        count = int(self.val["m_size"])
-        data = self.val["m_data"]
-        keys = data.reinterpret_cast(self.keyT.pointer())
-        offset = (
-            (count * self.keyT.sizeof)
-            if self.mappedT.sizeof < self.keyT.sizeof
-            else (
-                (count * self.keyT.sizeof + self.mappedT.alignof - 1)
-                // self.mappedT.alignof
-                * self.mappedT.alignof
+        try:
+            count = int(self.val["m_size"])
+            data = self.val["m_data"]
+            keys = data.reinterpret_cast(self.keyT.pointer())
+            offset = (
+                (count * self.keyT.sizeof)
+                if self.mappedT.sizeof < self.keyT.sizeof
+                else (
+                    (count * self.keyT.sizeof + self.mappedT.alignof - 1)
+                    // self.mappedT.alignof
+                    * self.mappedT.alignof
+                )
             )
-        )
-        values = (data[offset].address).reinterpret_cast(self.mappedT.pointer())
-        for i in range(count):
-            yield (str(keys[i]), values[i])
+            values = (data[offset].address).reinterpret_cast(self.mappedT.pointer())
+            for i in range(count):
+                yield (str(keys[i]), values[i])
+        except Exception as e:
+            print("StableMap_Printer failed!")
+            print(e)
+            return
 
 
 def StableMap_Printer_func(val):
@@ -99,12 +179,17 @@ class ParamList_Printer:
         return f"{count} Specs"
 
     def children(self):
-        specs = self.val["m_specList"]
-        valRefName = toRefName(specs)
-        count = int(gdb.parse_and_eval(f"{valRefName}.size()"))
+        try:
+            specs = self.val["m_specList"]
+            valRefName = toRefString(specs)
+            count = int(gdb.parse_and_eval(f"{valRefName}.size()"))
 
-        for i in range(count):
-            yield (str(i), gdb.parse_and_eval(f"{valRefName}[{i}]"))
+            for i in range(count):
+                yield (str(i), gdb.parse_and_eval(f"{valRefName}[{i}]"))
+        except Exception as e:
+            print("ParamList_Printer failed!")
+            print(e)
+            return
 
 
 def ParamList_Printer_func(val):
