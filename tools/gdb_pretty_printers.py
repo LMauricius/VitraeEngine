@@ -2,6 +2,13 @@ def toRefString(val):
     return f"(*static_cast<const {val.type}*>({int(val.address)}))"
 
 
+def typeInfoPtr2TypeName(p_type_info):
+    type_info_str = str(p_type_info)
+    MATCH_STR = "<typeinfo for "
+    # print(str(p_type_info))
+    return type_info_str[type_info_str.find(MATCH_STR) + len(MATCH_STR) : -1]
+
+
 # For Variant class
 
 class Variant_Printer:
@@ -44,7 +51,7 @@ class Variant_Printer:
         type_info_str = str(p_type_info)
         MATCH_STR = "<typeinfo for "
         # print(str(p_type_info))
-        return type_info_str[type_info_str.find(MATCH_STR) + len(MATCH_STR) : -1]
+        return typeInfoPtr2TypeName(p_type_info)
 
     def to_string(self):
         try:
@@ -170,12 +177,9 @@ class ParamSpec_Printer:
         name = self.val["name"]
         typeInfo = self.val["typeInfo"]
 
-        # typeNameStr = gdb.parse_and_eval(
-        #     f"{toRefName(typeInfo.referenced_value())}.getShortTypeName()"
-        # )
-        typeId = typeInfo["p_id"].referenced_value()
+        p_typeId = typeInfo["p_id"]
 
-        return f"{name}: {typeId}"
+        return f"{name}: {typeInfoPtr2TypeName(p_typeId)}"
 
 
 def ParamSpec_Printer_func(val):
@@ -253,13 +257,10 @@ class ParamList_Printer:
 
 
 def ParamList_Printer_func(val):
-    if val.type.name is not None and val.type.name.startswith("Vitrae::ParamList"):
+    if val.type.name is not None and val.type.unqualified().name.startswith(
+        "Vitrae::ParamList"
+    ):
         return ParamList_Printer(val)
-        # subval = val["m_specList"]
-        # for ppf in gdb.current_progspace().pretty_printers:
-        #    pp = ppf(subval)
-        #    if pp is not None:
-        #        return pp
 
 
 gdb.pretty_printers.append(ParamList_Printer_func)
