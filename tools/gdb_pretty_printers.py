@@ -2,10 +2,7 @@ def toRefString(val):
     return f"(*static_cast<const {val.type}*>({int(val.address)}))"
 
 
-def dbgPrint(str):
-    with open("gdbdbg.log", "a") as f:
-        f.write(str + "\n")
-
+# For Variant class
 
 class Variant_Printer:
     def __init__(self, val):
@@ -77,9 +74,72 @@ def Variant_Printer_func(val):
 
 gdb.pretty_printers.append(Variant_Printer_func)
 
+
+# For FirmPtr class
+class FirmPtr_Printer:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        try:
+            counter = self.val["m_p_ctr"].referenced_value()
+            firm_count = counter["m_firmcount"]
+            lazy_count = counter["m_lazycount"]
+            return f"0x{int(self.val["m_p_ctr"]):x}[{firm_count}]({lazy_count}) 0x{int(self.val["m_p_object"]):x} <{str(self.val['m_p_object'].referenced_value())}>"
+        except Exception as e:
+            print("FirmPtr failed!")
+            print(e)
+            return
+
+    def display_hint(self):
+        return "array"
+
+    def children(self):
+        try:
+            yield "", self.val["m_p_object"].referenced_value()
+        except Exception as e:
+            print("FirmPtr failed!")
+            print(e)
+            return
+
+
+def FirmPtr_Printer_func(val):
+    if val.type.name is not None and val.type.unqualified().name.startswith(
+        "dynasma::FirmPtr"
+    ):
+        return FirmPtr_Printer(val)
+
+
+gdb.pretty_printers.append(FirmPtr_Printer_func)
+
+
+# For LazyPtr class
+class LazyPtr_Printer:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        try:
+            counter = self.val["m_p_ctr"].referenced_value()
+            firm_count = counter["m_firmcount"]
+            lazy_count = counter["m_lazycount"]
+            return f"0x{int(self.val["m_p_ctr"]):x}[{firm_count}]({lazy_count})"
+        except Exception as e:
+            print("LazyPtr failed!")
+            print(e)
+            return
+
+
+def LazyPtr_Printer_func(val):
+    if val.type.name is not None and val.type.unqualified().name.startswith(
+        "dynasma::LazyPtr"
+    ):
+        return LazyPtr_Printer(val)
+
+
+gdb.pretty_printers.append(LazyPtr_Printer_func)
+
 # StringId
-
-
 class StringId_Printer:
     def __init__(self, val):
         self.val = val
