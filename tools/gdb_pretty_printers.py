@@ -264,3 +264,67 @@ def ParamList_Printer_func(val):
 
 
 gdb.pretty_printers.append(ParamList_Printer_func)
+
+
+# GLM classes
+
+
+# GlmVec
+class GlmVec_Printer:
+    def __init__(self, val):
+        self.val = val
+
+    def to_string(self):
+        v = []
+        try:
+            v.append(str(self.val["x"]))
+        except:
+            pass
+        try:
+            v.append(str(self.val["y"]))
+        except:
+            pass
+        try:
+            v.append(str(self.val["z"]))
+        except:
+            pass
+        try:
+            v.append(str(self.val["w"]))
+        except:
+            pass
+
+        return f"[{','.join(v)}]"
+
+    def children(self):
+        try:
+            try:
+                yield "x/r/s", self.val["x"]
+            except:
+                pass
+
+            try:
+                yield "y/g/t", self.val["y"]
+            except:
+                pass
+
+            try:
+                yield "z/b/p", self.val["z"]
+            except:
+                pass
+
+            try:
+                yield "w/a/q", self.val["w"]
+            except:
+                pass
+
+        except Exception as e:
+            print("GlmVec_Printer failed!")
+            print(e)
+            return
+
+
+def GlmVec_Printer_func(val):
+    if val.type.name is not None and val.type.unqualified().name.startswith("glm::vec"):
+        return GlmVec_Printer(val)
+
+gdb.pretty_printers.append(GlmVec_Printer_func)
