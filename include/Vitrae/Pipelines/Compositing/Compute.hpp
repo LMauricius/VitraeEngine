@@ -17,7 +17,8 @@ class ComposeCompute : public ComposeTask
     struct SetupParams
     {
         ComponentRoot &root;
-        ParamList outputSpecs;
+        std::vector<String> outputTokenNames;
+        ParamList iterationOutputSpecs;
         GpuComputeSetupParams computeSetup;
         bool cacheResults;
     };
