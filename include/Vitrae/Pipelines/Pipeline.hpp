@@ -275,11 +275,6 @@ template <TaskChild BasicTask> class Pipeline
         if (maybeTask.has_value()) {
             const Task &task = *maybeTask.value();
 
-            // task outputs (store the outputs as visited)
-            for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
-                visitedOutputs.insert(nameId);
-            }
-
             bool satisfiedAnyDependencies = false;
             PipelineParametrizationPolicy indirectDepPolicy =
                 parametrizationPolicy == PipelineParametrizationPolicy::AllDependencies
@@ -302,6 +297,11 @@ template <TaskChild BasicTask> class Pipeline
 
             if (satisfiedAnyDependencies ||
                 parametrizationPolicy != PipelineParametrizationPolicy::ParametrizedDependencies) {
+
+                // task outputs (store the outputs as visited)
+                for (auto [nameId, spec] : task.getOutputSpecs().getMappedSpecs()) {
+                    visitedOutputs.insert(nameId);
+                }
 
                 // consume specs by removing them from the visited list
                 for (auto [nameId, spec] : task.getConsumingSpecs(selection).getMappedSpecs()) {
@@ -364,7 +364,7 @@ template <TaskChild BasicTask> class Pipeline
                 if ((*it).second.typeInfo != propertySpec.typeInfo) {
                     throw PipelineSetupException(
                         String("Property '") + actualSpec.name + "' was first used as " +
-                        String((*it).second.typeInfo.getShortTypeName()) + " but late as " +
+                        String((*it).second.typeInfo.getShortTypeName()) + " but later as " +
                         String(propertySpec.typeInfo.getShortTypeName()) + " by " + byWho);
                 }
             } else {

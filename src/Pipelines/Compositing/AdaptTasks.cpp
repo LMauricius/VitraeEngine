@@ -295,7 +295,7 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adap
     // So the tasks that could be added to the external pipeline will be added there
     // This is IMPORTANT to prevent double generation and execution of the same tasks
     std::unordered_map<StringId, StringId> totalUsedAliases;
-    subAliases.extractAliasNameIds(totalUsedAliases);
+    adaptorAliases.extractAliasNameIds(totalUsedAliases);
 
     std::unordered_set<StringId> parameterProviderIds;
     parameterProviderIds.reserve(totalUsedAliases.size());
