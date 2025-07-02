@@ -89,10 +89,14 @@ class FirmPtr_Printer:
 
     def to_string(self):
         try:
-            counter = self.val["m_p_ctr"].referenced_value()
-            firm_count = counter["m_firmcount"]
-            lazy_count = counter["m_lazycount"]
-            return f"0x{int(self.val["m_p_ctr"]):x}[{firm_count}]({lazy_count}) 0x{int(self.val["m_p_object"]):x} <{str(self.val['m_p_object'].referenced_value())}>"
+            p_counter = self.val["m_p_ctr"]
+            if int(p_counter) != 0:
+                counter = p_counter.referenced_value()
+                firm_count = counter["m_firmcount"]
+                lazy_count = counter["m_lazycount"]
+                return f"0x{int(self.val["m_p_ctr"]):x}[{firm_count}]({lazy_count}) 0x{int(self.val["m_p_object"]):x} <{str(self.val['m_p_object'].referenced_value())}>"
+            else:
+                return f"<unset> 0x0 0x{int(self.val["m_p_object"]):x}"
         except Exception as e:
             print("FirmPtr failed!")
             print(e)
@@ -103,7 +107,11 @@ class FirmPtr_Printer:
 
     def children(self):
         try:
-            yield "", self.val["m_p_object"].referenced_value()
+            p_counter = self.val["m_p_ctr"]
+            if int(p_counter) != 0:
+                yield "", self.val["m_p_object"].referenced_value()
+            else:
+                yield "", "<No object>"
         except Exception as e:
             print("FirmPtr failed!")
             print(e)
@@ -155,9 +163,9 @@ class StringId_Printer:
         m_hash = int(self.val["m_hash"])
         if any(field.name == "m_str" for field in self.val.type.fields()):
             m_str = self.val["m_str"].string()
-            return f'<{m_hash:x}> "{m_str}"'
+            return f'<#{m_hash:x}> "{m_str}"'
         else:
-            return f"<{m_hash:x}>"
+            return f"<#{m_hash:x}>"
 
 
 def StringId_Printer_func(val):
