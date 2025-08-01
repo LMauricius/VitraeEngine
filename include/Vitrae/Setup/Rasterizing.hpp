@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Vitrae/Data/Blending.hpp"
+#include "Vitrae/Data/FragmentTest.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 
 namespace Vitrae
@@ -9,24 +11,6 @@ enum class CullingMode {
     None,
     Backface,
     Frontface
-};
-
-enum class BlendingFunction {
-    Zero,
-    One,
-    SourceColor,
-    OneMinusSourceColor,
-    DestinationColor,
-    OneMinusDestinationColor,
-    SourceAlpha,
-    OneMinusSourceAlpha,
-    DestinationAlpha,
-    OneMinusDestinationAlpha,
-    ConstantColor,
-    OneMinusConstantColor,
-    ConstantAlpha,
-    OneMinusConstantAlpha,
-    SourceAlphaSaturated,
 };
 
 /**
@@ -66,10 +50,10 @@ struct RasterizingSetupParams
 {
     String vertexPositionOutputPropertyName;
     String modelFormPurpose;
-    CullingMode cullingMode = CullingMode::Backface;
-    BlendingFunction sourceBlending = BlendingFunction::One;
-    BlendingFunction destinationBlending = BlendingFunction::Zero;
     RasterizingMode rasterizingMode = RasterizingMode::DerivationalFillCenters;
+    CullingMode cullingMode = CullingMode::Backface;
+    BlendingDescription blending = BlendingCommon::None;
+    FragmentTestFunction depthTest = FragmentTestFunction::LessOrEqual;
     float lineWidth = 1.0f;
     bool writeDepth : 1 = true;
     bool smoothFilling : 1 = false;
