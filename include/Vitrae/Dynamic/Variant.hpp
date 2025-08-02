@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 
 #include <any>
@@ -380,7 +379,7 @@ class Variant
 
     // buffer management
 
-    inline void freeBuffer(const VariantVTable *oldt)
+    inline constexpr void freeBuffer(const VariantVTable *oldt)
     {
         if (!oldt->hasShortObjectOptimization) {
             std::free(m_val.mp_longVal);
