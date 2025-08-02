@@ -67,15 +67,13 @@ class TypeInfo
         return TypeInfo(p_id, size, alignment, TYPE_META<T>, shortTypeNameGetter);
     }
 
-    template <typename T> static constexpr const TypeInfo GLOBAL_TYPE_INFO = construct<T>();
-
   protected:
-    TypeInfo() = default;
+    TypeInfo() = delete;
     TypeInfo(const TypeInfo &) = default;
     TypeInfo(TypeInfo &&) = default;
 
-    TypeInfo &operator=(const TypeInfo &) = default;
-    TypeInfo &operator=(TypeInfo &&) = default;
+    TypeInfo &operator=(const TypeInfo &) = delete;
+    TypeInfo &operator=(TypeInfo &&) = delete;
 
     constexpr TypeInfo(const std::type_info *p_id, std::size_t size, std::size_t alignment,
                        const PolymorphicTypeMeta &metaDetail,
@@ -95,7 +93,8 @@ class TypeInfo
     }
 };
 
-template <typename T> constexpr const TypeInfo &TYPE_INFO = TypeInfo::GLOBAL_TYPE_INFO<T>;
+template <typename T> constexpr const TypeInfo GLOBAL_TYPE_INFO = TypeInfo::construct<T>();
+template <typename T> constexpr const TypeInfo &TYPE_INFO = GLOBAL_TYPE_INFO<T>;
 
 } // namespace Vitrae
 

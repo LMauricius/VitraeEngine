@@ -90,7 +90,7 @@ class Variant
                       }) {
             table.hasShortObjectOptimization =
                 (sizeof(T) <= sizeof(decltype(Variant::m_val)::m_shortBufferVal) &&
-                 alignof(T) <= alignof(Variant::m_val));
+                 alignof(T) <= alignof(decltype(Variant::m_val)));
             table.size = sizeof(T);
             table.alignment = alignof(T);
         } else {
@@ -223,29 +223,29 @@ class Variant
     // constructors
 
     /// @brief default constructor
-    Variant() : m_val(), m_table(&V_TABLE<void>) {}
+    constexpr Variant() : m_val(), m_table(&V_TABLE<void>) {}
 
     /// @brief constructor with a value
-    template <class T> Variant(T val) : m_table(&V_TABLE<std::decay_t<T>>)
+    template <class T> constexpr Variant(T val) : m_table(&V_TABLE<std::decay_t<T>>)
     {
         allocateBuffer<T>();
         new (&get<T>()) T(val);
     }
     /// @brief copy constructor
-    inline Variant(const Variant &other) : m_table(other.m_table)
+    constexpr Variant(const Variant &other) : m_table(other.m_table)
     {
         allocateTBuffer(m_table);
         m_table->copyConstructor(*this, other);
     }
     /// @brief move constructor
-    inline Variant(Variant &&other) : m_table(other.m_table)
+    constexpr Variant(Variant &&other) : m_table(other.m_table)
     {
         allocateTBuffer(m_table);
         m_table->moveConstructor(*this, other);
     }
 
     /// @brief destructor
-    ~Variant()
+    constexpr ~Variant()
     {
         m_table->destructor(*this);
         freeBuffer(m_table);
@@ -344,7 +344,10 @@ class Variant
      * @returns A hash value for the stored value.
      * @throws std::runtime_error If the stored type is not hashable.
      */
-    constexpr std::size_t hash() const { return m_table->hash(*this) ^ (std::size_t)m_table; }
+    constexpr std::size_t hash() const
+    {
+        return m_table->hash(*this) ^ m_table->p_typeinfo->p_id->hash_code();
+    }
 
   private:
     // member variables
@@ -364,15 +367,15 @@ class Variant
 
     template <class T> constexpr T &getUnsafe()
     {
-        return *reinterpret_cast<T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
-                                          ? (void *)m_val.m_shortBufferVal
-                                          : m_val.mp_longVal);
+        return *static_cast<T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
+                                     ? (void *)m_val.m_shortBufferVal
+                                     : m_val.mp_longVal);
     }
     template <class T> constexpr const T &getUnsafe() const
     {
-        return *reinterpret_cast<const T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
-                                                ? (const void *)m_val.m_shortBufferVal
-                                                : m_val.mp_longVal);
+        return *static_cast<const T *>(V_TABLE<std::decay_t<T>>.hasShortObjectOptimization
+                                           ? (const void *)m_val.m_shortBufferVal
+                                           : m_val.mp_longVal);
     }
 
     // buffer management

@@ -64,12 +64,13 @@ template <class T> class ArgumentGetter
     T *getPtr(const VariantScope &scope) const
     {
         switch (m_nameOrValue.index()) {
-        case 0:
+        case 0: {
             const Variant *p = scope.getPtr(std::get<0>(m_nameOrValue).nameId);
             if (p)
                 return &(p->get<T>());
             else
                 return nullptr;
+        }
         case 1:
         default:
             return &(std::get<1>(m_nameOrValue));

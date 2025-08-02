@@ -135,7 +135,7 @@ template <class KeyT, class MappedT> class StableMap
 
         auto operator-(const AbstractStableMapIterator &other) { return mp_key - other.mp_key; }
 
-        auto operator==(const AbstractStableMapIterator &other) const
+        bool operator==(const AbstractStableMapIterator &other) const
         {
             return mp_key == other.mp_key;
         }

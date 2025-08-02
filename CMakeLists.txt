@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7.0)
+cmake_minimum_required(VERSION 3.12.0)
 project(VitraeEngine VERSION 0.1.0)
 
 include(CTest)
@@ -10,6 +10,8 @@ set(VITRAE_ENABLE_DETERMINISTIC_RENDERING_TIMES OFF CACHE BOOL "Whether CPU shou
 
 file(GLOB_RECURSE SrcFiles CONFIGURE_DEPENDS src/*.cpp)
 file(GLOB_RECURSE HeaderFiles CONFIGURE_DEPENDS include/*.h include/*.hpp)
+
+message("CMAKE_CXX_COMPILE_FEATURES" ${CMAKE_CXX_COMPILE_FEATURES})
 
 add_library(VitraeEngine SHARED ${SrcFiles} ${HeaderFiles})
 target_compile_features(VitraeEngine PUBLIC cxx_std_20)
