@@ -1,5 +1,7 @@
 #pragma once
 
+#include <variant>
+
 namespace Vitrae
 {
 
@@ -235,6 +237,14 @@ enum class BufferStorage_DEPTH_AND_STENCIL {
     NORM24_AND_UNSIGNED8,
     FLOAT32_AND_UNSIGNED8,
 };
+
+using AnyBufferStorage =
+    std::variant<BufferStorage_REAL_SCALAR, BufferStorage_REAL_VEC2, BufferStorage_REAL_VEC3,
+                 BufferStorage_REAL_VEC4, BufferStorage_INT_SCALAR, BufferStorage_INT_VEC2,
+                 BufferStorage_INT_VEC3, BufferStorage_INT_VEC4, BufferStorage_UNSIGNED_SCALAR,
+                 BufferStorage_UNSIGNED_VEC2, BufferStorage_UNSIGNED_VEC3,
+                 BufferStorage_UNSIGNED_VEC4, BufferStorage_DEPTH, BufferStorage_STENCIL,
+                 BufferStorage_DEPTH_AND_STENCIL>;
 
 // ---- Specialization wrappers per BufferType ----
 
