@@ -1,5 +1,6 @@
 #pragma once
 
+#include <utility>
 #include <variant>
 
 namespace Vitrae
@@ -13,24 +14,24 @@ namespace Vitrae
  * the operations that can be performed on the buffer,
  * and where it can be used.
  *
- * Constants are named like this: <Component type>_<Vector size>
+ * Constants are named like this: <Channel type>_<Vector size>
  * The element type is the type of one item of the stored value.
  * The vector size is the number of items of the stored value.
  *
- * Component types:
+ * Channel types:
  *  - REAL - A real value, with a number of decimal places
  *  - WHOLE - A signed integer (whole) value
  *  - COUNT - An unsigned integer (counting) value
  *
  * Vector sizes:
- *  - SCALAR - the value has a single component, so not a vector at all
- *  - VEC2 - 2 components stored in the value
- *  - VEC3 - 3 components stored in the value
- *  - VEC4 - 4 components stored in the value
+ *  - SCALAR - the value has a single channel, so not a vector at all
+ *  - VEC2 - 2 channels stored in the value
+ *  - VEC3 - 3 channels stored in the value
+ *  - VEC4 - 4 channels stored in the value
  *
  * For convenience, the following aliases are defined:
- *  - COLOR - A 3 component real number vector holding an RGB color
- *  - TRANSPARENT - A 4 component real number vector holding an RGBA color
+ *  - COLOR - A 3 channel real number vector holding an RGB color
+ *  - TRANSPARENT - A 4 channel real number vector holding an RGBA color
  *
  * There are some special types that generally require special handling:
  *  - DEPTH -  Distance of rendered geometry (a special real number value)
@@ -62,13 +63,17 @@ template <BufferType BUFFER_TYPE> struct BufferTypeSpecialization;
 
 /**
  * Storage format specification of image (and other) buffers.
- * This value specified how the bits in memory represent data in our buffers
+ * This value specifies how the bits in memory represent data in our buffers
  * Each BufferType has its own format constants.
+ *
+ * While BufferType elements are channels of vector values, BufferFormat elements are slots of
+ * entry values. This naming scheme is used because the order of channels doesn't have to be the
+ * same as the order of stored entry slots (see SwizzleSpec).
  *
  * The constants are named in the format of <Base type><Bit count>, with some exceptions.
  * The base type is the format of each element.
- * The bit count is the number of bits per element. Some storage types use a different bit coult per
- * each component of the vector, in which case the bit counts are given in order.
+ * The bit count is the number of bits per element. Some storage types use a different bit count per
+ * each slot of the entry, in which case the bit counts are given in order.
  *
  * Base types:
  *  - FLOAT - Floating point value, with the range and precision depending on the bit count
@@ -94,13 +99,20 @@ template <BufferType BT> using BufferFormat = typename BufferTypeSpecialization<
 
 /**
  * A variant of all BufferFormat formats that can store data for the specified BufferType.
- * Generally, you can use any format with the same component type but a different vector size.
+ * Generally, you can use any format with the same channel type but a different vector size.
  * @note If not using the native format (i.e. BufferFormat<BT> with BT being the BufferType),
- * you should use the texture component swizzling to specify how native type components are
+ * you should use the texture channel swizzling to specify how native type channels are
  * calculated from the stored data.
  */
 template <BufferType BT>
 using CompatibleBufferFormat = typename BufferTypeSpecialization<BT>::CompatibleBufferFormat;
+
+/**
+ * The native (CPU) channel type of the specified BufferType.
+ * @note For BufferType::DEPTH_AND_STENCIL, this is a pair of native types
+ */
+template <BufferType BT>
+using NativeChannelType = typename BufferTypeSpecialization<BT>::NativeChannelType;
 
 enum class BufferFormat_REAL_SCALAR {
     GENERIC_FULL,
@@ -261,6 +273,8 @@ template <> struct BufferTypeSpecialization<BufferType::REAL_SCALAR>
     using BufferFormat = BufferFormat_REAL_SCALAR;
     using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
                                                 BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
+    using NativeChannelType = float;
+    constexpr static std::size_t CHANNEL_COUNT = 1;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_VEC2>
@@ -268,6 +282,8 @@ template <> struct BufferTypeSpecialization<BufferType::REAL_VEC2>
     using BufferFormat = BufferFormat_REAL_VEC2;
     using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
                                                 BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
+    using NativeChannelType = float;
+    constexpr static std::size_t CHANNEL_COUNT = 2;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_VEC3>
@@ -275,6 +291,8 @@ template <> struct BufferTypeSpecialization<BufferType::REAL_VEC3>
     using BufferFormat = BufferFormat_REAL_VEC3;
     using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
                                                 BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
+    using NativeChannelType = float;
+    constexpr static std::size_t CHANNEL_COUNT = 3;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_VEC4>
@@ -282,6 +300,8 @@ template <> struct BufferTypeSpecialization<BufferType::REAL_VEC4>
     using BufferFormat = BufferFormat_REAL_VEC4;
     using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
                                                 BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
+    using NativeChannelType = float;
+    constexpr static std::size_t CHANNEL_COUNT = 4;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::WHOLE_SCALAR>
@@ -289,6 +309,8 @@ template <> struct BufferTypeSpecialization<BufferType::WHOLE_SCALAR>
     using BufferFormat = BufferFormat_WHOLE_SCALAR;
     using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
                                                 BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
+    using NativeChannelType = int;
+    constexpr static std::size_t CHANNEL_COUNT = 1;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC2>
@@ -296,6 +318,8 @@ template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC2>
     using BufferFormat = BufferFormat_WHOLE_VEC2;
     using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
                                                 BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
+    using NativeChannelType = int;
+    constexpr static std::size_t CHANNEL_COUNT = 2;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC3>
@@ -303,6 +327,8 @@ template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC3>
     using BufferFormat = BufferFormat_WHOLE_VEC3;
     using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
                                                 BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
+    using NativeChannelType = int;
+    constexpr static std::size_t CHANNEL_COUNT = 3;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC4>
@@ -310,6 +336,8 @@ template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC4>
     using BufferFormat = BufferFormat_WHOLE_VEC4;
     using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
                                                 BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
+    using NativeChannelType = int;
+    constexpr static std::size_t CHANNEL_COUNT = 4;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::COUNT_SCALAR>
@@ -317,6 +345,8 @@ template <> struct BufferTypeSpecialization<BufferType::COUNT_SCALAR>
     using BufferFormat = BufferFormat_COUNT_SCALAR;
     using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
                                                 BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
+    using NativeChannelType = unsigned int;
+    constexpr static std::size_t CHANNEL_COUNT = 1;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC2>
@@ -324,6 +354,8 @@ template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC2>
     using BufferFormat = BufferFormat_COUNT_VEC2;
     using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
                                                 BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
+    using NativeChannelType = unsigned int;
+    constexpr static std::size_t CHANNEL_COUNT = 2;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC3>
@@ -331,6 +363,8 @@ template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC3>
     using BufferFormat = BufferFormat_COUNT_VEC3;
     using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
                                                 BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
+    using NativeChannelType = unsigned int;
+    constexpr static std::size_t CHANNEL_COUNT = 3;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC4>
@@ -338,24 +372,32 @@ template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC4>
     using BufferFormat = BufferFormat_COUNT_VEC4;
     using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
                                                 BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
+    using NativeChannelType = unsigned int;
+    constexpr static std::size_t CHANNEL_COUNT = 4;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::DEPTH>
 {
     using BufferFormat = BufferFormat_DEPTH;
     using CompatibleBufferFormat = std::variant<BufferFormat_DEPTH>;
+    using NativeChannelType = float;
+    constexpr static std::size_t CHANNEL_COUNT = 1;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::DEPTH_AND_STENCIL>
 {
     using BufferFormat = BufferFormat_DEPTH_AND_STENCIL;
     using CompatibleBufferFormat = std::variant<BufferFormat_DEPTH_AND_STENCIL>;
+    using NativeChannelType = std::pair<float, unsigned int>;
+    constexpr static std::size_t CHANNEL_COUNT = 1;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::STENCIL>
 {
     using BufferFormat = BufferFormat_STENCIL;
     using CompatibleBufferFormat = std::variant<BufferFormat_STENCIL>;
+    using NativeChannelType = unsigned int;
+    constexpr static std::size_t CHANNEL_COUNT = 1;
 };
 
 } // namespace Vitrae

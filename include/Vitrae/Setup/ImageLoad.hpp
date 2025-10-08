@@ -2,6 +2,7 @@
 
 #include "Vitrae/Data/BufferFormat.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
+#include "Vitrae/Setup/Swizzle.hpp"
 
 #include "glm/glm.hpp"
 
@@ -24,8 +25,10 @@ template <BufferType BUFFER_TYPE, typename SizeT> struct EmptyParams
     ComponentRoot &root;
     SizeT size;
     BufferFormat<BUFFER_TYPE> storageFormat;
+    SwizzleSpec<BUFFER_TYPE> swizzle = CommonSwizzleSpecs<BUFFER_TYPE>::NATURAL;
     String friendlyName = "";
 };
+
 template <BufferType BUFFER_TYPE> struct PureColorParams
 {
     ComponentRoot &root;
