@@ -29,10 +29,10 @@ struct ShadingImageUse
     TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
 
     /// How we interpret the image buffer when reading from it, or UNUSED if we don't read from it
-    std::variant<UnusedT, AnyBufferStorage> bufferReadFormat = UNUSED;
+    std::variant<UnusedT, AnyBufferFormat> bufferReadFormat = UNUSED;
 
     /// How we interpret the image buffer when writing to it, or UNUSED if we don't write to it
-    std::variant<UnusedT, AnyBufferStorage> bufferWriteFormat = UNUSED;
+    std::variant<UnusedT, AnyBufferFormat> bufferWriteFormat = UNUSED;
 };
 
 } // namespace Vitrae

@@ -23,14 +23,14 @@ template <BufferType BUFFER_TYPE, typename SizeT> struct EmptyParams
 {
     ComponentRoot &root;
     SizeT size;
-    BufferStorage<BUFFER_TYPE> storageFormat;
+    BufferFormat<BUFFER_TYPE> storageFormat;
     String friendlyName = "";
 };
 template <BufferType BUFFER_TYPE> struct PureColorParams
 {
     ComponentRoot &root;
     glm::vec4 color;
-    BufferStorage<BUFFER_TYPE> storageFormat;
+    BufferFormat<BUFFER_TYPE> storageFormat;
 };
 
 } // namespace ImageCommon

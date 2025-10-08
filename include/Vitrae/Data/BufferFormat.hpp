@@ -19,8 +19,8 @@ namespace Vitrae
  *
  * Component types:
  *  - REAL - A real value, with a number of decimal places
- *  - INT - A signed integer value
- *  - UNSIGNED - An unsigned integer value
+ *  - WHOLE - A signed integer (whole) value
+ *  - COUNT - An unsigned integer (counting) value
  *
  * Vector sizes:
  *  - SCALAR - the value has a single component, so not a vector at all
@@ -29,8 +29,8 @@ namespace Vitrae
  *  - VEC4 - 4 components stored in the value
  *
  * For convenience, the following aliases are defined:
- *  - COLOR_OPAQUE - A 3 component real number vector holding an RGB color
- *  - COLOR_TRANSPARENT - A 4 component real number vector holding an RGBA color
+ *  - COLOR - A 3 component real number vector holding an RGB color
+ *  - TRANSPARENT - A 4 component real number vector holding an RGBA color
  *
  * There are some special types that generally require special handling:
  *  - DEPTH -  Distance of rendered geometry (a special real number value)
@@ -42,19 +42,19 @@ enum class BufferType {
     REAL_VEC2,
     REAL_VEC3,
     REAL_VEC4,
-    INT_SCALAR,
-    INT_VEC2,
-    INT_VEC3,
-    INT_VEC4,
-    UNSIGNED_SCALAR,
-    UNSIGNED_VEC2,
-    UNSIGNED_VEC3,
-    UNSIGNED_VEC4,
+    WHOLE_SCALAR,
+    WHOLE_VEC2,
+    WHOLE_VEC3,
+    WHOLE_VEC4,
+    COUNT_SCALAR,
+    COUNT_VEC2,
+    COUNT_VEC3,
+    COUNT_VEC4,
     DEPTH,
     STENCIL,
     DEPTH_AND_STENCIL,
-    COLOR_OPAQUE = REAL_VEC3,
-    COLOR_TRANSPARENT = REAL_VEC4,
+    COLOR = REAL_VEC3,
+    TRANSPARENT = REAL_VEC4,
 };
 
 // used for specializing enums and types tied to a specific BufferType
@@ -75,139 +75,148 @@ template <BufferType BUFFER_TYPE> struct BufferTypeSpecialization;
  *  - UFLOAT - Unsigned floating point value (stored without the sign bit)
  *  - INT - Signed integer value, with the range depending on the bit count
  *  - UNSIGNED - Unsigned integer value, with the range depending on the bit count
- *  - UNORM - Signed normalized float value in the range [0.0, 1.0], stored as an unsigned integer
- *  - SNORM - Unsigned normalized float value in the range [-1.0, 1.0], stored as a signed integer
- *  - NORM - Normalized float value for types where there is no difference of unsigned or signed
+ *  - NORM - Unsigned normalized float value in the range [0.0, 1.0], stored as an unsigned integer
+ *  - SNORM - Signed normalized float value in the range [-1.0, 1.0], stored as a signed integer
  *
  * Special types:
  *  - GENERIC / GENERIC_FULL - Large ranged value, with the format left to the implementation
- *  - GENERIC_UNORM - Value in the range [0.0, 1.0], with the format left to the implementation
+ *  - GENERIC_NORM - Value in the range [0.0, 1.0], with the format left to the implementation
  *  - BOOL - Either 1 or 0, i.e. unsigned integer with 1 bit
  *  - LINEAR_COLOR - Value in the range [0.0, 1.0], fitting for the linear color space
  *  - SRGB_COLOR - Value in the range [0.0, 1.0], fitting for the sRGB color space
  *  - SRGB_ALPHA_COLOR - sRGB color, with the alpha in linear color space
  *  - <*>_EXP<Bits> - Vector of floating point values with a shared exponent of specified bits
  *
- * @note Alternatively you can use constants from enum classes named as BufferStorage_TYPE,
+ * @note Alternatively you can use constants from enum classes named as BufferFormat_TYPE,
  * where TYPE is the BufferType that would be passed as a template parameter
  */
-template <BufferType BT> using BufferStorage = typename BufferTypeSpecialization<BT>::BufferStorage;
+template <BufferType BT> using BufferFormat = typename BufferTypeSpecialization<BT>::BufferFormat;
 
-enum class BufferStorage_REAL_SCALAR {
+/**
+ * A variant of all BufferFormat formats that can store data for the specified BufferType.
+ * Generally, you can use any format with the same component type but a different vector size.
+ * @note If not using the native format (i.e. BufferFormat<BT> with BT being the BufferType),
+ * you should use the texture component swizzling to specify how native type components are
+ * calculated from the stored data.
+ */
+template <BufferType BT>
+using CompatibleBufferFormat = typename BufferTypeSpecialization<BT>::CompatibleBufferFormat;
+
+enum class BufferFormat_REAL_SCALAR {
     GENERIC_FULL,
-    GENERIC_UNORM,
+    GENERIC_NORM,
     LINEAR_COLOR,
     FLOAT16,
     FLOAT32,
-    UNORM8,
-    UNORM16,
+    NORM8,
+    NORM16,
     SNORM8,
     SNORM16,
 };
 
-enum class BufferStorage_REAL_VEC2 {
+enum class BufferFormat_REAL_VEC2 {
     GENERIC_FULL,
-    GENERIC_UNORM,
+    GENERIC_NORM,
     LINEAR_COLOR,
     FLOAT16,
     FLOAT32,
-    UNORM8,
-    UNORM16,
+    NORM8,
+    NORM16,
     SNORM8,
     SNORM16,
 };
 
-enum class BufferStorage_REAL_VEC3 {
+enum class BufferFormat_REAL_VEC3 {
     GENERIC_FULL,
-    GENERIC_UNORM,
+    GENERIC_NORM,
     LINEAR_COLOR,
     SRGB_COLOR,
     FLOAT16,
     FLOAT32,
-    UNORM4,
-    UNORM5,
-    UNORM8,
-    UNORM10,
-    UNORM12,
-    UNORM16,
+    NORM4,
+    NORM5,
+    NORM8,
+    NORM10,
+    NORM12,
+    NORM16,
     SNORM8,
     SNORM16,
 
-    UNORM_3_3_2,
+    NORM_3_3_2,
     UFLOAT_11_11_10,
     UFLOAT9_EXP5,
-    UNORM_5_6_5,
+    NORM_5_6_5,
 };
 
-enum class BufferStorage_REAL_VEC4 {
+enum class BufferFormat_REAL_VEC4 {
     GENERIC_FULL,
-    GENERIC_UNORM,
+    GENERIC_NORM,
     LINEAR_COLOR,
     SRGB_ALPHA_COLOR,
     FLOAT16,
     FLOAT32,
-    UNORM2,
-    UNORM4,
-    UNORM8,
-    UNORM12,
-    UNORM16,
+    NORM2,
+    NORM4,
+    NORM8,
+    NORM12,
+    NORM16,
     SNORM8,
     SNORM16,
 
-    UNORM_5_5_5_1,
-    UNORM_10_10_10_2,
+    NORM_5_5_5_1,
+    NORM_10_10_10_2,
 };
 
-enum class BufferStorage_INT_SCALAR {
+enum class BufferFormat_WHOLE_SCALAR {
     GENERIC,
     INT8,
     INT16,
     INT32,
 };
 
-enum class BufferStorage_INT_VEC2 {
+enum class BufferFormat_WHOLE_VEC2 {
     GENERIC,
     INT8,
     INT16,
     INT32,
 };
 
-enum class BufferStorage_INT_VEC3 {
+enum class BufferFormat_WHOLE_VEC3 {
     GENERIC,
     INT8,
     INT16,
     INT32,
 };
 
-enum class BufferStorage_INT_VEC4 {
+enum class BufferFormat_WHOLE_VEC4 {
     GENERIC,
     INT8,
     INT16,
     INT32,
 };
 
-enum class BufferStorage_UNSIGNED_SCALAR {
+enum class BufferFormat_COUNT_SCALAR {
     GENERIC,
     UNSIGNED8,
     UNSIGNED16,
     UNSIGNED32,
 };
 
-enum class BufferStorage_UNSIGNED_VEC2 {
+enum class BufferFormat_COUNT_VEC2 {
     GENERIC,
     UNSIGNED8,
     UNSIGNED16,
     UNSIGNED32,
 };
 
-enum class BufferStorage_UNSIGNED_VEC3 {
+enum class BufferFormat_COUNT_VEC3 {
     GENERIC,
     UNSIGNED8,
     UNSIGNED16,
     UNSIGNED32,
 };
 
-enum class BufferStorage_UNSIGNED_VEC4 {
+enum class BufferFormat_COUNT_VEC4 {
     GENERIC,
     UNSIGNED8,
     UNSIGNED16,
@@ -216,7 +225,7 @@ enum class BufferStorage_UNSIGNED_VEC4 {
     UNSIGNED_10_10_10_2,
 };
 
-enum class BufferStorage_DEPTH {
+enum class BufferFormat_DEPTH {
     GENERIC,
     NORM16,
     NORM24,
@@ -224,7 +233,7 @@ enum class BufferStorage_DEPTH {
     FLOAT32,
 };
 
-enum class BufferStorage_STENCIL {
+enum class BufferFormat_STENCIL {
     GENERIC,
     BOOL,
     UNSIGNED4,
@@ -232,95 +241,121 @@ enum class BufferStorage_STENCIL {
     UNSIGNED16,
 };
 
-enum class BufferStorage_DEPTH_AND_STENCIL {
+enum class BufferFormat_DEPTH_AND_STENCIL {
     GENERIC,
-    NORM24_AND_UNSIGNED8,
-    FLOAT32_AND_UNSIGNED8,
+    NORM24_UNSIGNED8,
+    FLOAT32_UNSIGNED8,
 };
 
-using AnyBufferStorage =
-    std::variant<BufferStorage_REAL_SCALAR, BufferStorage_REAL_VEC2, BufferStorage_REAL_VEC3,
-                 BufferStorage_REAL_VEC4, BufferStorage_INT_SCALAR, BufferStorage_INT_VEC2,
-                 BufferStorage_INT_VEC3, BufferStorage_INT_VEC4, BufferStorage_UNSIGNED_SCALAR,
-                 BufferStorage_UNSIGNED_VEC2, BufferStorage_UNSIGNED_VEC3,
-                 BufferStorage_UNSIGNED_VEC4, BufferStorage_DEPTH, BufferStorage_STENCIL,
-                 BufferStorage_DEPTH_AND_STENCIL>;
+using AnyBufferFormat =
+    std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2, BufferFormat_REAL_VEC3,
+                 BufferFormat_REAL_VEC4, BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
+                 BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4, BufferFormat_COUNT_SCALAR,
+                 BufferFormat_COUNT_VEC2, BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4,
+                 BufferFormat_DEPTH, BufferFormat_STENCIL, BufferFormat_DEPTH_AND_STENCIL>;
 
 // ---- Specialization wrappers per BufferType ----
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_SCALAR>
 {
-    using BufferStorage = BufferStorage_REAL_SCALAR;
+    using BufferFormat = BufferFormat_REAL_SCALAR;
+    using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
+                                                BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_VEC2>
 {
-    using BufferStorage = BufferStorage_REAL_VEC2;
+    using BufferFormat = BufferFormat_REAL_VEC2;
+    using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
+                                                BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_VEC3>
 {
-    using BufferStorage = BufferStorage_REAL_VEC3;
+    using BufferFormat = BufferFormat_REAL_VEC3;
+    using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
+                                                BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_VEC4>
 {
-    using BufferStorage = BufferStorage_REAL_VEC4;
+    using BufferFormat = BufferFormat_REAL_VEC4;
+    using CompatibleBufferFormat = std::variant<BufferFormat_REAL_SCALAR, BufferFormat_REAL_VEC2,
+                                                BufferFormat_REAL_VEC3, BufferFormat_REAL_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::INT_SCALAR>
+template <> struct BufferTypeSpecialization<BufferType::WHOLE_SCALAR>
 {
-    using BufferStorage = BufferStorage_INT_SCALAR;
+    using BufferFormat = BufferFormat_WHOLE_SCALAR;
+    using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
+                                                BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::INT_VEC2>
+template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC2>
 {
-    using BufferStorage = BufferStorage_INT_VEC2;
+    using BufferFormat = BufferFormat_WHOLE_VEC2;
+    using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
+                                                BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::INT_VEC3>
+template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC3>
 {
-    using BufferStorage = BufferStorage_INT_VEC3;
+    using BufferFormat = BufferFormat_WHOLE_VEC3;
+    using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
+                                                BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::INT_VEC4>
+template <> struct BufferTypeSpecialization<BufferType::WHOLE_VEC4>
 {
-    using BufferStorage = BufferStorage_INT_VEC4;
+    using BufferFormat = BufferFormat_WHOLE_VEC4;
+    using CompatibleBufferFormat = std::variant<BufferFormat_WHOLE_SCALAR, BufferFormat_WHOLE_VEC2,
+                                                BufferFormat_WHOLE_VEC3, BufferFormat_WHOLE_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::UNSIGNED_SCALAR>
+template <> struct BufferTypeSpecialization<BufferType::COUNT_SCALAR>
 {
-    using BufferStorage = BufferStorage_UNSIGNED_SCALAR;
+    using BufferFormat = BufferFormat_COUNT_SCALAR;
+    using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
+                                                BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::UNSIGNED_VEC2>
+template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC2>
 {
-    using BufferStorage = BufferStorage_UNSIGNED_VEC2;
+    using BufferFormat = BufferFormat_COUNT_VEC2;
+    using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
+                                                BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::UNSIGNED_VEC3>
+template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC3>
 {
-    using BufferStorage = BufferStorage_UNSIGNED_VEC3;
+    using BufferFormat = BufferFormat_COUNT_VEC3;
+    using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
+                                                BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
 };
 
-template <> struct BufferTypeSpecialization<BufferType::UNSIGNED_VEC4>
+template <> struct BufferTypeSpecialization<BufferType::COUNT_VEC4>
 {
-    using BufferStorage = BufferStorage_UNSIGNED_VEC4;
+    using BufferFormat = BufferFormat_COUNT_VEC4;
+    using CompatibleBufferFormat = std::variant<BufferFormat_COUNT_SCALAR, BufferFormat_COUNT_VEC2,
+                                                BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4>;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::DEPTH>
 {
-    using BufferStorage = BufferStorage_DEPTH;
+    using BufferFormat = BufferFormat_DEPTH;
+    using CompatibleBufferFormat = std::variant<BufferFormat_DEPTH>;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::DEPTH_AND_STENCIL>
 {
-    using BufferStorage = BufferStorage_DEPTH_AND_STENCIL;
+    using BufferFormat = BufferFormat_DEPTH_AND_STENCIL;
+    using CompatibleBufferFormat = std::variant<BufferFormat_DEPTH_AND_STENCIL>;
 };
 
 template <> struct BufferTypeSpecialization<BufferType::STENCIL>
 {
-    using BufferStorage = BufferStorage_STENCIL;
+    using BufferFormat = BufferFormat_STENCIL;
+    using CompatibleBufferFormat = std::variant<BufferFormat_STENCIL>;
 };
 
 } // namespace Vitrae

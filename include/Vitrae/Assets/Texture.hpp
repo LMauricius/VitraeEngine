@@ -37,6 +37,8 @@ class TextureBase : public dynasma::PolymorphicBase
     virtual glm::uvec4 getNDSize() const = 0;
     virtual std::size_t getNumDimensions() const = 0;
     const std::optional<TextureStats> &getStats() const { return m_stats; }
+    virtual BufferType getBufferType() const = 0;
+    virtual AnyBufferFormat getAnyBufferFormat() const = 0;
 
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
@@ -83,6 +85,9 @@ template <BufferType BUFFER_TYPE> class Texture1D : public TextureBase
     unsigned int getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1, 1}; }
     std::size_t getNumDimensions() const override { return 1; }
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 
     virtual dynasma::LazyPtr<Image1D<BUFFER_TYPE>> getImage() const = 0;
 
@@ -103,6 +108,9 @@ template <BufferType BUFFER_TYPE> class Texture2D : public TextureBase
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 
     virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage() const = 0;
 
@@ -123,6 +131,9 @@ template <BufferType BUFFER_TYPE> class Texture3D : public TextureBase
     glm::uvec3 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 
     virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(unsigned int z) const = 0;
 
@@ -143,6 +154,9 @@ template <BufferType BUFFER_TYPE> class TextureCubemap : public TextureBase
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 6, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 
     virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(Side side) const = 0;
 
@@ -163,6 +177,9 @@ template <BufferType BUFFER_TYPE> class Texture1DArray : public TextureBase
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 
     virtual dynasma::LazyPtr<Image1D<BUFFER_TYPE>> getImage(unsigned int index) const = 0;
 
@@ -183,6 +200,9 @@ template <BufferType BUFFER_TYPE> class Texture2DArray : public TextureBase
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 
     virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(unsigned int index) const = 0;
 
@@ -203,6 +223,9 @@ template <BufferType BUFFER_TYPE> class TextureCubemapArray : public TextureBase
     glm::uvec3 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size.x, m_size.y, m_size.z, 1}; }
     std::size_t getNumDimensions() const override { return 4; }
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 
     virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(Side side,
                                                             unsigned int index) const = 0;
