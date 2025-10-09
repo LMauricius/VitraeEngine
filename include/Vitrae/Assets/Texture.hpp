@@ -75,9 +75,11 @@ template <class TextureT> using TextureManager = dynasma::AbstractManager<Textur
 /**
  * A 1D image
  */
-template <BufferType BUFFER_TYPE> class Texture1D : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture1D : public TextureBase
 {
   public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
@@ -98,9 +100,11 @@ template <BufferType BUFFER_TYPE> class Texture1D : public TextureBase
 /**
  * A 2D image
  */
-template <BufferType BUFFER_TYPE> class Texture2D : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture2D : public TextureBase
 {
   public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
@@ -121,9 +125,11 @@ template <BufferType BUFFER_TYPE> class Texture2D : public TextureBase
 /**
  * A 3D image
  */
-template <BufferType BUFFER_TYPE> class Texture3D : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture3D : public TextureBase
 {
   public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
@@ -144,9 +150,11 @@ template <BufferType BUFFER_TYPE> class Texture3D : public TextureBase
 /**
  * A 3D collection of 6 2D images used for cubemapping
  */
-template <BufferType BUFFER_TYPE> class TextureCubemap : public TextureBase
+template <BufferType TBUFFER_TYPE> class TextureCubemap : public TextureBase
 {
   public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
@@ -167,9 +175,11 @@ template <BufferType BUFFER_TYPE> class TextureCubemap : public TextureBase
 /**
  * A list of 1D images, each a layer of 1 asset
  */
-template <BufferType BUFFER_TYPE> class Texture1DArray : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture1DArray : public TextureBase
 {
   public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
@@ -190,9 +200,11 @@ template <BufferType BUFFER_TYPE> class Texture1DArray : public TextureBase
 /**
  * A list of 2D images
  */
-template <BufferType BUFFER_TYPE> class Texture2DArray : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture2DArray : public TextureBase
 {
   public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
@@ -213,9 +225,11 @@ template <BufferType BUFFER_TYPE> class Texture2DArray : public TextureBase
 /**
  * A list of cubemap images
  */
-template <BufferType BUFFER_TYPE> class TextureCubemapArray : public TextureBase
+template <BufferType TBUFFER_TYPE> class TextureCubemapArray : public TextureBase
 {
   public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;

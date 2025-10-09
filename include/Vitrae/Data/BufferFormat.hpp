@@ -3,6 +3,8 @@
 #include <utility>
 #include <variant>
 
+#include <glm/glm.hpp>
+
 namespace Vitrae
 {
 
@@ -113,6 +115,19 @@ using CompatibleBufferFormat = typename BufferTypeSpecialization<BT>::Compatible
  */
 template <BufferType BT>
 using NativeChannelType = typename BufferTypeSpecialization<BT>::NativeChannelType;
+
+/**
+ * The number of channels in the specified BufferType.
+ */
+template <BufferType BT>
+constexpr std::size_t CHANNEL_COUNT = BufferTypeSpecialization<BT>::CHANNEL_COUNT;
+
+/**
+ * The native (CPU) vector/scalar type of a single entry of the specified BufferType.
+ */
+template <BufferType BT>
+using BufferValueType = std::conditional_t<(CHANNEL_COUNT<BT> == 1), NativeChannelType<BT>,
+                                           glm::vec<CHANNEL_COUNT<BT>, NativeChannelType<BT>>>;
 
 enum class BufferFormat_REAL_SCALAR {
     GENERIC_FULL,
