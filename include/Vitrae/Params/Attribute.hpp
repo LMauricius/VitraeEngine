@@ -19,7 +19,7 @@ struct PolymorphicParamAttribute
 template <class... CompAttrT>
 struct CompoundParamAttribute : public PolymorphicParamAttribute, public CompAttrT...
 {
-    CompoundParamAttribute(const CompAttrT &&...attrInit)
+    constexpr CompoundParamAttribute(const CompAttrT &&...attrInit)
         : PolymorphicParamAttribute(), CompAttrT(attrInit)...
     {}
 };
@@ -38,9 +38,9 @@ class AttributeWrapper
     const PolymorphicParamAttribute *p_attributes;
 
   public:
-    AttributeWrapper(AttributeWrapper &&) = default;
-    AttributeWrapper(const AttributeWrapper &) = default;
-    AttributeWrapper(const PolymorphicParamAttribute &attr) : p_attributes(&attr) {}
+    constexpr AttributeWrapper(AttributeWrapper &&) = default;
+    constexpr AttributeWrapper(const AttributeWrapper &) = default;
+    constexpr AttributeWrapper(const PolymorphicParamAttribute &attr) : p_attributes(&attr) {}
 
     /**
      * A constructor that takes ParamAttribute values and constructs a reference to a global
@@ -63,8 +63,8 @@ class AttributeWrapper
     consteval AttributeWrapper(const CompAttrT &...attr) : p_attributes{&GLOBAL_ATTRIBUTE<attr...>}
     {}
 
-    AttributeWrapper &operator=(const AttributeWrapper &) = default;
-    AttributeWrapper &operator=(AttributeWrapper &&) = default;
+    constexpr AttributeWrapper &operator=(const AttributeWrapper &) = default;
+    constexpr AttributeWrapper &operator=(AttributeWrapper &&) = default;
 };
 
 } // namespace Vitrae
