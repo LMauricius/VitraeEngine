@@ -266,7 +266,26 @@ using AnyBufferFormat =
                  BufferFormat_COUNT_VEC2, BufferFormat_COUNT_VEC3, BufferFormat_COUNT_VEC4,
                  BufferFormat_DEPTH, BufferFormat_STENCIL, BufferFormat_DEPTH_AND_STENCIL>;
 
-// ---- Specialization wrappers per BufferType ----
+// ==== Helpers for handling all these types =======================================================
+
+/**
+ * Calls the templated visitor on all BufferTypes
+ * @param visitor its operator() has to accept a BufferType as its template parameter
+ * @param args The arguments to pass to the visitor
+ * @note You can use a template lambda for this
+ * @example @code
+ *  forBufferTypes(
+ *      []<BufferType BT>(std::string_view str) {
+ *          std::print("{}{}\n", str, BT)
+ *      },
+ *      "BufTp: "
+ *  );
+ * @endcode
+ */
+template <class VisitorT, typename... ArgTs>
+constexpr void forBufferTypes(VisitorT &visitor, ArgTs &&...args);
+
+// ==== Specialization wrappers per BufferType =====================================================
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_SCALAR>
 {
@@ -399,5 +418,27 @@ template <> struct BufferTypeSpecialization<BufferType::STENCIL>
     using NativeChannelType = unsigned int;
     constexpr static std::size_t CHANNEL_COUNT = 1;
 };
+
+// ==== Helper implementation ======================================================================
+
+template <class VisitorT, typename... ArgTs>
+constexpr void forBufferTypes(VisitorT &visitor, ArgTs &&...args)
+{
+    visitor.template operator()<BufferType::REAL_SCALAR>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::REAL_VEC2>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::REAL_VEC3>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::REAL_VEC4>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::WHOLE_SCALAR>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::WHOLE_VEC2>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::WHOLE_VEC3>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::WHOLE_VEC4>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::COUNT_SCALAR>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::COUNT_VEC2>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::COUNT_VEC3>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::COUNT_VEC4>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::DEPTH>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::STENCIL>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<BufferType::DEPTH_AND_STENCIL>(std::forward<ArgTs>(args)...);
+}
 
 } // namespace Vitrae

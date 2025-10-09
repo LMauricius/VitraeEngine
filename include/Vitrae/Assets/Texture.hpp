@@ -11,7 +11,7 @@
 #include "dynasma/managers/abstract.hpp"
 
 #include "dynasma/pointer.hpp"
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 
 #include <optional>
 
@@ -233,5 +233,62 @@ template <BufferType BUFFER_TYPE> class TextureCubemapArray : public TextureBase
   protected:
     glm::uvec3 m_size;
 };
+
+// ==== Helpers for handling all these types =======================================================
+
+/**
+ * Calls the templated visitor on all Texture_<BufferType> templates
+ * @param visitor its operator() has to accept a Texture_<BufferType> template as its parameter
+ * @param args The arguments to pass to the visitor
+ * @note You can use a template template parametrized lambda for this
+ * @example @code
+ *  forTextureTemplates(
+ *      []<template<BufferType> class Texture>(std::string_view str) {
+ *          std::print("{}{}\n", str, TYPE_INFO<Texture<BufferType::REAL_SCALAR>>.getShortName())
+ *      },
+ *      "TexTp: "
+ *  );
+ * @endcode
+ */
+template <class VisitorT, typename... ArgTs>
+constexpr void forTextureTemplates(VisitorT &visitor, ArgTs &&...args);
+
+/**
+ * @note You can use a template lambda for this
+ * @example @code
+ *  forTextureTypes(
+ *      []<class Texture>(std::string_view str) {
+ *          std::print("{}{}\n", str, TYPE_INFO<Texture>.getShortName())
+ *      },
+ *      "TexTp: "
+ *  );
+ * @endcode
+ */
+template <class VisitorT, typename... ArgTs>
+constexpr void forTextureTypes(VisitorT &visitor, ArgTs &&...args);
+
+// ==== Helper implementation ======================================================================
+
+template <class VisitorT, typename... ArgTs>
+constexpr void forTextureTemplates(VisitorT &visitor, ArgTs &&...args)
+{
+    visitor.template operator()<Texture1D>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<Texture2D>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<Texture3D>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<TextureCubemap>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<Texture1DArray>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<Texture2DArray>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<TextureCubemapArray>(std::forward<ArgTs>(args)...);
+}
+
+template <class VisitorT, typename... ArgTs>
+constexpr void forTextureTypes(VisitorT &visitor, ArgTs &&...args)
+{
+    forTextureTemplates([&]<template <BufferType> class Texture> {
+        forBufferTypes([&]<BufferType BT> {
+            visitor.template operator()<Texture<BT>>(std::forward<ArgTs>(args)...);
+        });
+    });
+}
 
 } // namespace Vitrae
