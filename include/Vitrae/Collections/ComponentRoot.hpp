@@ -1,22 +1,13 @@
 #pragma once
 
 #include "Vitrae/Containers/StableMap.hpp"
-#include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Dynamic/UniqueAnyPtr.hpp"
-#include "Vitrae/Pipelines/Method.hpp"
 #include "Vitrae/Pipelines/Shading/Task.hpp"
 #include "Vitrae/Util/UniqueId.hpp"
 
-#include "assimp/material.h"
-#include "dynasma/cachers/abstract.hpp"
-#include "dynasma/managers/abstract.hpp"
-#include "dynasma/pointer.hpp"
+#include "dynasma/pool.hpp"
 
-#include <any>
-#include <map>
-#include <memory>
-#include <span>
 #include <vector>
 
 class aiMesh;
@@ -39,16 +30,14 @@ class ComponentRoot
     ComponentRoot();
     ~ComponentRoot();
 
-    /*
-    === Components ===
-    */
+    // ---- Generic components ---------------------------------------------------------------------
 
     /**
-    Sets the component of a particular type and
-    takes its ownership.
-    @param comp The component pointer to set
-    */
-    template <class T> void setComponent(Unique<T> comp)
+     * Sets the component of a particular type and takes its ownership.
+     * @tparam T The component type
+     * @param comp The component pointer to set. Has to be derived from T
+     */
+    template <class T> void setComponent(Unique<T> &&comp)
     {
         UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
         if constexpr (std::derived_from<T, dynasma::AbstractPool>) {
@@ -76,8 +65,8 @@ class ComponentRoot
     }
 
     /**
-    @return The component of a particular type T
-    */
+     * @return The component of a particular type T
+     */
     template <class T> T &getComponent() const
     {
         const UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
@@ -93,96 +82,7 @@ class ComponentRoot
     std::size_t cleanMemoryPools(std::size_t bytenum);
 
     /*
-    === AssImp mesh buffers ===
-    */
-
-    /**
-     * A function that extracts a buffer from an aiMesh
-     * @tparam aiType The type of the buffer element
-     * @param extMesh The mesh to extract the buffer from
-     * @returns a pointer to array of data from an aiMesh,
-     * or nullptr if data cannot be found
-     */
-    template <class aiType>
-    using AiMeshBufferExtractor = std::function<const aiType *(const aiMesh &extMesh)>;
-
-    /**
-     * Information about an aiMesh buffer
-     * @tparam aiType The type of the buffer element
-     */
-    template <class aiType> struct AiMeshBufferInfo
-    {
-        /// The name of the vertex component
-        StringId name;
-
-        /// The extractor function
-        AiMeshBufferExtractor<aiType> extractor;
-    };
-
-    /**
-     * @tparam aiType The type of the buffer element
-     * @return Span of AiMeshBufferInfo for the specified type.
-     */
-    template <class aiType> std::span<const AiMeshBufferInfo<aiType>> getAiMeshBufferInfos() const
-    {
-        auto &myvar = this->getMeshBufferInfoList<aiType>();
-        return std::span(myvar);
-    }
-
-    /**
-     * Adds a new AiMeshBufferInfo to the mesh buffer info list.
-     * @tparam aiType The type of the buffer element
-     * @param newInfo The AiMeshBufferInfo to add
-     */
-    template <class aiType> void addAiMeshBufferInfo(const AiMeshBufferInfo<aiType> &newInfo)
-    {
-        this->getMeshBufferInfoList<aiType>().push_back(newInfo);
-    }
-
-    void addAiMaterialParamAliases(aiShadingMode aiMode, const ParamAliases &newInfo);
-    const ParamAliases &getAiMaterialParamAliases(aiShadingMode aiMode) const;
-
-    struct AiMaterialTextureInfo
-    {
-        String colorName;
-        aiTextureType aiTextureId;
-        glm::vec4 defaultColor;
-    };
-
-    void addAiMaterialTextureInfo(AiMaterialTextureInfo newInfo);
-    std::span<const AiMaterialTextureInfo> getAiMaterialTextureInfos() const;
-
-    /**
-     * Information about an aiMaterial property
-     */
-    struct AiMaterialPropertyInfo
-    {
-        /// The name of the property
-        StringId nameId;
-
-        /// The extractor function
-        std::function<std::optional<Variant>(const aiMaterial &extMat)> extractor;
-    };
-
-    /**
-     * @return Span of AiMaterialPropertyInfo.
-     */
-    std::span<const AiMaterialPropertyInfo> getAiMaterialPropertyInfos() const
-    {
-        return std::span(mMaterialPropertyInfos);
-    }
-
-    /**
-     * Adds a new AiMaterialPropertyInfo to the list.
-     * @param newInfo The AiMaterialPropertyInfo to add
-     */
-    void addAiMaterialPropertyInfo(const AiMaterialPropertyInfo &newInfo)
-    {
-        this->mMaterialPropertyInfos.push_back(newInfo);
-    }
-
-    /*
-    === Streams ===
+    ---- Streams -----------------------------------------------------------------------------------
     */
 
     inline std::ostream &getErrStream() const { return *mErrStream; }
@@ -212,31 +112,8 @@ class ComponentRoot
         }
     }
 
-    template <class aiType> using MeshBufferInfoList = std::vector<AiMeshBufferInfo<aiType>>;
-
-    template <class aiType> MeshBufferInfoList<aiType> &getMeshBufferInfoList()
-    {
-        auto &listPtr = m_aiMeshInfoLists[getClassID<MeshBufferInfoList<aiType>>()];
-        if (!listPtr) {
-            listPtr = new MeshBufferInfoList<aiType>();
-        }
-        return *(listPtr.template get<MeshBufferInfoList<aiType>>());
-    }
-    template <class aiType> const MeshBufferInfoList<aiType> &getMeshBufferInfoList() const
-    {
-        auto &listPtr = m_aiMeshInfoLists[getClassID<MeshBufferInfoList<aiType>>()];
-        if (!listPtr) {
-            listPtr = new MeshBufferInfoList<aiType>();
-        }
-        return *(listPtr.template get<MeshBufferInfoList<aiType>>());
-    }
-
     StableMap<size_t, UniqueAnyPtr> mCustomComponents;
     std::vector<dynasma::AbstractPool *> m_memoryPools;
-    mutable StableMap<size_t, UniqueAnyPtr> m_aiMeshInfoLists;
-    StableMap<aiShadingMode, ParamAliases> mAiMaterialAliases;
-    std::vector<AiMaterialTextureInfo> mAiMaterialTextureInfos;
-    std::vector<AiMaterialPropertyInfo> mMaterialPropertyInfos;
 
     std::ostream *mErrStream, *mInfoStream, *mWarningStream;
 };
