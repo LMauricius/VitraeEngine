@@ -8,6 +8,7 @@
 
 #include "dynasma/pool.hpp"
 
+#include <type_traits>
 #include <vector>
 
 class aiMesh;
@@ -37,41 +38,16 @@ class ComponentRoot
      * @tparam T The component type
      * @param comp The component pointer to set. Has to be derived from T
      */
-    template <class T> void setComponent(Unique<T> &&comp)
-    {
-        UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
-        if constexpr (std::derived_from<T, dynasma::AbstractPool>) {
-            auto it = std::find(m_memoryPools.begin(), m_memoryPools.end(), myvar.get<T>());
-            if (it != m_memoryPools.end()) {
-                *it = comp.get();
-            } else {
-                m_memoryPools.push_back(comp.get());
-            }
-        }
-        myvar = std::move(comp);
-    }
-    template <class T> void setComponent(T *p_comp)
-    {
-        UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
-        if constexpr (std::derived_from<T, dynasma::AbstractPool>) {
-            auto it = std::find(m_memoryPools.begin(), m_memoryPools.end(), myvar.get<T>());
-            if (it != m_memoryPools.end()) {
-                *it = p_comp;
-            } else {
-                m_memoryPools.push_back(p_comp);
-            }
-        }
-        myvar = std::move(Unique<T>(p_comp));
-    }
-
+    template <class T> void setComponent(Unique<T> &&comp);
     /**
-     * @return The component of a particular type T
+     * Sets the component of a particular type and takes its ownership.
+     * @tparam T The component type
+     * @param comp The component pointer to set. Has to be derived from T
      */
-    template <class T> T &getComponent() const
-    {
-        const UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
-        return *(myvar.get<T>());
-    }
+    template <class T> void setComponent(T *p_comp);
+
+    /// @returns The component of a particular type T
+    template <class T> T &getComponent() const;
 
     /**
      * @brief Attempts to unload not-firmly-referenced assets to free memory
@@ -85,36 +61,117 @@ class ComponentRoot
     ---- Streams -----------------------------------------------------------------------------------
     */
 
-    inline std::ostream &getErrStream() const { return *mErrStream; }
-    inline std::ostream &getInfoStream() const { return *mInfoStream; }
-    inline std::ostream &getWarningStream() const { return *mWarningStream; }
-    inline void setErrStream(std::ostream &os) { mErrStream = &os; }
-    inline void setInfoStream(std::ostream &os) { mInfoStream = &os; }
-    inline void setWarningStr(std::ostream &os) { mWarningStream = &os; }
+    std::ostream &getErrStream() const;
+    std::ostream &getInfoStream() const;
+    std::ostream &getWarningStream() const;
+    void setErrStream(std::ostream &os);
+    void setInfoStream(std::ostream &os);
+    void setWarningStr(std::ostream &os);
 
   protected:
+    // Just for keeping a unique counter
+    struct ComponentIDToken
+    {};
+
     /*
     Returns a variable to store the manager of a particular type.
     Is specialized to return member variables for defaultly supported types.
     */
-    template <class T> UniqueAnyPtr &getGenericStorageVariable()
-    {
-        return mCustomComponents[getClassID<T>()];
-    }
-    template <class T> const UniqueAnyPtr &getGenericStorageVariable() const
-    {
-        try {
-            return mCustomComponents.at(getClassID<T>());
-        }
-        catch (std::out_of_range) {
-            throw std::out_of_range("Component " + std::string(TYPE_INFO<T *>.getShortTypeName()) +
-                                    " not registered");
-        }
-    }
+    template <class T> UniqueAnyPtr &getGenericStorageVariable();
+    template <class T> const UniqueAnyPtr &getAssignedGenericStorageVariable() const;
 
-    StableMap<size_t, UniqueAnyPtr> mCustomComponents;
+    std::vector<UniqueAnyPtr> mCustomComponents;
     std::vector<dynasma::AbstractPool *> m_memoryPools;
 
     std::ostream *mErrStream, *mInfoStream, *mWarningStream;
 };
+
+// ==== ComponentRoot implementations ==============================================================
+
+template <class T> void ComponentRoot::setComponent(Unique<T> &&comp)
+{
+    UniqueAnyPtr &myvar = getGenericStorageVariable<T>();
+    if constexpr (std::derived_from<T, dynasma::AbstractPool>) {
+        auto it = std::find(m_memoryPools.begin(), m_memoryPools.end(), myvar.get<T>());
+        if (it != m_memoryPools.end()) {
+            *it = comp.get();
+        } else {
+            m_memoryPools.push_back(comp.get());
+        }
+    }
+    myvar = std::move(comp);
+}
+
+template <class T> void ComponentRoot::setComponent(T *p_comp)
+{
+    using UnderlyingT = std::remove_cv<T>;
+
+    UniqueAnyPtr &myvar = getGenericStorageVariable<UnderlyingT>();
+    if constexpr (std::derived_from<UnderlyingT, dynasma::AbstractPool>) {
+        auto it = std::find(m_memoryPools.begin(), m_memoryPools.end(), myvar.get<UnderlyingT>());
+        if (it != m_memoryPools.end()) {
+            *it = p_comp;
+        } else {
+            m_memoryPools.push_back(p_comp);
+        }
+    }
+    myvar = std::move(Unique<UnderlyingT>(p_comp));
+}
+
+template <class T> T &ComponentRoot::getComponent() const
+{
+    using UnderlyingT = std::remove_cv<T>;
+
+    const UniqueAnyPtr &myvar = getAssignedGenericStorageVariable<UnderlyingT>();
+    return *(myvar.get<UnderlyingT>());
+}
+
+inline std::ostream &ComponentRoot::getErrStream() const
+{
+    return *mErrStream;
+}
+inline std::ostream &ComponentRoot::getInfoStream() const
+{
+    return *mInfoStream;
+}
+inline std::ostream &ComponentRoot::getWarningStream() const
+{
+    return *mWarningStream;
+}
+inline void ComponentRoot::setErrStream(std::ostream &os)
+{
+    mErrStream = &os;
+}
+inline void ComponentRoot::setInfoStream(std::ostream &os)
+{
+    mInfoStream = &os;
+}
+inline void ComponentRoot::setWarningStr(std::ostream &os)
+{
+    mWarningStream = &os;
+}
+
+template <class T> UniqueAnyPtr &ComponentRoot::getGenericStorageVariable()
+{
+    std::size_t ind = getScopedClassID<ComponentIDToken, T>();
+
+    if (ind >= mCustomComponents.size()) {
+        mCustomComponents.resize(ind + 1);
+    }
+
+    return mCustomComponents[ind];
+}
+
+template <class T> const UniqueAnyPtr &ComponentRoot::getAssignedGenericStorageVariable() const
+{
+    std::size_t ind = getScopedClassID<ComponentIDToken, T>();
+
+    if (ind >= mCustomComponents.size() || !mCustomComponents[ind]) {
+        throw std::out_of_range("Component " + std::string(TYPE_INFO<T *>.getShortTypeName()) +
+                                " not registered");
+    }
+
+    return mCustomComponents[ind];
+}
+
 } // namespace Vitrae
