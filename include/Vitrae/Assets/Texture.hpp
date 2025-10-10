@@ -265,7 +265,7 @@ template <BufferType TBUFFER_TYPE> class TextureCubemapArray : public TextureBas
  * @endcode
  */
 template <class VisitorT, typename... ArgTs>
-constexpr void forTextureTemplates(VisitorT &visitor, ArgTs &&...args);
+constexpr void forTextureTemplates(VisitorT &&visitor, ArgTs &&...args);
 
 /**
  * @note You can use a template lambda for this
@@ -279,12 +279,12 @@ constexpr void forTextureTemplates(VisitorT &visitor, ArgTs &&...args);
  * @endcode
  */
 template <class VisitorT, typename... ArgTs>
-constexpr void forTextureTypes(VisitorT &visitor, ArgTs &&...args);
+constexpr void forTextureTypes(VisitorT &&visitor, ArgTs &&...args);
 
 // ==== Helper implementation ======================================================================
 
 template <class VisitorT, typename... ArgTs>
-constexpr void forTextureTemplates(VisitorT &visitor, ArgTs &&...args)
+constexpr void forTextureTemplates(VisitorT &&visitor, ArgTs &&...args)
 {
     visitor.template operator()<Texture1D>(std::forward<ArgTs>(args)...);
     visitor.template operator()<Texture2D>(std::forward<ArgTs>(args)...);
@@ -296,7 +296,7 @@ constexpr void forTextureTemplates(VisitorT &visitor, ArgTs &&...args)
 }
 
 template <class VisitorT, typename... ArgTs>
-constexpr void forTextureTypes(VisitorT &visitor, ArgTs &&...args)
+constexpr void forTextureTypes(VisitorT &&visitor, ArgTs &&...args)
 {
     forTextureTemplates([&]<template <BufferType> class Texture> {
         forBufferTypes([&]<BufferType BT> {

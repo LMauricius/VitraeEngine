@@ -298,7 +298,7 @@ using AnyBufferFormat =
  * @endcode
  */
 template <class VisitorT, typename... ArgTs>
-constexpr void forBufferTypes(VisitorT &visitor, ArgTs &&...args);
+constexpr void forBufferTypes(VisitorT &&visitor, ArgTs &&...args);
 
 // ==== Specialization wrappers per BufferType =====================================================
 
@@ -437,7 +437,7 @@ template <> struct BufferTypeSpecialization<BufferType::STENCIL>
 // ==== Helper implementation ======================================================================
 
 template <class VisitorT, typename... ArgTs>
-constexpr void forBufferTypes(VisitorT &visitor, ArgTs &&...args)
+constexpr void forBufferTypes(VisitorT &&visitor, ArgTs &&...args)
 {
     visitor.template operator()<BufferType::REAL_SCALAR>(std::forward<ArgTs>(args)...);
     visitor.template operator()<BufferType::REAL_VEC2>(std::forward<ArgTs>(args)...);
