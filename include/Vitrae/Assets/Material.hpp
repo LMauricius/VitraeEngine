@@ -15,7 +15,7 @@
 namespace Vitrae
 {
 class ComponentRoot;
-class Texture;
+class TextureBase;
 
 class Material : public dynasma::PolymorphicBase
 {
@@ -35,9 +35,10 @@ class Material : public dynasma::PolymorphicBase
     void setParamAliases(const ParamAliases &aliases);
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
-    void setTexture(StringView colorName, dynasma::FirmPtr<Texture> texture,
-                    StringView coordPropertyName);
-    void setTexture(StringView colorName, glm::vec4 uniformColor);
+    void setTexturePtr(StringView sampleName, const Variant &texture, StringView coordPropertyName);
+    void setTexturePtr(StringView sampleName, Variant &&texture, StringView coordPropertyName);
+    void setTextureColor(StringView sampleName, const Variant &uniformColor);
+    void setTextureColor(StringView sampleName, Variant &&uniformColor);
 
     const ParamAliases &getParamAliases() const;
     const StableMap<StringId, Variant> &getProperties() const;
