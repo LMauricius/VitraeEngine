@@ -3,6 +3,7 @@
 #include "Vitrae/Data/BufferFormat.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Setup/Swizzle.hpp"
+#include "Vitrae/Setup/TextureFiltering.hpp"
 
 #include "glm/glm.hpp"
 
@@ -19,6 +20,7 @@ struct FileLoadParams
 {
     ComponentRoot &root;
     std::filesystem::path filepath;
+    TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
 };
 template <BufferType BUFFER_TYPE, typename SizeT> struct EmptyParams
 {
@@ -26,6 +28,7 @@ template <BufferType BUFFER_TYPE, typename SizeT> struct EmptyParams
     SizeT size;
     BufferFormat<BUFFER_TYPE> storageFormat;
     SwizzleSpec<BUFFER_TYPE> swizzle = CommonSwizzleSpecs<BUFFER_TYPE>::NATURAL;
+    TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
     String friendlyName = "";
 };
 
