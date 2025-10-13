@@ -94,18 +94,29 @@ template <class TextureT> struct TextureSeed
 template <class TextureT> using TextureManager = dynasma::AbstractManager<TextureSeed<TextureT>>;
 
 /**
- * A 1D image
+ * A 1D image of any type
  */
-template <BufferType TBUFFER_TYPE> class Texture1D : public TextureBaseTyped<TBUFFER_TYPE>
+class Texture1DBase : public TextureBase
+{
+  public:
+    unsigned int getSize() const { return m_size; }
+    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1, 1}; }
+    std::size_t getNumDimensions() const override { return 1; }
+
+  protected:
+    unsigned int m_size;
+};
+
+/**
+ * A 1D image of a concrete type
+ */
+template <BufferType TBUFFER_TYPE>
+class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
-
-    unsigned int getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1, 1}; }
-    std::size_t getNumDimensions() const override { return 1; }
 
     virtual dynasma::LazyPtr<Image1D<TBUFFER_TYPE>> getImage() const = 0;
 
@@ -114,80 +125,126 @@ template <BufferType TBUFFER_TYPE> class Texture1D : public TextureBaseTyped<TBU
 };
 
 /**
- * A 2D image
+ * A 2D image of any type
  */
-template <BufferType TBUFFER_TYPE> class Texture2D : public TextureBaseTyped<TBUFFER_TYPE>
+class Texture2DBase : public TextureBase
 {
   public:
-    using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
-
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
-
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage() const = 0;
 
   protected:
     glm::uvec2 m_size;
 };
 
 /**
- * A 3D image
+ * A 2D image of a concrete type
  */
-template <BufferType TBUFFER_TYPE> class Texture3D : public TextureBaseTyped<TBUFFER_TYPE>
+template <BufferType TBUFFER_TYPE>
+class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage() const = 0;
+};
+
+/**
+ * A 3D image of any type
+ */
+class Texture3DBase : public TextureBase
+{
+  public:
     glm::uvec3 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(unsigned int z) const = 0;
 
   protected:
     glm::uvec3 m_size;
 };
 
 /**
- * A 3D collection of 6 2D images used for cubemapping
+ * A 3D image of a concrete type
  */
-template <BufferType TBUFFER_TYPE> class TextureCubemap : public TextureBaseTyped<TBUFFER_TYPE>
+template <BufferType TBUFFER_TYPE>
+class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(unsigned int z) const = 0;
+};
+
+/**
+ * A 3D collection of 6 2D images used for cubemapping of any type
+ */
+class TextureCubemapBase : public TextureBase
+{
+  public:
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 6, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(Side side) const = 0;
 
   protected:
     glm::uvec2 m_size;
 };
 
 /**
- * A list of 1D images, each a layer of 1 asset
+ * A 3D collection of 6 2D images used for cubemapping of a concrete type
  */
-template <BufferType TBUFFER_TYPE> class Texture1DArray : public TextureBaseTyped<TBUFFER_TYPE>
+template <BufferType TBUFFER_TYPE>
+class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(Side side) const = 0;
+};
+
+/**
+ * A list of 1D images, each a layer of 1 asset of any type
+ */
+class Texture1DArrayBase : public TextureBase
+{
+  public:
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
 
+  protected:
+    glm::uvec2 m_size;
+};
+
+/**
+ * A list of 1D images, each a layer of 1 asset of a concrete type
+ */
+template <BufferType TBUFFER_TYPE>
+class Texture1DArray : public Texture1DArrayBase, public TextureBaseTyped<TBUFFER_TYPE>
+{
+  public:
+    using FileLoadParams = ImageCommon::FileLoadParams;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+
     virtual dynasma::LazyPtr<Image1D<TBUFFER_TYPE>> getImage(unsigned int index) const = 0;
+};
+
+/**
+ * A list of 2D images
+ */
+class Texture2DArrayBase : public TextureBase
+{
+  public:
+    glm::uvec2 getSize() const { return m_size; }
+    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
+    std::size_t getNumDimensions() const override { return 3; }
 
   protected:
     glm::uvec2 m_size;
@@ -196,42 +253,44 @@ template <BufferType TBUFFER_TYPE> class Texture1DArray : public TextureBaseType
 /**
  * A list of 2D images
  */
-template <BufferType TBUFFER_TYPE> class Texture2DArray : public TextureBaseTyped<TBUFFER_TYPE>
+template <BufferType TBUFFER_TYPE>
+class Texture2DArray : public Texture2DArrayBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    glm::uvec2 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
-    std::size_t getNumDimensions() const override { return 3; }
-
     virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(unsigned int index) const = 0;
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 /**
  * A list of cubemap images
  */
-template <BufferType TBUFFER_TYPE> class TextureCubemapArray : public TextureBaseTyped<TBUFFER_TYPE>
+class TextureCubemapArrayBase : public TextureBase
+{
+  public:
+    glm::uvec3 getSize() const { return m_size; }
+    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size.x, m_size.y, m_size.z, 1}; }
+    std::size_t getNumDimensions() const override { return 4; }
+
+  protected:
+    glm::uvec3 m_size;
+};
+
+/**
+ * A list of cubemap images
+ */
+template <BufferType TBUFFER_TYPE>
+class TextureCubemapArray : public TextureCubemapArrayBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    glm::uvec3 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size.x, m_size.y, m_size.z, 1}; }
-    std::size_t getNumDimensions() const override { return 4; }
-
     virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(Side side,
                                                              unsigned int index) const = 0;
-
-  protected:
-    glm::uvec3 m_size;
 };
 
 // ==== Helpers for handling all these types =======================================================
