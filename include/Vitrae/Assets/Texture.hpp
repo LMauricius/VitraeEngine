@@ -50,6 +50,27 @@ class TextureBase : public dynasma::PolymorphicBase
 };
 
 /**
+ * Base for any TextureBase type that has this BufferType
+ * @tparam BUFFER_TYPE The buffer type this texture uses
+ */
+template <BufferType TBUFFER_TYPE> class TextureBaseTyped : public TextureBase
+{
+  public:
+    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+
+    BufferType getBufferType() const override { return BUFFER_TYPE; }
+
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
+
+    // Always convert from getBufferFormat()
+    AnyBufferFormat getAnyBufferFormat() const override
+    {
+        return std::visit([](auto compatible_format) { return AnyBufferFormat{compatible_format}; },
+                          getBufferFormat());
+    }
+};
+
+/**
  * A seed for any image type
  * @tparam TextureT the image type
  * @example @code TextureSeed<Texture2D<BufferType::COLOR_TRANSPARENT>> @endcode
@@ -75,23 +96,18 @@ template <class TextureT> using TextureManager = dynasma::AbstractManager<Textur
 /**
  * A 1D image
  */
-template <BufferType TBUFFER_TYPE> class Texture1D : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture1D : public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
-
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, unsigned int>;
-    using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, unsigned int>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     unsigned int getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1, 1}; }
     std::size_t getNumDimensions() const override { return 1; }
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
-
-    virtual dynasma::LazyPtr<Image1D<BUFFER_TYPE>> getImage() const = 0;
+    virtual dynasma::LazyPtr<Image1D<TBUFFER_TYPE>> getImage() const = 0;
 
   protected:
     unsigned int m_size;
@@ -100,23 +116,18 @@ template <BufferType TBUFFER_TYPE> class Texture1D : public TextureBase
 /**
  * A 2D image
  */
-template <BufferType TBUFFER_TYPE> class Texture2D : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture2D : public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
-
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
-
-    virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage() const = 0;
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage() const = 0;
 
   protected:
     glm::uvec2 m_size;
@@ -125,23 +136,18 @@ template <BufferType TBUFFER_TYPE> class Texture2D : public TextureBase
 /**
  * A 3D image
  */
-template <BufferType TBUFFER_TYPE> class Texture3D : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture3D : public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
-
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec3>;
-    using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     glm::uvec3 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
-
-    virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(unsigned int z) const = 0;
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(unsigned int z) const = 0;
 
   protected:
     glm::uvec3 m_size;
@@ -150,23 +156,18 @@ template <BufferType TBUFFER_TYPE> class Texture3D : public TextureBase
 /**
  * A 3D collection of 6 2D images used for cubemapping
  */
-template <BufferType TBUFFER_TYPE> class TextureCubemap : public TextureBase
+template <BufferType TBUFFER_TYPE> class TextureCubemap : public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
-
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 6, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
-
-    virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(Side side) const = 0;
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(Side side) const = 0;
 
   protected:
     glm::uvec2 m_size;
@@ -175,23 +176,18 @@ template <BufferType TBUFFER_TYPE> class TextureCubemap : public TextureBase
 /**
  * A list of 1D images, each a layer of 1 asset
  */
-template <BufferType TBUFFER_TYPE> class Texture1DArray : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture1DArray : public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
-
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
-
-    virtual dynasma::LazyPtr<Image1D<BUFFER_TYPE>> getImage(unsigned int index) const = 0;
+    virtual dynasma::LazyPtr<Image1D<TBUFFER_TYPE>> getImage(unsigned int index) const = 0;
 
   protected:
     glm::uvec2 m_size;
@@ -200,23 +196,18 @@ template <BufferType TBUFFER_TYPE> class Texture1DArray : public TextureBase
 /**
  * A list of 2D images
  */
-template <BufferType TBUFFER_TYPE> class Texture2DArray : public TextureBase
+template <BufferType TBUFFER_TYPE> class Texture2DArray : public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
-
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     glm::uvec2 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
-
-    virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(unsigned int index) const = 0;
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(unsigned int index) const = 0;
 
   protected:
     glm::uvec2 m_size;
@@ -225,24 +216,19 @@ template <BufferType TBUFFER_TYPE> class Texture2DArray : public TextureBase
 /**
  * A list of cubemap images
  */
-template <BufferType TBUFFER_TYPE> class TextureCubemapArray : public TextureBase
+template <BufferType TBUFFER_TYPE> class TextureCubemapArray : public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
-
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<BUFFER_TYPE, glm::uvec3>;
-    using PureColorParams = ImageCommon::PureColorParams<BUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
+    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     glm::uvec3 getSize() const { return m_size; }
     glm::uvec4 getNDSize() const override { return glm::uvec4{m_size.x, m_size.y, m_size.z, 1}; }
     std::size_t getNumDimensions() const override { return 4; }
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
-
-    virtual dynasma::LazyPtr<Image2D<BUFFER_TYPE>> getImage(Side side,
-                                                            unsigned int index) const = 0;
+    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(Side side,
+                                                             unsigned int index) const = 0;
 
   protected:
     glm::uvec3 m_size;
