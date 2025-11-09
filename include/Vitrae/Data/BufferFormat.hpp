@@ -17,8 +17,8 @@ namespace Vitrae
  * and where it can be used.
  *
  * Constants are named like this: <Channel type>_<Vector size>
- * The element type is the type of one item of the stored value.
- * The vector size is the number of items of the stored value.
+ * The element type is the type of one channel of the stored value.
+ * The vector size is the number of channels of the stored value.
  *
  * Channel types:
  *  - REAL - A real value, with a number of decimal places
