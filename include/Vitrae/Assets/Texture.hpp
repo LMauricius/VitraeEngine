@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Assets/Image.hpp"
+#include "Vitrae/Assets/TensorBuffer.hpp"
 #include "Vitrae/Containers/StableMap.hpp"
 #include "Vitrae/Data/BufferFormat.hpp"
 #include "Vitrae/Data/Sides.hpp"
@@ -118,7 +118,9 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    virtual dynasma::LazyPtr<Image1D<TBUFFER_TYPE>> getImage() const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer1D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer1D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
+        const = 0;
 
   protected:
     unsigned int m_size;
@@ -149,7 +151,9 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage() const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer2D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer2D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
+        const = 0;
 };
 
 /**
@@ -177,7 +181,9 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(unsigned int z) const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer3D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer3D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
+        const = 0;
 };
 
 /**
@@ -186,12 +192,12 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
 class TextureCubemapBase : public TextureBase
 {
   public:
-    glm::uvec2 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 6, 1}; }
+    glm::uvec2 getSize() const { return {m_size, m_size}; }
+    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, m_size, 6, 1}; }
     std::size_t getNumDimensions() const override { return 3; }
 
   protected:
-    glm::uvec2 m_size;
+    unsigned int m_size;
 };
 
 /**
@@ -205,7 +211,9 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFE
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(Side side) const = 0;
+    virtual dynasma::SharedPtr<TensorBufferCubemap<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBufferCubemap<BufferValueType<TBUFFER_TYPE>>> getBuffer()
+        const = 0;
 };
 
 /**
@@ -233,7 +241,9 @@ class Texture1DArray : public Texture1DArrayBase, public TextureBaseTyped<TBUFFE
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    virtual dynasma::LazyPtr<Image1D<TBUFFER_TYPE>> getImage(unsigned int index) const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer1DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer1DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer()
+        const = 0;
 };
 
 /**
@@ -261,7 +271,9 @@ class Texture2DArray : public Texture2DArrayBase, public TextureBaseTyped<TBUFFE
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(unsigned int index) const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer2DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer2DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer()
+        const = 0;
 };
 
 /**
@@ -270,12 +282,12 @@ class Texture2DArray : public Texture2DArrayBase, public TextureBaseTyped<TBUFFE
 class TextureCubemapArrayBase : public TextureBase
 {
   public:
-    glm::uvec3 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size.x, m_size.y, m_size.z, 1}; }
+    glm::uvec3 getSize() const { return {m_size.x, m_size.x, m_size.y}; }
+    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size.x, m_size.x, 6, m_size.y}; }
     std::size_t getNumDimensions() const override { return 4; }
 
   protected:
-    glm::uvec3 m_size;
+    glm::uvec2 m_size;
 };
 
 /**
@@ -289,8 +301,10 @@ class TextureCubemapArray : public TextureCubemapArrayBase, public TextureBaseTy
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
-    virtual dynasma::LazyPtr<Image2D<TBUFFER_TYPE>> getImage(Side side,
-                                                             unsigned int index) const = 0;
+    virtual dynasma::SharedPtr<TensorBufferCubemapArray<BufferValueType<TBUFFER_TYPE>>>
+    getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBufferCubemapArray<BufferValueType<TBUFFER_TYPE>>>
+    getBuffer() const = 0;
 };
 
 // ==== Helpers for handling all these types =======================================================
