@@ -118,6 +118,9 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    /**
+     * @returns pointer to the buffer
+     */
     virtual dynasma::SharedPtr<TensorBuffer1D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
     virtual dynasma::SharedPtr<const TensorBuffer1D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
         const = 0;
@@ -151,6 +154,9 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    /**
+     * @returns pointer to the buffer
+     */
     virtual dynasma::SharedPtr<TensorBuffer2D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
     virtual dynasma::SharedPtr<const TensorBuffer2D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
         const = 0;
@@ -181,6 +187,9 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    /**
+     * @returns pointer to the buffer
+     */
     virtual dynasma::SharedPtr<TensorBuffer3D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
     virtual dynasma::SharedPtr<const TensorBuffer3D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
         const = 0;
@@ -211,6 +220,15 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFE
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    /**
+     * @returns pointer to a Texture2D face of this cubemap
+     */
+    virtual dynasma::SharedPtr<Texture2D<TBUFFER_TYPE>> getFace(Side side) = 0;
+    virtual dynasma::SharedPtr<const Texture2D<TBUFFER_TYPE>> getFace(Side side) const = 0;
+
+    /**
+     * @returns pointer to the buffer
+     */
     virtual dynasma::SharedPtr<TensorBufferCubemap<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
     virtual dynasma::SharedPtr<const TensorBufferCubemap<BufferValueType<TBUFFER_TYPE>>> getBuffer()
         const = 0;
@@ -241,6 +259,15 @@ class Texture1DArray : public Texture1DArrayBase, public TextureBaseTyped<TBUFFE
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    /**
+     * @returns pointer to a Texture1D layer
+     */
+    virtual dynasma::SharedPtr<Texture1D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::SharedPtr<const Texture1D<TBUFFER_TYPE>> getLayer(std::size_t layer) const = 0;
+
+    /**
+     * @returns pointer to the buffer
+     */
     virtual dynasma::SharedPtr<TensorBuffer1DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
     virtual dynasma::SharedPtr<const TensorBuffer1DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer()
         const = 0;
@@ -271,6 +298,15 @@ class Texture2DArray : public Texture2DArrayBase, public TextureBaseTyped<TBUFFE
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    /**
+     * @returns pointer to a Texture2D layer
+     */
+    virtual dynasma::SharedPtr<Texture2D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::SharedPtr<const Texture2D<TBUFFER_TYPE>> getLayer(std::size_t layer) const = 0;
+
+    /**
+     * @returns pointer to the buffer
+     */
     virtual dynasma::SharedPtr<TensorBuffer2DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
     virtual dynasma::SharedPtr<const TensorBuffer2DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer()
         const = 0;
@@ -301,6 +337,16 @@ class TextureCubemapArray : public TextureCubemapArrayBase, public TextureBaseTy
     using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
+    /**
+     * @returns pointer to a TextureCubemap layer
+     */
+    virtual dynasma::SharedPtr<TextureCubemap<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::SharedPtr<const TextureCubemap<TBUFFER_TYPE>> getLayer(
+        std::size_t layer) const = 0;
+
+    /**
+     * @returns pointer to the buffer
+     */
     virtual dynasma::SharedPtr<TensorBufferCubemapArray<BufferValueType<TBUFFER_TYPE>>>
     getBuffer() = 0;
     virtual dynasma::SharedPtr<const TensorBufferCubemapArray<BufferValueType<TBUFFER_TYPE>>>
