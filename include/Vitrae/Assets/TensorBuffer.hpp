@@ -266,40 +266,6 @@ class TensorBuffer2DArray : public TensorBufferBaseTyped<TElementType>
 };
 
 /**
- * A list of 3D TensorBuffers of shared size
- */
-template <typename TElementType>
-class TensorBuffer3DArray : public TensorBufferBaseTyped<TElementType>
-{
-  public:
-    /**
-     * @return The size of the buffer
-     */
-    inline glm::uvec4 getSize() const { return m_size; }
-
-    /**
-     * @return The size of the buffer, in 4 dimensions
-     * @note In unused dimensions the size is 1
-     */
-    glm::uvec4 getNDSize() const override { return m_size; }
-
-    /**
-     * @return The number of buffer dimensions
-     */
-    std::size_t getNumDimensions() const override { return 4; }
-
-    /**
-     * @returns pointer to a 3D TensorBuffer layer of this array
-     */
-    virtual dynasma::SharedPtr<TensorBuffer3D<TElementType>> getLayer(std::size_t w) = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer3D<TElementType>> getLayer(
-        std::size_t w) const = 0;
-
-  protected:
-    glm::uvec4 m_size;
-};
-
-/**
  * A list of Cubemap TensorBuffers of shared size
  */
 template <typename TElementType>
