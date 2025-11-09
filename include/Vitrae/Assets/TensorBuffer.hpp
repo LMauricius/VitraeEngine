@@ -201,7 +201,7 @@ class TensorBufferCubemap : public TensorBufferBaseTyped<TElementType>
  * A list of 1D TensorBuffers of shared size
  */
 template <typename TElementType>
-class TensorBuffer1DArray : public TensorBufferBaseTyped<TElementType>
+class TensorBuffer1DLayered : public TensorBufferBaseTyped<TElementType>
 {
   public:
     /**
@@ -221,7 +221,7 @@ class TensorBuffer1DArray : public TensorBufferBaseTyped<TElementType>
     std::size_t getNumDimensions() const override { return 2; }
 
     /**
-     * @returns pointer to a 1D TensorBuffer layer of this array
+     * @returns pointer to a 1D TensorBuffer layer of this multi-layer
      */
     virtual dynasma::SharedPtr<TensorBuffer1D<TElementType>> getLayer(std::size_t y) = 0;
     virtual dynasma::SharedPtr<const TensorBuffer1D<TElementType>> getLayer(
@@ -235,7 +235,7 @@ class TensorBuffer1DArray : public TensorBufferBaseTyped<TElementType>
  * A list of 2D TensorBuffers of shared size
  */
 template <typename TElementType>
-class TensorBuffer2DArray : public TensorBufferBaseTyped<TElementType>
+class TensorBuffer2DLayered : public TensorBufferBaseTyped<TElementType>
 {
   public:
     /**
@@ -255,7 +255,7 @@ class TensorBuffer2DArray : public TensorBufferBaseTyped<TElementType>
     std::size_t getNumDimensions() const override { return 3; }
 
     /**
-     * @returns pointer to a 2D TensorBuffer layer of this array
+     * @returns pointer to a 2D TensorBuffer layer of this multi-layer
      */
     virtual dynasma::SharedPtr<TensorBuffer2D<TElementType>> getLayer(std::size_t z) = 0;
     virtual dynasma::SharedPtr<const TensorBuffer2D<TElementType>> getLayer(
@@ -269,7 +269,7 @@ class TensorBuffer2DArray : public TensorBufferBaseTyped<TElementType>
  * A list of Cubemap TensorBuffers of shared size
  */
 template <typename TElementType>
-class TensorBufferCubemapArray : public TensorBufferBaseTyped<TElementType>
+class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TElementType>
 {
   public:
     /**
@@ -289,7 +289,7 @@ class TensorBufferCubemapArray : public TensorBufferBaseTyped<TElementType>
     std::size_t getNumDimensions() const override { return 4; }
 
     /**
-     * @returns pointer to a Cubemap TensorBuffer layer of this array
+     * @returns pointer to a Cubemap TensorBuffer layer of this multi-layer
      */
     virtual dynasma::SharedPtr<TensorBufferCubemap<TElementType>> getLayer(std::size_t w) = 0;
     virtual dynasma::SharedPtr<const TensorBufferCubemap<TElementType>> getLayer(

@@ -237,7 +237,7 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFE
 /**
  * A list of 1D images, each a layer of 1 asset of any type
  */
-class Texture1DArrayBase : public TextureBase
+class Texture1DLayeredBase : public TextureBase
 {
   public:
     glm::uvec2 getSize() const { return m_size; }
@@ -252,7 +252,7 @@ class Texture1DArrayBase : public TextureBase
  * A list of 1D images, each a layer of 1 asset of a concrete type
  */
 template <BufferType TBUFFER_TYPE>
-class Texture1DArray : public Texture1DArrayBase, public TextureBaseTyped<TBUFFER_TYPE>
+class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
@@ -268,15 +268,16 @@ class Texture1DArray : public Texture1DArrayBase, public TextureBaseTyped<TBUFFE
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer1DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer1DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer()
-        const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer1DLayered<BufferValueType<TBUFFER_TYPE>>>
+    getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer1DLayered<BufferValueType<TBUFFER_TYPE>>>
+    getBuffer() const = 0;
 };
 
 /**
  * A list of 2D images
  */
-class Texture2DArrayBase : public TextureBase
+class Texture2DLayeredBase : public TextureBase
 {
   public:
     glm::uvec2 getSize() const { return m_size; }
@@ -291,7 +292,7 @@ class Texture2DArrayBase : public TextureBase
  * A list of 2D images
  */
 template <BufferType TBUFFER_TYPE>
-class Texture2DArray : public Texture2DArrayBase, public TextureBaseTyped<TBUFFER_TYPE>
+class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
@@ -307,15 +308,16 @@ class Texture2DArray : public Texture2DArrayBase, public TextureBaseTyped<TBUFFE
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer2DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2DArray<BufferValueType<TBUFFER_TYPE>>> getBuffer()
-        const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer2DLayered<BufferValueType<TBUFFER_TYPE>>>
+    getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer2DLayered<BufferValueType<TBUFFER_TYPE>>>
+    getBuffer() const = 0;
 };
 
 /**
  * A list of cubemap images
  */
-class TextureCubemapArrayBase : public TextureBase
+class TextureCubemapLayeredBase : public TextureBase
 {
   public:
     glm::uvec3 getSize() const { return {m_size.x, m_size.x, m_size.y}; }
@@ -330,7 +332,8 @@ class TextureCubemapArrayBase : public TextureBase
  * A list of cubemap images
  */
 template <BufferType TBUFFER_TYPE>
-class TextureCubemapArray : public TextureCubemapArrayBase, public TextureBaseTyped<TBUFFER_TYPE>
+class TextureCubemapLayered : public TextureCubemapLayeredBase,
+                              public TextureBaseTyped<TBUFFER_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
@@ -347,9 +350,9 @@ class TextureCubemapArray : public TextureCubemapArrayBase, public TextureBaseTy
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBufferCubemapArray<BufferValueType<TBUFFER_TYPE>>>
+    virtual dynasma::SharedPtr<TensorBufferCubemapLayered<BufferValueType<TBUFFER_TYPE>>>
     getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBufferCubemapArray<BufferValueType<TBUFFER_TYPE>>>
+    virtual dynasma::SharedPtr<const TensorBufferCubemapLayered<BufferValueType<TBUFFER_TYPE>>>
     getBuffer() const = 0;
 };
 
@@ -395,9 +398,9 @@ constexpr void forTextureTemplates(VisitorT &&visitor, ArgTs &&...args)
     visitor.template operator()<Texture2D>(std::forward<ArgTs>(args)...);
     visitor.template operator()<Texture3D>(std::forward<ArgTs>(args)...);
     visitor.template operator()<TextureCubemap>(std::forward<ArgTs>(args)...);
-    visitor.template operator()<Texture1DArray>(std::forward<ArgTs>(args)...);
-    visitor.template operator()<Texture2DArray>(std::forward<ArgTs>(args)...);
-    visitor.template operator()<TextureCubemapArray>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<Texture1DLayered>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<Texture2DLayered>(std::forward<ArgTs>(args)...);
+    visitor.template operator()<TextureCubemapLayered>(std::forward<ArgTs>(args)...);
 }
 
 template <class VisitorT, typename... ArgTs>
