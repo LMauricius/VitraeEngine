@@ -31,7 +31,7 @@ struct ParamSpec
     const TypeInfo &typeInfo;
 
     /// Attributes placed on the parameter as opposed to its value (default none)
-    AttributeWrapper attributes = {};
+    AttributeWrapper attributes{};
 };
 
 } // namespace Vitrae

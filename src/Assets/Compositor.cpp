@@ -3,6 +3,7 @@
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Collections/MethodCollection.hpp"
 #include "Vitrae/Debugging/PipelineExport.hpp"
+#include "Vitrae/Params/Attribute/Default.hpp"
 #include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Pipelines/PipelineContainer.hpp"
 
@@ -156,9 +157,9 @@ void Compositor::rebuildPipeline()
     for (auto p_specs :
          {&m_pipeline.inputSpecs, &m_pipeline.filterSpecs, &m_pipeline.consumingSpecs}) {
         for (auto &spec : p_specs->getSpecList()) {
-            if (spec.defaultValue.getAssignedTypeInfo() != TYPE_INFO<void> &&
-                !parameters.has(spec.name)) {
-                parameters.set(spec.name, spec.defaultValue);
+            auto default_attr = spec.attributes.p_attribute<DefaultValue>();
+            if (default_attr && !parameters.has(spec.name)) {
+                parameters.set(spec.name, default_attr->value);
             }
         }
     }

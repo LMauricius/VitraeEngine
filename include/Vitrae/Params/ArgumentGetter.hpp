@@ -2,6 +2,8 @@
 
 #include "Vitrae/Dynamic/ArgumentScope.hpp"
 #include "Vitrae/Dynamic/VariantScope.hpp"
+#include "Vitrae/Params/Attribute.hpp"
+#include "Vitrae/Params/Attribute/Default.hpp"
 #include "Vitrae/Params/ParamSpec.hpp"
 #include "Vitrae/Util/Hashing.hpp"
 
@@ -29,12 +31,13 @@ template <class T> class ArgumentGetter
         : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name, {name, TYPE_INFO<T>}})
     {}
     ArgumentGetter(String name, const T &defaultValue)
-        : m_nameOrValue(std::in_place_index<0>, DynamicSpec{name,
-                                                            {
-                                                                .name = name,
-                                                                .typeInfo = TYPE_INFO<T>,
-                                                                .defaultValue = defaultValue,
-                                                            }})
+        : m_nameOrValue(std::in_place_index<0>,
+                        DynamicSpec{name,
+                                    {
+                                        .name = name,
+                                        .typeInfo = TYPE_INFO<T>,
+                                        .attributes = DefaultValue{defaultValue},
+                                    }})
     {}
     ArgumentGetter(const T &value) : m_nameOrValue(std::in_place_index<1>, value) {}
     ArgumentGetter(T &&value) : m_nameOrValue(std::in_place_index<1>, std::move(value)) {}

@@ -1,5 +1,12 @@
 #pragma once
 
+#include "Vitrae/Data/GlobalConst.hpp"
+
+#include <concepts>
+#include <memory>
+#include <utility>
+#include <variant>
+
 namespace Vitrae
 {
 
@@ -25,22 +32,17 @@ struct CompoundParamAttribute : public PolymorphicParamAttribute, public CompAtt
 };
 
 /**
- * An inline global variable holding a CompoundParamAttribute value for ensuring maximum lifetime
- */
-template <auto... ATTR_VALUE> constexpr CompoundParamAttribute GLOBAL_ATTRIBUTE = {ATTR_VALUE...};
-
-/**
  * A wrapper type of references to ParamAttribute values,
  * That can be constructred from a list of attributes
  */
 class AttributeWrapper
 {
-    const PolymorphicParamAttribute *p_attributes;
+    // Pointer is used if we take the global value, shared_ptr for dynamicly constructed values
+    std::shared_ptr<const PolymorphicParamAttribute> p_attributes;
 
   public:
-    constexpr AttributeWrapper(AttributeWrapper &&) = default;
-    constexpr AttributeWrapper(const AttributeWrapper &) = default;
-    constexpr AttributeWrapper(const PolymorphicParamAttribute &attr) : p_attributes(&attr) {}
+    AttributeWrapper(AttributeWrapper &&) = default;
+    AttributeWrapper(const AttributeWrapper &) = default;
 
     /**
      * A constructor that takes ParamAttribute values and constructs a reference to a global
@@ -60,11 +62,28 @@ class AttributeWrapper
      * @endcode
      */
     template <class... CompAttrT>
-    consteval AttributeWrapper(const CompAttrT &...attr) : p_attributes{&GLOBAL_ATTRIBUTE<attr...>}
+    AttributeWrapper(CompAttrT &&...attr)
+        : p_attributes{
+              std::make_shared<const CompoundParamAttribute<CompAttrT...>>(
+                  std::forward<CompAttrT...>(attr)...),
+          }
+    /*std::make_shared<const CompoundParamAttribute<CompAttrT...>>(
+      std::forward<CompAttrT...>(attr)...)*/
     {}
 
-    constexpr AttributeWrapper &operator=(const AttributeWrapper &) = default;
-    constexpr AttributeWrapper &operator=(AttributeWrapper &&) = default;
+    AttributeWrapper &operator=(const AttributeWrapper &) = default;
+    AttributeWrapper &operator=(AttributeWrapper &&) = default;
+
+    /**
+     * @tparam AttrT The type of the attribute we want
+     * @returns Pointer to the attribute object of type AttrT if it is set, nullptr otherwise
+     * @note AttrT is set if the attribute passed to this wrapper derives from AttrT
+     * @note Attribute types can be added to the contained object through this type's constructor
+     */
+    template <class AttrT> constexpr const AttrT *p_attribute() const
+    {
+        return dynamic_cast<const AttrT *>(p_attributes.get());
+    }
 };
 
 } // namespace Vitrae

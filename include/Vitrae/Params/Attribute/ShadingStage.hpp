@@ -8,7 +8,7 @@ namespace Vitrae
 /**
  * Specifies what stage this parameter should be calculated in
  */
-struct InherentShadingStage
+struct NaturalShadingStage
 {
     ShadingStage stage;
 };

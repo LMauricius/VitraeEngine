@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Dynamic/Variant.hpp"
+#include <any>
 
 namespace Vitrae
 {
@@ -9,7 +9,7 @@ namespace Vitrae
  */
 struct DefaultValue
 {
-    Variant value;
+    std::any value;
 };
 
 } // namespace Vitrae
