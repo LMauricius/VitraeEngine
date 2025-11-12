@@ -104,7 +104,7 @@ template <class T> void ComponentRoot::setComponent(Unique<T> &&comp)
 
 template <class T> void ComponentRoot::setComponent(T *p_comp)
 {
-    using UnderlyingT = std::remove_cv<T>;
+    using UnderlyingT = std::remove_cv_t<T>;
 
     UniqueAnyPtr &myvar = getGenericStorageVariable<UnderlyingT>();
     if constexpr (std::derived_from<UnderlyingT, dynasma::AbstractPool>) {
@@ -120,7 +120,7 @@ template <class T> void ComponentRoot::setComponent(T *p_comp)
 
 template <class T> T &ComponentRoot::getComponent() const
 {
-    using UnderlyingT = std::remove_cv<T>;
+    using UnderlyingT = std::remove_cv_t<T>;
 
     const UniqueAnyPtr &myvar = getAssignedGenericStorageVariable<UnderlyingT>();
     return *(myvar.get<UnderlyingT>());
