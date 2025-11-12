@@ -4,6 +4,8 @@
 #include "Vitrae/Assets/Model.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 
+#include "dynasma/standalone.hpp"
+
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
