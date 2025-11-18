@@ -1,4 +1,5 @@
 #include "Vitrae/Dynamic/VariantScope.hpp"
+#include "Vitrae/Dynamic/Variant.hpp"
 
 #include <stdexcept>
 
@@ -28,6 +29,18 @@ const Variant &VariantScope::get(StringId key) const
         return m_parent->get(key);
 
     throw std::runtime_error{"Key not found"};
+}
+
+const Variant &VariantScope::get(StringId key, const Variant &defaultValue) const
+{
+    auto it = m_dict.find(key);
+    if (it != m_dict.end())
+        return (*it).second;
+
+    if (m_parent)
+        return m_parent->get(key, defaultValue);
+
+    return defaultValue;
 }
 
 Variant VariantScope::move(StringId key)

@@ -84,6 +84,18 @@ class VariantScope
     const Variant &get(StringId key) const;
 
     /**
+     * @brief Get the value associated with a key, or a default value if not found.
+     *
+     * If the key is not found in the current dictionary, the search continues in the parent
+     * dictionary.
+     *
+     * @param key The key.
+     * @return The value associated with the key, or the default value if the key is not found.
+     * @throws nothing
+     */
+    const Variant &get(StringId key, const Variant &defaultValue) const;
+
+    /**
      * @brief Get a move-reference to the value associated with a key.
      *
      * If the key is not found in the current dictionary, the search continues in the parent
