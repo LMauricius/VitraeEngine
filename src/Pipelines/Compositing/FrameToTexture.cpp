@@ -1,5 +1,7 @@
 #include "Vitrae/Pipelines/Compositing/FrameToTexture.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
+#include "Vitrae/Assets/Texture.hpp"
+#include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Data/Overloaded.hpp"
 #include "Vitrae/Params/Standard.hpp"
 
@@ -9,37 +11,47 @@
 
 namespace Vitrae
 {
-ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params) : m_params(params)
+ComposeFrameToTexture::ComposeFrameToTexture(const AnySetupParams &params) : m_params(params)
 {
     m_friendlyName += "Fragment ";
-    std::visit(Overloaded{
-                   [&](const FixedRenderComponent &comp) {
-                       switch (comp) {
-                       case FixedRenderComponent::Depth:
-                           m_friendlyName += String("depth");
-                           break;
-                       }
-                   },
-                   [&](const ParamSpec &spec) { m_friendlyName += String(spec.name); },
-               },
-               params.shaderComponent);
+    std::visit(
+        [&]<BufferType BT>(const SetupParams<BT> &params) {
+            std::visit(Overloaded{
+                           [&](const FixedRenderComponent &comp) {
+                               switch (comp) {
+                               case FixedRenderComponent::DEPTH:
+                                   m_friendlyName += String("depth");
+                                   break;
+                               case FixedRenderComponent::DEPTH_AND_STENCIL:
+                                   m_friendlyName += String("depth and stencil");
+                                   break;
+                               case FixedRenderComponent::STENCIL:
+                                   m_friendlyName += String("stencil");
+                                   break;
+                               }
+                           },
+                           [&](const ParamSpec &spec) { m_friendlyName += String(spec.name); },
+                       },
+                       params.shaderComponent);
 
-    m_friendlyName += " to texture";
+            m_friendlyName += " to texture";
 
-    m_inputSpecs.insert_back(StandardParam::fs_target);
+            m_inputSpecs.insert_back(StandardParam::fs_target);
 
-    for (auto &tokenName : params.inputTokenNames) {
-        m_inputSpecs.insert_back({tokenName, TYPE_INFO<void>});
-    }
+            for (auto &tokenName : params.inputTokenNames) {
+                m_inputSpecs.insert_back({tokenName, TYPE_INFO<void>});
+            }
 
-    m_outputSpecs.insert_back({
-        params.textureName,
-        TYPE_INFO<dynasma::FirmPtr<Texture>>,
-    });
+            m_outputSpecs.insert_back({
+                params.textureName,
+                TYPE_INFO<dynasma::FirmPtr<Texture>>,
+            });
 
-    if (!m_params.size.isFixed()) {
-        m_inputSpecs.insert_back(m_params.size.getSpec());
-    }
+            if (!params.size.isFixed()) {
+                m_inputSpecs.insert_back(params.size.getSpec());
+            }
+        },
+        params);
 }
 
 std::size_t ComposeFrameToTexture::memory_cost() const
@@ -87,7 +99,10 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 {
     MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
-    glm::uvec2 retrSize = m_params.size.get(ctx.properties);
+    glm::uvec2 retrSize =
+        std::visit([&]<BufferType BT>(
+                       const SetupParams<BT> &params) { return params.size.get(ctx.properties); },
+                   m_params);
 
     // reset the whole pipeline if the FrameStore size is invalid
     if (ctx.properties.get(StandardParam::fs_target.name)
@@ -104,47 +119,54 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 
 void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx) const
 {
-    FrameStoreManager &frameManager = m_params.root.getComponent<FrameStoreManager>();
-    TextureManager &textureManager = m_params.root.getComponent<TextureManager>();
+    ComponentRoot &root = *std::visit(
+        [&]<BufferType BT>(const SetupParams<BT> &params) { return &params.root; }, m_params);
 
-    glm::uvec2 retrSize = m_params.size.get(ctx.properties);
+    FrameStoreManager &frameManager = root.getComponent<FrameStoreManager>();
 
-    auto p_texture =
-        textureManager
-            .register_asset({Texture::EmptyParams{.root = m_params.root,
-                                                  .size = retrSize,
-                                                  .format = m_params.format,
-                                                  .filtering = m_params.filtering,
-                                                  .friendlyName = m_params.textureName}})
-            .getLoaded();
-    FrameStore::OutputTextureSpec outputSpec = {
-        .p_texture = p_texture,
-        .shaderComponent = m_params.shaderComponent,
-        .clearColor = m_params.clearColor,
-    };
-    ctx.properties.set(m_params.textureName, p_texture);
+    std::visit(
+        [&]<BufferType BT>(const SetupParams<BT> &params) {
+            TextureManager<Texture2D<BT>> &textureManager =
+                root.getComponent<TextureManager<Texture2D<BT>>>();
 
-    /*
-    Now create the FB only if it didn't exist beforehand
-    */
-    if (!ctx.properties.has(StandardParam::fs_target.name) ||
-        ctx.properties.get(StandardParam::fs_target.name).getAssignedTypeInfo() ==
-            TYPE_INFO<void>) {
-        auto p_frame =
-            frameManager
-                .register_asset_k(FrameStore::TextureBindParams{
-                    .root = m_params.root,
-                    .outputTextureSpecs = {outputSpec},
-                    .friendlyName = ctx.aliases.choiceStringFor(StandardParam::fs_target.name),
-                })
-                .getLoaded();
-        ctx.properties.set(StandardParam::fs_target.name, p_frame);
-    } else {
-        auto p_frame =
-            ctx.properties.get(StandardParam::fs_target.name).get<dynasma::FirmPtr<FrameStore>>();
-        p_frame->bindOutput(outputSpec);
-        ctx.properties.set(StandardParam::fs_target.name, p_frame);
-    }
+            glm::uvec2 retrSize = params.size.get(ctx.properties);
+
+            auto p_texture =
+                textureManager
+                    .register_asset(
+                        {typename Texture2D<BT>::EmptyParams{.root = root,
+                                                             .size = retrSize,
+                                                             .storageFormat = params.storageFormat,
+                                                             .filtering = params.filtering,
+                                                             .friendlyName = params.textureName}})
+                    .getLoaded();
+            auto outputSpec = RenderTextureSpec::fromUnsafe(p_texture, params.shaderComponent);
+
+            /*
+            Now create the FB only if it didn't exist beforehand
+            */
+            if (!ctx.properties.has(StandardParam::fs_target.name) ||
+                ctx.properties.get(StandardParam::fs_target.name).getAssignedTypeInfo() ==
+                    TYPE_INFO<void>) {
+                auto p_frame = frameManager
+                                   .register_asset_k(FrameStore::TextureBindParams{
+                                       .root = params.root,
+                                       .outputTextureSpecs{outputSpec},
+                                       .friendlyName = ctx.aliases.choiceStringFor(
+                                           StandardParam::fs_target.name),
+                                   })
+                                   .getLoaded();
+                ctx.properties.set(StandardParam::fs_target.name, p_frame);
+            } else {
+                auto p_frame = ctx.properties.get(StandardParam::fs_target.name)
+                                   .get<dynasma::FirmPtr<FrameStore>>();
+                p_frame->bindOutput(outputSpec);
+                ctx.properties.set(StandardParam::fs_target.name, p_frame);
+            }
+
+            ctx.properties.set(params.textureName, p_texture);
+        },
+        m_params);
 }
 
 StringView ComposeFrameToTexture::getFriendlyName() const

@@ -2,14 +2,14 @@
 
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/RenderComponents.hpp"
 #include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
-#include "Vitrae/Data/RenderComponents.hpp"
-#include "Vitrae/Data/ClearColor.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
 
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 
 #include <variant>
 
@@ -19,19 +19,63 @@ namespace Vitrae
 class ComposeFrameToTexture : public ComposeTask
 {
   public:
-    struct SetupParams
+    template <BufferType BUFFER_TYPE> struct SetupParams
     {
         ComponentRoot &root;
-        std::vector<String> inputTokenNames;
-        String textureName;
-        RenderComponent shaderComponent;
-        BufferFormat format;
-        ClearColor clearColor = glm::vec4{0.0f, 0.0f, 0.0f, 0.0f};
-        TextureFilteringParams filtering;
         ArgumentGetter<glm::uvec2> size;
+        BufferFormat<BUFFER_TYPE> storageFormat;
+        SwizzleSpec<BUFFER_TYPE> swizzle = CommonSwizzleSpecs<BUFFER_TYPE>::NATURAL;
+        TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
+        String textureName;
+        std::vector<String> inputTokenNames;
+        RenderComponent shaderComponent;
     };
 
-    ComposeFrameToTexture(const SetupParams &params);
+    template <> struct SetupParams<BufferType::DEPTH>
+    {
+        ComponentRoot &root;
+        ArgumentGetter<glm::uvec2> size;
+        BufferFormat<BufferType::DEPTH> storageFormat;
+        TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
+        String textureName;
+        std::vector<String> inputTokenNames;
+
+        constexpr static SwizzleSpec<BufferType::DEPTH> swizzle =
+            CommonSwizzleSpecs<BufferType::DEPTH>::NATURAL;
+        constexpr static RenderComponent shaderComponent = FixedRenderComponent::DEPTH;
+    };
+
+    template <> struct SetupParams<BufferType::STENCIL>
+    {
+        ComponentRoot &root;
+        ArgumentGetter<glm::uvec2> size;
+        BufferFormat<BufferType::STENCIL> storageFormat;
+        TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
+        String textureName;
+        std::vector<String> inputTokenNames;
+
+        constexpr static SwizzleSpec<BufferType::STENCIL> swizzle =
+            CommonSwizzleSpecs<BufferType::STENCIL>::NATURAL;
+        constexpr static RenderComponent shaderComponent = FixedRenderComponent::STENCIL;
+    };
+
+    template <> struct SetupParams<BufferType::DEPTH_AND_STENCIL>
+    {
+        ComponentRoot &root;
+        ArgumentGetter<glm::uvec2> size;
+        BufferFormat<BufferType::DEPTH_AND_STENCIL> storageFormat;
+        TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
+        String textureName;
+        std::vector<String> inputTokenNames;
+
+        constexpr static SwizzleSpec<BufferType::DEPTH_AND_STENCIL> swizzle =
+            CommonSwizzleSpecs<BufferType::DEPTH_AND_STENCIL>::NATURAL;
+        constexpr static RenderComponent shaderComponent = FixedRenderComponent::DEPTH_AND_STENCIL;
+    };
+
+    using AnySetupParams = VariantForBufferTypes<SetupParams>;
+
+    ComposeFrameToTexture(const AnySetupParams &params);
     ~ComposeFrameToTexture() = default;
 
     std::size_t memory_cost() const override;
@@ -52,7 +96,7 @@ class ComposeFrameToTexture : public ComposeTask
     StringView getFriendlyName() const override;
 
   protected:
-    SetupParams m_params;
+    AnySetupParams m_params;
     ParamList m_inputSpecs;
     ParamList m_consumeSpecs;
     ParamList m_outputSpecs;
@@ -63,7 +107,7 @@ class ComposeFrameToTexture : public ComposeTask
 struct ComposeFrameToTextureKeeperSeed
 {
     using Asset = ComposeFrameToTexture;
-    std::variant<ComposeFrameToTexture::SetupParams> kernel;
+    std::variant<ComposeFrameToTexture::AnySetupParams> kernel;
     inline std::size_t load_cost() const { return 1; }
 };
 

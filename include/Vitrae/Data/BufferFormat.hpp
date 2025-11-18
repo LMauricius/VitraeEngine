@@ -300,6 +300,21 @@ using AnyBufferFormat =
 template <class VisitorT, typename... ArgTs>
 constexpr void forBufferTypes(VisitorT &&visitor, ArgTs &&...args);
 
+/**
+ * A variant that contains OptionT<BUFFER_TYPE> for all BufferTypes
+ * @param OptionT a template class that is parametrized by a BufferType
+ */
+template <template <auto> class OptionT>
+using VariantForBufferTypes =
+    std::variant<OptionT<BufferType::REAL_SCALAR>, OptionT<BufferType::REAL_VEC2>,
+                 OptionT<BufferType::REAL_VEC3>, OptionT<BufferType::REAL_VEC4>,
+                 OptionT<BufferType::WHOLE_SCALAR>, OptionT<BufferType::WHOLE_VEC2>,
+                 OptionT<BufferType::WHOLE_VEC3>, OptionT<BufferType::WHOLE_VEC4>,
+                 OptionT<BufferType::COUNT_SCALAR>, OptionT<BufferType::COUNT_VEC2>,
+                 OptionT<BufferType::COUNT_VEC3>, OptionT<BufferType::COUNT_VEC4>,
+                 OptionT<BufferType::DEPTH>, OptionT<BufferType::STENCIL>,
+                 OptionT<BufferType::DEPTH_AND_STENCIL>>;
+
 // ==== Specialization wrappers per BufferType =====================================================
 
 template <> struct BufferTypeSpecialization<BufferType::REAL_SCALAR>

@@ -1,16 +1,12 @@
 #pragma once
 
-#include "Vitrae/Data/RenderComponents.hpp"
-#include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Data/ClearColor.hpp"
-#include "Vitrae/Params/ParamSpec.hpp"
+#include "Vitrae/Data/Typedefs.hpp"
+#include "Vitrae/Setup/RenderTexture.hpp"
 
 #include "dynasma/managers/abstract.hpp"
 #include "dynasma/pointer.hpp"
 
-#include "glm/glm.hpp"
-
-#include <optional>
 #include <span>
 
 namespace Vitrae
@@ -25,17 +21,10 @@ class ParamList;
 class FrameStore : public dynasma::PolymorphicBase
 {
   public:
-    struct OutputTextureSpec
-    {
-        std::optional<dynasma::FirmPtr<Texture>> p_texture;
-        RenderComponent shaderComponent;
-        ClearColor clearColor = glm::vec4{0.0f, 0.0f, 0.0f, 0.0f};
-    };
-
     struct TextureBindParams
     {
         ComponentRoot &root;
-        std::vector<OutputTextureSpec> outputTextureSpecs;
+        std::vector<RenderTextureSpec> outputTextureSpecs;
         String friendlyName = "";
     };
     struct WindowDisplayParams
@@ -57,11 +46,11 @@ class FrameStore : public dynasma::PolymorphicBase
     virtual std::size_t memory_cost() const = 0;
 
     virtual void resize(glm::vec2 size) = 0;
-    virtual void bindOutput(const OutputTextureSpec &spec) = 0;
+    virtual void bindOutput(const RenderTextureSpec &spec) = 0;
 
     virtual glm::uvec2 getSize() const = 0;
     virtual dynasma::FirmPtr<const ParamList> getRenderComponents() const = 0;
-    virtual std::span<const OutputTextureSpec> getOutputTextureSpecs() const = 0;
+    virtual std::span<const RenderTextureSpec> getRenderTextureSpecs() const = 0;
 
     virtual void sync(bool vsync) = 0;
 };

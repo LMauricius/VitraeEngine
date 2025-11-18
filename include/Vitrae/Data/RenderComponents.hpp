@@ -11,7 +11,9 @@ namespace Vitrae
  * Identifies standard output properties of render passes.
  */
 enum class FixedRenderComponent {
-    Depth,
+    DEPTH,
+    STENCIL,
+    DEPTH_AND_STENCIL,
 };
 
 /**

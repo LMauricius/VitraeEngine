@@ -1,6 +1,7 @@
 #include "Vitrae/Pipelines/Compositing/FrameToFrame.hpp"
 #include "Vitrae/Assets/FrameStore.hpp"
 #include "Vitrae/Data/Overloaded.hpp"
+#include "Vitrae/Data/RenderComponents.hpp"
 #include "Vitrae/Params/Standard.hpp"
 
 #include "MMeter.h"
@@ -15,8 +16,14 @@ ComposeFrameToFrame::ComposeFrameToFrame(const SetupParams &params) : m_params(p
     std::visit(Overloaded{
                    [&](const FixedRenderComponent &comp) {
                        switch (comp) {
-                       case FixedRenderComponent::Depth:
+                       case FixedRenderComponent::DEPTH:
                            m_friendlyName += String("depth");
+                           break;
+                       case FixedRenderComponent::DEPTH_AND_STENCIL:
+                           m_friendlyName += String("depth and stencil");
+                           break;
+                       case FixedRenderComponent::STENCIL:
+                           m_friendlyName += String("stencil");
                            break;
                        }
                    },
@@ -91,33 +98,30 @@ void ComposeFrameToFrame::run(RenderComposeContext ctx) const
 void ComposeFrameToFrame::prepareRequiredLocalAssets(RenderComposeContext ctx) const
 {
     FrameStoreManager &frameManager = m_params.root.getComponent<FrameStoreManager>();
-    TextureManager &textureManager = m_params.root.getComponent<TextureManager>();
 
     auto p_targetFrame =
         ctx.properties.get(m_params.targetFrameStoreName).get<dynasma::FirmPtr<FrameStore>>();
-
-    dynasma::FirmPtr<Texture> p_texture;
-    ClearColor clearColor;
 
     Overloaded nameGetter{
         [&](FixedRenderComponent comp) { return std::to_string((int)comp); },
         [&](const ParamSpec &spec) { return spec.name; },
     };
 
-    for (auto& texSpec : p_targetFrame->getOutputTextureSpecs()) {
+    const RenderTextureSpec *p_foundSpec = nullptr;
+    for (auto &texSpec : p_targetFrame->getRenderTextureSpecs()) {
         if (std::visit(nameGetter, m_params.shaderComponent) ==
                 std::visit(nameGetter, texSpec.shaderComponent) &&
-            texSpec.p_texture.has_value()) {
-            p_texture = texSpec.p_texture.value();
-            clearColor = texSpec.clearColor;
+            texSpec.p_texture != dynasma::FirmPtr<Texture2DBase>{}) {
+            p_foundSpec = &texSpec;
+            break;
         }
     }
 
-    FrameStore::OutputTextureSpec outputSpec = {
-        .p_texture = p_texture,
-        .shaderComponent = m_params.shaderComponent,
-        .clearColor = clearColor,
-    };
+    if (!p_foundSpec) {
+        throw std::runtime_error("Could not find texture to bind to frame");
+    }
+
+    RenderTextureSpec outputSpec = *p_foundSpec;
 
     /*
     Now create the FB only if it didn't exist beforehand

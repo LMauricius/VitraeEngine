@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Vitrae/Assets/TensorBuffer.hpp"
-#include "Vitrae/Containers/StableMap.hpp"
 #include "Vitrae/Data/BufferFormat.hpp"
 #include "Vitrae/Data/Sides.hpp"
 #include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
+#include "Vitrae/Dynamic/VariantScope.hpp"
 #include "Vitrae/Setup/ImageLoad.hpp"
 
 #include "dynasma/managers/abstract.hpp"
@@ -42,18 +42,18 @@ class TextureBase : public dynasma::PolymorphicBase
 
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
-    const StableMap<StringId, Variant> &getProperties() const { return m_properties; }
+    const VariantScope &getProperties() const { return m_properties; }
 
   protected:
     std::optional<TextureStats> m_stats;
-    StableMap<StringId, Variant> m_properties;
+    VariantScope m_properties;
 };
 
 /**
  * Base for any TextureBase type that has this BufferType
  * @tparam BUFFER_TYPE The buffer type this texture uses
  */
-template <BufferType TBUFFER_TYPE> class TextureBaseTyped : public TextureBase
+template <BufferType TBUFFER_TYPE> class TextureBaseTyped : public virtual TextureBase
 {
   public:
     constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
@@ -96,7 +96,7 @@ template <class TextureT> using TextureManager = dynasma::AbstractManager<Textur
 /**
  * A 1D image of any type
  */
-class Texture1DBase : public TextureBase
+class Texture1DBase : public virtual TextureBase
 {
   public:
     unsigned int getSize() const { return m_size; }
@@ -132,7 +132,7 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
 /**
  * A 2D image of any type
  */
-class Texture2DBase : public TextureBase
+class Texture2DBase : public virtual TextureBase
 {
   public:
     glm::uvec2 getSize() const { return m_size; }
@@ -165,7 +165,7 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
 /**
  * A 3D image of any type
  */
-class Texture3DBase : public TextureBase
+class Texture3DBase : public virtual TextureBase
 {
   public:
     glm::uvec3 getSize() const { return m_size; }
@@ -198,7 +198,7 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
 /**
  * A 3D collection of 6 2D images used for cubemapping of any type
  */
-class TextureCubemapBase : public TextureBase
+class TextureCubemapBase : public virtual TextureBase
 {
   public:
     glm::uvec2 getSize() const { return {m_size, m_size}; }
@@ -237,7 +237,7 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFE
 /**
  * A list of 1D images, each a layer of 1 asset of any type
  */
-class Texture1DLayeredBase : public TextureBase
+class Texture1DLayeredBase : public virtual TextureBase
 {
   public:
     glm::uvec2 getSize() const { return m_size; }
@@ -277,7 +277,7 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TB
 /**
  * A list of 2D images
  */
-class Texture2DLayeredBase : public TextureBase
+class Texture2DLayeredBase : public virtual TextureBase
 {
   public:
     glm::uvec2 getSize() const { return m_size; }
@@ -317,7 +317,7 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TB
 /**
  * A list of cubemap images
  */
-class TextureCubemapLayeredBase : public TextureBase
+class TextureCubemapLayeredBase : public virtual TextureBase
 {
   public:
     glm::uvec3 getSize() const { return {m_size.x, m_size.x, m_size.y}; }
