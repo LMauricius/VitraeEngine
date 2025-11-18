@@ -49,6 +49,9 @@ inline const ParamSpec position    = {"position",    TYPE_INFO<glm::vec3>};
 inline const ParamSpec normal      = {"normal",      TYPE_INFO<glm::vec3>};
 inline const ParamSpec coord_base  = {"coord_base",   TYPE_INFO<glm::vec3>};
 
+/// @subsection Material properties
+inline const ParamSpec is_transparent = {"is_transparent", TYPE_INFO<bool>};
+
 // clang-format on
 
 } // namespace StandardParam

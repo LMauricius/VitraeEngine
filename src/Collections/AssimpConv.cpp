@@ -42,6 +42,19 @@ AssimpConvCollection::AssimpConvCollection()
             }
         },
     });
+
+    addMaterialPropertyConv({
+        .nameId = StandardParam::is_transparent.name,
+        .extractor = [](const aiMaterial &extMat) -> std::optional<Variant> {
+            int flags;
+            if (extMat.Get(AI_MATKEY_TEXFLAGS(aiTextureType_DIFFUSE, 0), flags) ==
+                aiReturn_SUCCESS) {
+                return Variant{
+                    bool{flags & aiTextureFlags_UseAlpha && !(flags & aiTextureFlags_IgnoreAlpha)}};
+            }
+            return std::nullopt;
+        },
+    });
 }
 
 void AssimpConvCollection::addMaterialPropertyConv(const MaterialPropertyConv &newInfo)
