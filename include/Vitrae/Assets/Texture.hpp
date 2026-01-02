@@ -99,12 +99,9 @@ template <class TextureT> using TextureManager = dynasma::AbstractManager<Textur
 class Texture1DBase : public virtual TextureBase
 {
   public:
-    unsigned int getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1, 1}; }
+    virtual unsigned int getSize() const = 0;
+    glm::uvec4 getNDSize() const override { return glm::uvec4{getSize(), 1, 1, 1}; }
     std::size_t getNumDimensions() const override { return 1; }
-
-  protected:
-    unsigned int m_size;
 };
 
 /**
@@ -121,12 +118,8 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer1D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer1D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
-        const = 0;
-
-  protected:
-    unsigned int m_size;
+    virtual dynasma::SharedPtr<TensorBuffer1D<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer1D<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -135,12 +128,9 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
 class Texture2DBase : public virtual TextureBase
 {
   public:
-    glm::uvec2 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
+    virtual glm::uvec2 getSize() const = 0;
+    glm::uvec4 getNDSize() const override { return glm::uvec4{getSize(), 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 /**
@@ -157,9 +147,8 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer2D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
-        const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer2D<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer2D<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -168,12 +157,9 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
 class Texture3DBase : public virtual TextureBase
 {
   public:
-    glm::uvec3 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1}; }
+    virtual glm::uvec3 getSize() const = 0;
+    glm::uvec4 getNDSize() const override { return glm::uvec4{getSize(), 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-
-  protected:
-    glm::uvec3 m_size;
 };
 
 /**
@@ -190,9 +176,8 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer3D<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer3D<BufferValueType<TBUFFER_TYPE>>> getBuffer()
-        const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer3D<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer3D<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -201,12 +186,9 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
 class TextureCubemapBase : public virtual TextureBase
 {
   public:
-    glm::uvec2 getSize() const { return {m_size, m_size}; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, m_size, 6, 1}; }
+    virtual glm::uvec3 getSize() const = 0;
+    glm::uvec4 getNDSize() const override { return glm::uvec4{getSize(), 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-
-  protected:
-    unsigned int m_size;
 };
 
 /**
@@ -229,9 +211,8 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFE
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBufferCubemap<BufferValueType<TBUFFER_TYPE>>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBufferCubemap<BufferValueType<TBUFFER_TYPE>>> getBuffer()
-        const = 0;
+    virtual dynasma::SharedPtr<TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -240,12 +221,9 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFE
 class Texture1DLayeredBase : public virtual TextureBase
 {
   public:
-    glm::uvec2 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
+    virtual glm::uvec2 getSize() const = 0;
+    glm::uvec4 getNDSize() const override { return glm::uvec4{getSize(), 1, 1}; }
     std::size_t getNumDimensions() const override { return 2; }
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 /**
@@ -268,10 +246,8 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TB
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer1DLayered<BufferValueType<TBUFFER_TYPE>>>
-    getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer1DLayered<BufferValueType<TBUFFER_TYPE>>>
-    getBuffer() const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -280,12 +256,9 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TB
 class Texture2DLayeredBase : public virtual TextureBase
 {
   public:
-    glm::uvec2 getSize() const { return m_size; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size, 1, 1}; }
+    virtual glm::uvec3 getSize() const = 0;
+    glm::uvec4 getNDSize() const override { return glm::uvec4{getSize(), 1}; }
     std::size_t getNumDimensions() const override { return 3; }
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 /**
@@ -308,10 +281,8 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TB
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer2DLayered<BufferValueType<TBUFFER_TYPE>>>
-    getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2DLayered<BufferValueType<TBUFFER_TYPE>>>
-    getBuffer() const = 0;
+    virtual dynasma::SharedPtr<TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -320,12 +291,9 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TB
 class TextureCubemapLayeredBase : public virtual TextureBase
 {
   public:
-    glm::uvec3 getSize() const { return {m_size.x, m_size.x, m_size.y}; }
-    glm::uvec4 getNDSize() const override { return glm::uvec4{m_size.x, m_size.x, 6, m_size.y}; }
+    virtual glm::uvec4 getSize() const = 0;
+    glm::uvec4 getNDSize() const override { return getSize(); }
     std::size_t getNumDimensions() const override { return 4; }
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 /**
@@ -350,10 +318,9 @@ class TextureCubemapLayered : public TextureCubemapLayeredBase,
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBufferCubemapLayered<BufferValueType<TBUFFER_TYPE>>>
-    getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBufferCubemapLayered<BufferValueType<TBUFFER_TYPE>>>
-    getBuffer() const = 0;
+    virtual dynasma::SharedPtr<TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::SharedPtr<const TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer()
+        const = 0;
 };
 
 // ==== Helpers for handling all these types =======================================================

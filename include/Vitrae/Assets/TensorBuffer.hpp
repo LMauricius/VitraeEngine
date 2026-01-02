@@ -53,21 +53,21 @@ class TensorBufferBase : public dynasma::PolymorphicBase
 
 /**
  * Base for any TensorBufferBase type that has this Tensor type
- * @tparam TElementType The element type of the buffer
+ * @tparam TBUFFER_TYPE The element type of the buffer
  */
-template <typename TElementType> class TensorBufferBaseTyped : public TensorBufferBase
+template <BufferType TBUFFER_TYPE> class TensorBufferBaseTyped : public TensorBufferBase
 {
   public:
-    static_assert(Tensor<TElementType>,
-                  "ElementType must be a Tensor type according to TYPE_META<ElementType>");
-
     /// The element type
-    using ElementType = TElementType;
+    constexpr static auto BUFFER_TYPE = TBUFFER_TYPE;
 
     /**
      * @return The element type info
      */
-    const TypeInfo &getElementType() const override { return TYPE_INFO<ElementType>; }
+    const TypeInfo &getElementType() const override
+    {
+        return TYPE_INFO<BufferValueType<BUFFER_TYPE>>;
+    }
 
     /**
      * @return The format of the buffer, among all BufferFormats
@@ -82,105 +82,95 @@ template <typename TElementType> class TensorBufferBaseTyped : public TensorBuff
     /**
      * @return The format of the buffer among those compatible with the element type
      */
-    virtual CompatibleBufferFormat<TYPE_META<ElementType>.CORE_VECTOR_KIND> getBufferFormat()
-        const = 0;
+    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
 };
 
 /**
  * A 1D TensorBuffer
  */
-template <typename TElementType> class TensorBuffer1D : public TensorBufferBaseTyped<TElementType>
+template <BufferType TBUFFER_TYPE> class TensorBuffer1D : public TensorBufferBaseTyped<TBUFFER_TYPE>
 {
   public:
     /**
      * @return The size of the buffer
      */
-    inline unsigned int getSize() const { return m_size; }
+    virtual unsigned int getSize() const = 0;
 
     /**
      * @return The size of the buffer, in 4 dimensions
      * @note In unused dimensions the size is 1
      */
-    glm::uvec4 getNDSize() const override { return {m_size, 1, 1, 1}; }
+    glm::uvec4 getNDSize() const override { return {getSize(), 1, 1, 1}; }
 
     /**
      * @return The number of buffer dimensions
      */
     std::size_t getNumDimensions() const override { return 1; }
-
-  protected:
-    unsigned int m_size;
 };
 
 /**
  * A 2D TensorBuffer
  */
-template <typename TElementType> class TensorBuffer2D : public TensorBufferBaseTyped<TElementType>
+template <BufferType TBUFFER_TYPE> class TensorBuffer2D : public TensorBufferBaseTyped<TBUFFER_TYPE>
 {
   public:
     /**
      * @return The size of the buffer
      */
-    inline glm::uvec2 getSize() const { return m_size; }
+    virtual glm::uvec2 getSize() const = 0;
 
     /**
      * @return The size of the buffer, in 4 dimensions
      * @note In unused dimensions the size is 1
      */
-    glm::uvec4 getNDSize() const override { return {m_size, 1, 1}; }
+    glm::uvec4 getNDSize() const override { return {getSize(), 1, 1}; }
 
     /**
      * @return The number of buffer dimensions
      */
     std::size_t getNumDimensions() const override { return 2; }
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 /**
  * A 3D TensorBuffer
  */
-template <typename TElementType> class TensorBuffer3D : public TensorBufferBaseTyped<TElementType>
+template <BufferType TBUFFER_TYPE> class TensorBuffer3D : public TensorBufferBaseTyped<TBUFFER_TYPE>
 {
   public:
     /**
      * @return The size of the buffer
      */
-    inline glm::uvec3 getSize() const { return m_size; }
+    virtual glm::uvec3 getSize() const = 0;
 
     /**
      * @return The size of the buffer, in 4 dimensions
      * @note In unused dimensions the size is 1
      */
-    glm::uvec4 getNDSize() const override { return {m_size, 1}; }
+    glm::uvec4 getNDSize() const override { return {getSize(), 1}; }
 
     /**
      * @return The number of buffer dimensions
      */
     std::size_t getNumDimensions() const override { return 3; }
-
-  protected:
-    glm::uvec3 m_size;
 };
 
 /**
  * A 3D collection of 6 2D TensorBuffers
  */
-template <typename TElementType>
-class TensorBufferCubemap : public TensorBufferBaseTyped<TElementType>
+template <BufferType TBUFFER_TYPE>
+class TensorBufferCubemap : public TensorBufferBaseTyped<TBUFFER_TYPE>
 {
   public:
     /**
      * @return The size of the buffer
      */
-    inline glm::uvec2 getSize() const { return {m_size, m_size}; }
+    virtual glm::uvec3 getSize() const = 0;
 
     /**
      * @return The size of the buffer, in 4 dimensions
      * @note In unused dimensions the size is 1
      */
-    glm::uvec4 getNDSize() const override { return {m_size, m_size, 6, 1}; }
+    glm::uvec4 getNDSize() const override { return {getSize(), 1}; }
 
     /**
      * @return The number of buffer dimensions
@@ -190,30 +180,27 @@ class TensorBufferCubemap : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a TensorBuffer2D face of this cubemap
      */
-    virtual dynasma::SharedPtr<TensorBuffer2D<TElementType>> getFace(Side side) = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2D<TElementType>> getFace(Side side) const = 0;
-
-  protected:
-    unsigned int m_size;
+    virtual dynasma::SharedPtr<TensorBuffer2D<TBUFFER_TYPE>> getFace(Side side) = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer2D<TBUFFER_TYPE>> getFace(Side side) const = 0;
 };
 
 /**
  * A list of 1D TensorBuffers of shared size
  */
-template <typename TElementType>
-class TensorBuffer1DLayered : public TensorBufferBaseTyped<TElementType>
+template <BufferType TBUFFER_TYPE>
+class TensorBuffer1DLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
 {
   public:
     /**
      * @return The size of the buffer
      */
-    inline glm::uvec2 getSize() const { return {m_size}; }
+    virtual glm::uvec2 getSize() const = 0;
 
     /**
      * @return The size of the buffer, in 4 dimensions
      * @note In unused dimensions the size is 1
      */
-    glm::uvec4 getNDSize() const override { return {m_size, 1, 1}; }
+    glm::uvec4 getNDSize() const override { return {getSize(), 1, 1}; }
 
     /**
      * @return The number of buffer dimensions
@@ -223,31 +210,28 @@ class TensorBuffer1DLayered : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a 1D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::SharedPtr<TensorBuffer1D<TElementType>> getLayer(std::size_t y) = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer1D<TElementType>> getLayer(
+    virtual dynasma::SharedPtr<TensorBuffer1D<TBUFFER_TYPE>> getLayer(std::size_t y) = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer1D<TBUFFER_TYPE>> getLayer(
         std::size_t y) const = 0;
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 /**
  * A list of 2D TensorBuffers of shared size
  */
-template <typename TElementType>
-class TensorBuffer2DLayered : public TensorBufferBaseTyped<TElementType>
+template <BufferType TBUFFER_TYPE>
+class TensorBuffer2DLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
 {
   public:
     /**
      * @return The size of the buffer
      */
-    inline glm::uvec3 getSize() const { return {m_size}; }
+    virtual glm::uvec3 getSize() const = 0;
 
     /**
      * @return The size of the buffer, in 4 dimensions
      * @note In unused dimensions the size is 1
      */
-    glm::uvec4 getNDSize() const override { return {m_size, 1}; }
+    glm::uvec4 getNDSize() const override { return {getSize(), 1}; }
 
     /**
      * @return The number of buffer dimensions
@@ -257,31 +241,28 @@ class TensorBuffer2DLayered : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a 2D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::SharedPtr<TensorBuffer2D<TElementType>> getLayer(std::size_t z) = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2D<TElementType>> getLayer(
+    virtual dynasma::SharedPtr<TensorBuffer2D<TBUFFER_TYPE>> getLayer(std::size_t z) = 0;
+    virtual dynasma::SharedPtr<const TensorBuffer2D<TBUFFER_TYPE>> getLayer(
         std::size_t z) const = 0;
-
-  protected:
-    glm::uvec3 m_size;
 };
 
 /**
  * A list of Cubemap TensorBuffers of shared size
  */
-template <typename TElementType>
-class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TElementType>
+template <BufferType TBUFFER_TYPE>
+class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
 {
   public:
     /**
      * @return The size of the buffer
      */
-    inline glm::uvec4 getSize() const { return {m_size.x, m_size.x, 6, m_size.y}; }
+    virtual glm::uvec4 getSize() const = 0;
 
     /**
      * @return The size of the buffer, in 4 dimensions
      * @note In unused dimensions the size is 1
      */
-    glm::uvec4 getNDSize() const override { return {m_size.x, m_size.x, 6, m_size.y}; }
+    glm::uvec4 getNDSize() const override { return getSize(); }
 
     /**
      * @return The number of buffer dimensions
@@ -291,12 +272,9 @@ class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a Cubemap TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::SharedPtr<TensorBufferCubemap<TElementType>> getLayer(std::size_t w) = 0;
-    virtual dynasma::SharedPtr<const TensorBufferCubemap<TElementType>> getLayer(
+    virtual dynasma::SharedPtr<TensorBufferCubemap<TBUFFER_TYPE>> getLayer(std::size_t w) = 0;
+    virtual dynasma::SharedPtr<const TensorBufferCubemap<TBUFFER_TYPE>> getLayer(
         std::size_t w) const = 0;
-
-  protected:
-    glm::uvec2 m_size;
 };
 
 } // namespace Vitrae

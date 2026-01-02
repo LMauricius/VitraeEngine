@@ -35,7 +35,7 @@ template <BufferType BUFFER_TYPE, typename SizeT> struct EmptyParams
 template <BufferType BUFFER_TYPE> struct PureColorParams
 {
     ComponentRoot &root;
-    glm::vec4 color;
+    BufferValueType<BUFFER_TYPE> color;
     BufferFormat<BUFFER_TYPE> storageFormat;
 };
 
