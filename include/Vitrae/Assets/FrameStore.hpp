@@ -24,7 +24,7 @@ class FrameStore : public dynasma::PolymorphicBase
     struct TextureBindParams
     {
         ComponentRoot &root;
-        std::vector<RenderTextureSpec> outputTextureSpecs;
+        std::vector<RenderTextureSpec> renderTextureSpecs;
         String friendlyName = "";
     };
     struct WindowDisplayParams

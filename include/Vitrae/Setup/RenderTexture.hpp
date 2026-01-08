@@ -64,7 +64,7 @@ inline RenderTextureSpec::RenderTextureSpec(dynasma::FirmPtr<Texture2D<BUFFER_TY
                                             String componentName)
     : p_texture{p_texture}, shaderComponent{ParamSpec{
                                 .name = componentName,
-                                .typeInfo = TYPE_INFO<NativeChannelType<BUFFER_TYPE>>,
+                                .typeInfo = TYPE_INFO<BufferChannelType<BUFFER_TYPE>>,
                             }}
 {}
 
