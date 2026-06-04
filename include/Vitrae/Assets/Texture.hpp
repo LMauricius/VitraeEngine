@@ -118,8 +118,8 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer1D<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer1D<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer1D<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer1D<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -147,8 +147,8 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer2D<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2D<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer2D<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2D<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -176,8 +176,8 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer3D<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer3D<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer3D<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer3D<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -199,20 +199,20 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFE
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     /**
      * @returns pointer to a Texture2D face of this cubemap
      */
-    virtual dynasma::SharedPtr<Texture2D<TBUFFER_TYPE>> getFace(Side side) = 0;
-    virtual dynasma::SharedPtr<const Texture2D<TBUFFER_TYPE>> getFace(Side side) const = 0;
+    virtual dynasma::IndirectPtr<Texture2D<TBUFFER_TYPE>> getFace(Side side) = 0;
+    virtual dynasma::IndirectPtr<const Texture2D<TBUFFER_TYPE>> getFace(Side side) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -240,14 +240,15 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TB
     /**
      * @returns pointer to a Texture1D layer
      */
-    virtual dynasma::SharedPtr<Texture1D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
-    virtual dynasma::SharedPtr<const Texture1D<TBUFFER_TYPE>> getLayer(std::size_t layer) const = 0;
+    virtual dynasma::IndirectPtr<Texture1D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::IndirectPtr<const Texture1D<TBUFFER_TYPE>> getLayer(
+        std::size_t layer) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -269,20 +270,21 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TB
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     /**
      * @returns pointer to a Texture2D layer
      */
-    virtual dynasma::SharedPtr<Texture2D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
-    virtual dynasma::SharedPtr<const Texture2D<TBUFFER_TYPE>> getLayer(std::size_t layer) const = 0;
+    virtual dynasma::IndirectPtr<Texture2D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::IndirectPtr<const Texture2D<TBUFFER_TYPE>> getLayer(
+        std::size_t layer) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -305,21 +307,21 @@ class TextureCubemapLayered : public TextureCubemapLayeredBase,
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
+    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
 
     /**
      * @returns pointer to a TextureCubemap layer
      */
-    virtual dynasma::SharedPtr<TextureCubemap<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
-    virtual dynasma::SharedPtr<const TextureCubemap<TBUFFER_TYPE>> getLayer(
+    virtual dynasma::IndirectPtr<TextureCubemap<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::IndirectPtr<const TextureCubemap<TBUFFER_TYPE>> getLayer(
         std::size_t layer) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::SharedPtr<TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::SharedPtr<const TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer()
+    virtual dynasma::IndirectPtr<TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer()
         const = 0;
 };
 

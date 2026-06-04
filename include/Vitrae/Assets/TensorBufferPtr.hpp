@@ -4,7 +4,7 @@
 #include "Vitrae/Data/Sides.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 #include "Vitrae/Dynamic/TypeMeta/Tensor.hpp"
-#include "dynasma/shared.hpp"
+#include "dynasma/indirect.hpp"
 #include "glm/glm.hpp"
 
 namespace Vitrae
@@ -190,8 +190,8 @@ class TensorBufferCubemap : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a TensorBuffer2D face of this cubemap
      */
-    virtual dynasma::SharedPtr<TensorBuffer2D<TElementType>> getFace(Side side) = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2D<TElementType>> getFace(Side side) const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer2D<TElementType>> getFace(Side side) = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2D<TElementType>> getFace(Side side) const = 0;
 
   protected:
     unsigned int m_size;
@@ -223,8 +223,8 @@ class TensorBuffer1DLayered : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a 1D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::SharedPtr<TensorBuffer1D<TElementType>> getLayer(std::size_t y) = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer1D<TElementType>> getLayer(
+    virtual dynasma::IndirectPtr<TensorBuffer1D<TElementType>> getLayer(std::size_t y) = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer1D<TElementType>> getLayer(
         std::size_t y) const = 0;
 
   protected:
@@ -257,8 +257,8 @@ class TensorBuffer2DLayered : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a 2D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::SharedPtr<TensorBuffer2D<TElementType>> getLayer(std::size_t z) = 0;
-    virtual dynasma::SharedPtr<const TensorBuffer2D<TElementType>> getLayer(
+    virtual dynasma::IndirectPtr<TensorBuffer2D<TElementType>> getLayer(std::size_t z) = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2D<TElementType>> getLayer(
         std::size_t z) const = 0;
 
   protected:
@@ -291,8 +291,8 @@ class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TElementType>
     /**
      * @returns pointer to a Cubemap TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::SharedPtr<TensorBufferCubemap<TElementType>> getLayer(std::size_t w) = 0;
-    virtual dynasma::SharedPtr<const TensorBufferCubemap<TElementType>> getLayer(
+    virtual dynasma::IndirectPtr<TensorBufferCubemap<TElementType>> getLayer(std::size_t w) = 0;
+    virtual dynasma::IndirectPtr<const TensorBufferCubemap<TElementType>> getLayer(
         std::size_t w) const = 0;
 
   protected:
