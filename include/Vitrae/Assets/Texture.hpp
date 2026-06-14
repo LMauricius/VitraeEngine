@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Assets/TensorBuffer.hpp"
-#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/Sides.hpp"
 #include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Dynamic/Variant.hpp"
@@ -37,8 +37,8 @@ class TextureBase : public dynasma::PolymorphicBase
     virtual glm::uvec4 getNDSize() const = 0;
     virtual std::size_t getNumDimensions() const = 0;
     const std::optional<TextureStats> &getStats() const { return m_stats; }
-    virtual BufferType getBufferType() const = 0;
-    virtual AnyBufferFormat getAnyBufferFormat() const = 0;
+    virtual PixelType getPixelType() const = 0;
+    virtual AnyPixelFormat getAnyPixelFormat() const = 0;
 
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
@@ -50,30 +50,30 @@ class TextureBase : public dynasma::PolymorphicBase
 };
 
 /**
- * Base for any TextureBase type that has this BufferType
- * @tparam BUFFER_TYPE The buffer type this texture uses
+ * Base for any TextureBase type that has this PixelType
+ * @tparam PIXEL_TYPE The buffer type this texture uses
  */
-template <BufferType TBUFFER_TYPE> class TextureBaseTyped : public virtual TextureBase
+template <PixelType TPIXEL_TYPE> class TextureBaseTyped : public virtual TextureBase
 {
   public:
-    constexpr static BufferType BUFFER_TYPE = TBUFFER_TYPE;
+    constexpr static PixelType PIXEL_TYPE = TPIXEL_TYPE;
 
-    BufferType getBufferType() const override { return BUFFER_TYPE; }
+    PixelType getPixelType() const override { return PIXEL_TYPE; }
 
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
+    virtual CompatiblePixelFormat<PIXEL_TYPE> getPixelFormat() const = 0;
 
-    // Always convert from getBufferFormat()
-    AnyBufferFormat getAnyBufferFormat() const override
+    // Always convert from getPixelFormat()
+    AnyPixelFormat getAnyPixelFormat() const override
     {
-        return std::visit([](auto compatible_format) { return AnyBufferFormat{compatible_format}; },
-                          getBufferFormat());
+        return std::visit([](auto compatible_format) { return AnyPixelFormat{compatible_format}; },
+                          getPixelFormat());
     }
 };
 
 /**
  * A seed for any image type
  * @tparam TextureT the image type
- * @example @code TextureSeed<Texture2D<BufferType::COLOR_TRANSPARENT>> @endcode
+ * @example @code TextureSeed<Texture2D<PixelType::COLOR_TRANSPARENT>> @endcode
  */
 template <class TextureT> struct TextureSeed
 {
@@ -89,7 +89,7 @@ template <class TextureT> struct TextureSeed
 /**
  * A manager for any image type
  * @tparam TextureT the image type
- * @example @code TextureManager<Texture2D<BufferType::COLOR_TRANSPARENT>> @endcode
+ * @example @code TextureManager<Texture2D<PixelType::COLOR_TRANSPARENT>> @endcode
  */
 template <class TextureT> using TextureManager = dynasma::AbstractManager<TextureSeed<TextureT>>;
 
@@ -107,19 +107,19 @@ class Texture1DBase : public virtual TextureBase
 /**
  * A 1D image of a concrete type
  */
-template <BufferType TBUFFER_TYPE>
-class Texture1D : public Texture1DBase, public TextureBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class Texture1D : public Texture1DBase, public TextureBaseTyped<TPIXEL_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, unsigned int>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, unsigned int>;
+    using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer1D<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer1D<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer1D<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer1D<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -136,19 +136,19 @@ class Texture2DBase : public virtual TextureBase
 /**
  * A 2D image of a concrete type
  */
-template <BufferType TBUFFER_TYPE>
-class Texture2D : public Texture2DBase, public TextureBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class Texture2D : public Texture2DBase, public TextureBaseTyped<TPIXEL_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer2D<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer2D<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer2D<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2D<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -165,19 +165,19 @@ class Texture3DBase : public virtual TextureBase
 /**
  * A 3D image of a concrete type
  */
-template <BufferType TBUFFER_TYPE>
-class Texture3D : public Texture3DBase, public TextureBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class Texture3D : public Texture3DBase, public TextureBaseTyped<TPIXEL_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec3>;
+    using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer3D<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer3D<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer3D<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer3D<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -194,25 +194,25 @@ class TextureCubemapBase : public virtual TextureBase
 /**
  * A 3D collection of 6 2D images used for cubemapping of a concrete type
  */
-template <BufferType TBUFFER_TYPE>
-class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TPIXEL_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, unsigned int>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, unsigned int>;
+    using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
     /**
      * @returns pointer to a Texture2D face of this cubemap
      */
-    virtual dynasma::IndirectPtr<Texture2D<TBUFFER_TYPE>> getFace(Side side) = 0;
-    virtual dynasma::IndirectPtr<const Texture2D<TBUFFER_TYPE>> getFace(Side side) const = 0;
+    virtual dynasma::IndirectPtr<Texture2D<TPIXEL_TYPE>> getFace(Side side) = 0;
+    virtual dynasma::IndirectPtr<const Texture2D<TPIXEL_TYPE>> getFace(Side side) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::IndirectPtr<TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::IndirectPtr<const TensorBufferCubemap<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBufferCubemap<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBufferCubemap<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -229,26 +229,26 @@ class Texture1DLayeredBase : public virtual TextureBase
 /**
  * A list of 1D images, each a layer of 1 asset of a concrete type
  */
-template <BufferType TBUFFER_TYPE>
-class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TPIXEL_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
     /**
      * @returns pointer to a Texture1D layer
      */
-    virtual dynasma::IndirectPtr<Texture1D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
-    virtual dynasma::IndirectPtr<const Texture1D<TBUFFER_TYPE>> getLayer(
+    virtual dynasma::IndirectPtr<Texture1D<TPIXEL_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::IndirectPtr<const Texture1D<TPIXEL_TYPE>> getLayer(
         std::size_t layer) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer1DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer1DLayered<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer1DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -265,26 +265,26 @@ class Texture2DLayeredBase : public virtual TextureBase
 /**
  * A list of 2D images
  */
-template <BufferType TBUFFER_TYPE>
-class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TPIXEL_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec3>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec3>;
+    using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
     /**
      * @returns pointer to a Texture2D layer
      */
-    virtual dynasma::IndirectPtr<Texture2D<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
-    virtual dynasma::IndirectPtr<const Texture2D<TBUFFER_TYPE>> getLayer(
+    virtual dynasma::IndirectPtr<Texture2D<TPIXEL_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::IndirectPtr<const Texture2D<TPIXEL_TYPE>> getLayer(
         std::size_t layer) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer2DLayered<TBUFFER_TYPE>> getBuffer() const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer2DLayered<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -301,41 +301,40 @@ class TextureCubemapLayeredBase : public virtual TextureBase
 /**
  * A list of cubemap images
  */
-template <BufferType TBUFFER_TYPE>
-class TextureCubemapLayered : public TextureCubemapLayeredBase,
-                              public TextureBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class TextureCubemapLayered : public TextureCubemapLayeredBase, public TextureBaseTyped<TPIXEL_TYPE>
 {
   public:
     using FileLoadParams = ImageCommon::FileLoadParams;
-    using EmptyParams = ImageCommon::EmptyParams<TBUFFER_TYPE, glm::uvec2>;
-    using PureColorParams = ImageCommon::PureColorParams<TBUFFER_TYPE>;
+    using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
+    using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
     /**
      * @returns pointer to a TextureCubemap layer
      */
-    virtual dynasma::IndirectPtr<TextureCubemap<TBUFFER_TYPE>> getLayer(std::size_t layer) = 0;
-    virtual dynasma::IndirectPtr<const TextureCubemap<TBUFFER_TYPE>> getLayer(
+    virtual dynasma::IndirectPtr<TextureCubemap<TPIXEL_TYPE>> getLayer(std::size_t layer) = 0;
+    virtual dynasma::IndirectPtr<const TextureCubemap<TPIXEL_TYPE>> getLayer(
         std::size_t layer) const = 0;
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::IndirectPtr<TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer() = 0;
-    virtual dynasma::IndirectPtr<const TensorBufferCubemapLayered<TBUFFER_TYPE>> getBuffer()
+    virtual dynasma::IndirectPtr<TensorBufferCubemapLayered<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::IndirectPtr<const TensorBufferCubemapLayered<TPIXEL_TYPE>> getBuffer()
         const = 0;
 };
 
 // ==== Helpers for handling all these types =======================================================
 
 /**
- * Calls the templated visitor on all Texture_<BufferType> templates
- * @param visitor its operator() has to accept a Texture_<BufferType> template as its parameter
+ * Calls the templated visitor on all Texture_<PixelType> templates
+ * @param visitor its operator() has to accept a Texture_<PixelType> template as its parameter
  * @param args The arguments to pass to the visitor
  * @note You can use a template template parametrized lambda for this
  * @example @code
  *  forTextureTemplates(
- *      []<template<BufferType> class Texture>(std::string_view str) {
- *          std::print("{}{}\n", str, TYPE_INFO<Texture<BufferType::REAL_SCALAR>>.getShortName())
+ *      []<template<PixelType> class Texture>(std::string_view str) {
+ *          std::print("{}{}\n", str, TYPE_INFO<Texture<PixelType::REAL_SCALAR>>.getShortName())
  *      },
  *      "TexTp: "
  *  );
@@ -375,8 +374,8 @@ constexpr void forTextureTemplates(VisitorT &&visitor, ArgTs &&...args)
 template <class VisitorT, typename... ArgTs>
 constexpr void forTextureTypes(VisitorT &&visitor, ArgTs &&...args)
 {
-    forTextureTemplates([&]<template <BufferType> class Texture> {
-        forBufferTypes([&]<BufferType BT> {
+    forTextureTemplates([&]<template <PixelType> class Texture> {
+        forPixelTypes([&]<PixelType BT> {
             visitor.template operator()<Texture<BT>>(std::forward<ArgTs>(args)...);
         });
     });

@@ -25,12 +25,12 @@ struct RenderTextureSpec
     RenderTextureSpec &operator=(const RenderTextureSpec &) = delete;
 
     /**
-     * Sets p_texture and shaderComponent to compatible types depending on texture's BUFFER_TYPE
+     * Sets p_texture and shaderComponent to compatible types depending on texture's PIXEL_TYPE
      * @param p_texture Converted to Texture2DBase
      * @param name The name for the ParamSpec of shaderComponent. typeInfo is set automatically
      */
-    template <BufferType BUFFER_TYPE>
-    RenderTextureSpec(dynasma::FirmPtr<Texture2D<BUFFER_TYPE>> p_texture, String componentName,
+    template <BufferType PIXEL_TYPE>
+    RenderTextureSpec(dynasma::FirmPtr<Texture2D<PIXEL_TYPE>> p_texture, String componentName,
                       ClearColor clearColor = FixedClearColor::Default);
 
     /**
@@ -53,7 +53,7 @@ struct RenderTextureSpec
 
     /**
      * Sets p_texture=the texture and shaderComponent=component
-     * This is unsafe because it doesn't check if the texture's BUFFER_TYPE matches the component,
+     * This is unsafe because it doesn't check if the texture's PIXEL_TYPE matches the component,
      * so put in its own factory function
      */
     static RenderTextureSpec fromUnsafe(dynasma::FirmPtr<Texture2DBase> p_texture,
@@ -66,12 +66,12 @@ struct RenderTextureSpec
 
 // ==== Implementation for templates ===============================================================
 
-template <BufferType BUFFER_TYPE>
-inline RenderTextureSpec::RenderTextureSpec(dynasma::FirmPtr<Texture2D<BUFFER_TYPE>> p_texture,
+template <BufferType PIXEL_TYPE>
+inline RenderTextureSpec::RenderTextureSpec(dynasma::FirmPtr<Texture2D<PIXEL_TYPE>> p_texture,
                                             String componentName, ClearColor clearColor)
     : p_texture{p_texture}, shaderComponent{ParamSpec{
                                 .name = componentName,
-                                .typeInfo = TYPE_INFO<BufferChannelType<BUFFER_TYPE>>,
+                                .typeInfo = TYPE_INFO<PixelValueType<PIXEL_TYPE>>,
                             }},
       clearColor{clearColor}
 {}

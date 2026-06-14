@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Dynamic/TypeMeta.hpp"
 
 #include "Vitrae/Dynamic/TypeMeta.hpp"
@@ -29,7 +29,7 @@ class TypeInfo;
  */
 struct TensorMeta
 {
-    BufferType CORE_VECTOR_KIND;
+    PixelType CORE_VECTOR_KIND;
     std::size_t NUM_CORE_VECTORS;
 };
 

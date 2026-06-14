@@ -15,7 +15,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const AnySetupParams &params) : m_p
 {
     m_friendlyName += "Fragment ";
     std::visit(
-        [&]<BufferType BT>(const SetupParams<BT> &params) {
+        [&]<PixelType BT>(const SetupParams<BT> &params) {
             std::visit(Overloaded{
                            [&](const FixedRenderComponent &comp) {
                                switch (comp) {
@@ -100,7 +100,7 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
     MMETER_SCOPE_PROFILER(m_friendlyName.c_str());
 
     glm::uvec2 retrSize =
-        std::visit([&]<BufferType BT>(
+        std::visit([&]<PixelType BT>(
                        const SetupParams<BT> &params) { return params.size.get(ctx.properties); },
                    m_params);
 
@@ -120,12 +120,12 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx) const
 {
     ComponentRoot &root = *std::visit(
-        [&]<BufferType BT>(const SetupParams<BT> &params) { return &params.root; }, m_params);
+        [&]<PixelType BT>(const SetupParams<BT> &params) { return &params.root; }, m_params);
 
     FrameStoreManager &frameManager = root.getComponent<FrameStoreManager>();
 
     std::visit(
-        [&]<BufferType BT>(const SetupParams<BT> &params) {
+        [&]<PixelType BT>(const SetupParams<BT> &params) {
             TextureManager<Texture2D<BT>> &textureManager =
                 root.getComponent<TextureManager<Texture2D<BT>>>();
 

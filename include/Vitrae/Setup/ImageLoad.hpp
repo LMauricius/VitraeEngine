@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Setup/Swizzle.hpp"
 #include "Vitrae/Setup/TextureFiltering.hpp"
@@ -22,21 +22,21 @@ struct FileLoadParams
     std::filesystem::path filepath;
     TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
 };
-template <BufferType BUFFER_TYPE, typename SizeT> struct EmptyParams
+template <PixelType PIXEL_TYPE, typename SizeT> struct EmptyParams
 {
     ComponentRoot &root;
     SizeT size;
-    BufferFormat<BUFFER_TYPE> storageFormat;
-    SwizzleSpec<BUFFER_TYPE> swizzle = CommonSwizzleSpecs<BUFFER_TYPE>::NATURAL;
+    PixelFormat<PIXEL_TYPE> storageFormat;
+    SwizzleSpec<PIXEL_TYPE> swizzle = CommonSwizzleSpecs<PIXEL_TYPE>::NATURAL;
     TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
     String friendlyName = "";
 };
 
-template <BufferType BUFFER_TYPE> struct PureColorParams
+template <PixelType PIXEL_TYPE> struct PureColorParams
 {
     ComponentRoot &root;
-    BufferValueType<BUFFER_TYPE> color;
-    BufferFormat<BUFFER_TYPE> storageFormat;
+    BufferValueType<PIXEL_TYPE> color;
+    PixelFormat<PIXEL_TYPE> storageFormat;
 };
 
 } // namespace ImageCommon

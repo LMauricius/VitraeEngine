@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/Sides.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 #include "Vitrae/Dynamic/TypeMeta/Tensor.hpp"
@@ -46,9 +46,9 @@ class TensorBufferBase : public dynasma::PolymorphicBase
     virtual std::size_t getNumDimensions() const = 0;
 
     /**
-     * @return The format of the buffer, among all BufferFormats
+     * @return The format of the buffer, among all PixelFormats
      */
-    virtual AnyBufferFormat getAnyBufferFormat() const = 0;
+    virtual AnyPixelFormat getAnyPixelFormat() const = 0;
 };
 
 /**
@@ -70,19 +70,19 @@ template <typename TElementType> class TensorBufferBaseTyped : public TensorBuff
     const TypeInfo &getElementType() const override { return TYPE_INFO<ElementType>; }
 
     /**
-     * @return The format of the buffer, among all BufferFormats
+     * @return The format of the buffer, among all PixelFormats
      */
-    AnyBufferFormat getAnyBufferFormat() const override
+    AnyPixelFormat getAnyPixelFormat() const override
     {
-        // Always convert from getBufferFormat()
-        return std::visit([](auto compatible_format) { return AnyBufferFormat{compatible_format}; },
-                          getBufferFormat());
+        // Always convert from getPixelFormat()
+        return std::visit([](auto compatible_format) { return AnyPixelFormat{compatible_format}; },
+                          getPixelFormat());
     }
 
     /**
      * @return The format of the buffer among those compatible with the element type
      */
-    virtual CompatibleBufferFormat<TYPE_META<ElementType>.CORE_VECTOR_KIND> getBufferFormat()
+    virtual CompatiblePixelFormat<TYPE_META<ElementType>.CORE_VECTOR_KIND> getPixelFormat()
         const = 0;
 };
 

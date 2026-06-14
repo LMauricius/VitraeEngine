@@ -2,8 +2,8 @@
 
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
-#include "Vitrae/Data/BufferFormat.hpp"
 #include "Vitrae/Data/ClearColor.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/RenderComponents.hpp"
 #include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
@@ -20,12 +20,12 @@ namespace Vitrae
 class ComposeFrameToTexture : public ComposeTask
 {
   public:
-    template <BufferType BUFFER_TYPE> struct SetupParams
+    template <PixelType PIXEL_TYPE> struct SetupParams
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
-        BufferFormat<BUFFER_TYPE> storageFormat;
-        SwizzleSpec<BUFFER_TYPE> swizzle = CommonSwizzleSpecs<BUFFER_TYPE>::NATURAL;
+        PixelFormat<PIXEL_TYPE> storageFormat;
+        SwizzleSpec<PIXEL_TYPE> swizzle = CommonSwizzleSpecs<PIXEL_TYPE>::NATURAL;
         TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
         String textureName;
         std::vector<String> inputTokenNames;
@@ -33,52 +33,52 @@ class ComposeFrameToTexture : public ComposeTask
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    template <> struct SetupParams<BufferType::DEPTH>
+    template <> struct SetupParams<PixelType::DEPTH>
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
-        BufferFormat<BufferType::DEPTH> storageFormat;
+        PixelFormat<PixelType::DEPTH> storageFormat;
         TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
         String textureName;
         std::vector<String> inputTokenNames;
 
-        constexpr static SwizzleSpec<BufferType::DEPTH> swizzle =
-            CommonSwizzleSpecs<BufferType::DEPTH>::NATURAL;
+        constexpr static SwizzleSpec<PixelType::DEPTH> swizzle =
+            CommonSwizzleSpecs<PixelType::DEPTH>::NATURAL;
         constexpr static RenderComponent shaderComponent = FixedRenderComponent::DEPTH;
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    template <> struct SetupParams<BufferType::STENCIL>
+    template <> struct SetupParams<PixelType::STENCIL>
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
-        BufferFormat<BufferType::STENCIL> storageFormat;
+        PixelFormat<PixelType::STENCIL> storageFormat;
         TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
         String textureName;
         std::vector<String> inputTokenNames;
 
-        constexpr static SwizzleSpec<BufferType::STENCIL> swizzle =
-            CommonSwizzleSpecs<BufferType::STENCIL>::NATURAL;
+        constexpr static SwizzleSpec<PixelType::STENCIL> swizzle =
+            CommonSwizzleSpecs<PixelType::STENCIL>::NATURAL;
         constexpr static RenderComponent shaderComponent = FixedRenderComponent::STENCIL;
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    template <> struct SetupParams<BufferType::DEPTH_AND_STENCIL>
+    template <> struct SetupParams<PixelType::DEPTH_AND_STENCIL>
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
-        BufferFormat<BufferType::DEPTH_AND_STENCIL> storageFormat;
+        PixelFormat<PixelType::DEPTH_AND_STENCIL> storageFormat;
         TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
         String textureName;
         std::vector<String> inputTokenNames;
 
-        constexpr static SwizzleSpec<BufferType::DEPTH_AND_STENCIL> swizzle =
-            CommonSwizzleSpecs<BufferType::DEPTH_AND_STENCIL>::NATURAL;
+        constexpr static SwizzleSpec<PixelType::DEPTH_AND_STENCIL> swizzle =
+            CommonSwizzleSpecs<PixelType::DEPTH_AND_STENCIL>::NATURAL;
         constexpr static RenderComponent shaderComponent = FixedRenderComponent::DEPTH_AND_STENCIL;
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    using AnySetupParams = VariantForBufferTypes<SetupParams>;
+    using AnySetupParams = VariantForPixelTypes<SetupParams>;
 
     ComposeFrameToTexture(const AnySetupParams &params);
     ~ComposeFrameToTexture() = default;

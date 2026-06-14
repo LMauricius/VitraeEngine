@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 
 #include <glm/glm.hpp>
 
@@ -16,12 +16,12 @@ enum class ChannelSource {
     CONSTANT_1,
 };
 
-template <BufferType BUFFER_TYPE>
-using SwizzleSpec = glm::vec<BufferTypeSpecialization<BUFFER_TYPE>::CHANNEL_COUNT, ChannelSource>;
+template <PixelType PIXEL_TYPE>
+using SwizzleSpec = glm::vec<PixelTypeSpecialization<PIXEL_TYPE>::CHANNEL_COUNT, ChannelSource>;
 
-template <BufferType BUFFER_TYPE> struct CommonSwizzleSpecs
+template <PixelType PIXEL_TYPE> struct CommonSwizzleSpecs
 {
-    constexpr static SwizzleSpec<BUFFER_TYPE> NATURAL = glm::vec<4, ChannelSource>{
+    constexpr static SwizzleSpec<PIXEL_TYPE> NATURAL = glm::vec<4, ChannelSource>{
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_1,
         ChannelSource::SLOT_2,
@@ -29,38 +29,38 @@ template <BufferType BUFFER_TYPE> struct CommonSwizzleSpecs
     }; // this will be truncated as needed
 };
 
-template <> struct CommonSwizzleSpecs<BufferType::COLOR>
+template <> struct CommonSwizzleSpecs<PixelType::COLOR>
 {
-    constexpr static SwizzleSpec<BufferType::COLOR> NATURAL{
+    constexpr static SwizzleSpec<PixelType::COLOR> NATURAL{
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_1,
         ChannelSource::SLOT_2,
     };
 
-    constexpr static SwizzleSpec<BufferType::COLOR> GRAYSCALE{
+    constexpr static SwizzleSpec<PixelType::COLOR> GRAYSCALE{
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_0,
     };
 };
 
-template <> struct CommonSwizzleSpecs<BufferType::TRANSPARENT>
+template <> struct CommonSwizzleSpecs<PixelType::TRANSPARENT>
 {
-    constexpr static SwizzleSpec<BufferType::TRANSPARENT> NATURAL{
+    constexpr static SwizzleSpec<PixelType::TRANSPARENT> NATURAL{
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_1,
         ChannelSource::SLOT_2,
         ChannelSource::SLOT_3,
     };
 
-    constexpr static SwizzleSpec<BufferType::TRANSPARENT> GRAYSCALE{
+    constexpr static SwizzleSpec<PixelType::TRANSPARENT> GRAYSCALE{
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_1,
     };
 
-    constexpr static SwizzleSpec<BufferType::TRANSPARENT> OPAQUE{
+    constexpr static SwizzleSpec<PixelType::TRANSPARENT> OPAQUE{
         ChannelSource::SLOT_0,
         ChannelSource::SLOT_1,
         ChannelSource::SLOT_2,

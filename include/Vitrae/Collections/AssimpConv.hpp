@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vitrae/Containers/StableMap.hpp"
-#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/StringId.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 #include "Vitrae/Dynamic/UniqueAnyPtr.hpp"
@@ -89,7 +89,7 @@ class AssimpConvCollection
         aiTextureType aiTextureId;
 
         /// The color which will be set as the texture if the texture is missing
-        BufferValueType<TextureT::BUFFER_TYPE> defaultColor;
+        BufferValueType<TextureT::PIXEL_TYPE> defaultColor;
     };
 
     /**

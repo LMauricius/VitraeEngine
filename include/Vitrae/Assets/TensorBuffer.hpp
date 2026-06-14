@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/Sides.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 #include "Vitrae/Dynamic/TypeMeta/Tensor.hpp"
@@ -46,49 +46,49 @@ class TensorBufferBase : public dynasma::PolymorphicBase
     virtual std::size_t getNumDimensions() const = 0;
 
     /**
-     * @return The format of the buffer, among all BufferFormats
+     * @return The format of the buffer, among all PixelFormats
      */
-    virtual AnyBufferFormat getAnyBufferFormat() const = 0;
+    virtual AnyPixelFormat getAnyPixelFormat() const = 0;
 };
 
 /**
  * Base for any TensorBufferBase type that has this Tensor type
- * @tparam TBUFFER_TYPE The element type of the buffer
+ * @tparam TPIXEL_TYPE The element type of the buffer
  */
-template <BufferType TBUFFER_TYPE> class TensorBufferBaseTyped : public TensorBufferBase
+template <PixelType TPIXEL_TYPE> class TensorBufferBaseTyped : public TensorBufferBase
 {
   public:
     /// The element type
-    constexpr static auto BUFFER_TYPE = TBUFFER_TYPE;
+    constexpr static auto PIXEL_TYPE = TPIXEL_TYPE;
 
     /**
      * @return The element type info
      */
     const TypeInfo &getElementType() const override
     {
-        return TYPE_INFO<BufferValueType<BUFFER_TYPE>>;
+        return TYPE_INFO<BufferValueType<PIXEL_TYPE>>;
     }
 
     /**
-     * @return The format of the buffer, among all BufferFormats
+     * @return The format of the buffer, among all PixelFormats
      */
-    AnyBufferFormat getAnyBufferFormat() const override
+    AnyPixelFormat getAnyPixelFormat() const override
     {
-        // Always convert from getBufferFormat()
-        return std::visit([](auto compatible_format) { return AnyBufferFormat{compatible_format}; },
-                          getBufferFormat());
+        // Always convert from getPixelFormat()
+        return std::visit([](auto compatible_format) { return AnyPixelFormat{compatible_format}; },
+                          getPixelFormat());
     }
 
     /**
      * @return The format of the buffer among those compatible with the element type
      */
-    virtual CompatibleBufferFormat<BUFFER_TYPE> getBufferFormat() const = 0;
+    virtual CompatiblePixelFormat<PIXEL_TYPE> getPixelFormat() const = 0;
 };
 
 /**
  * A 1D TensorBuffer
  */
-template <BufferType TBUFFER_TYPE> class TensorBuffer1D : public TensorBufferBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE> class TensorBuffer1D : public TensorBufferBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -111,7 +111,7 @@ template <BufferType TBUFFER_TYPE> class TensorBuffer1D : public TensorBufferBas
 /**
  * A 2D TensorBuffer
  */
-template <BufferType TBUFFER_TYPE> class TensorBuffer2D : public TensorBufferBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE> class TensorBuffer2D : public TensorBufferBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -134,7 +134,7 @@ template <BufferType TBUFFER_TYPE> class TensorBuffer2D : public TensorBufferBas
 /**
  * A 3D TensorBuffer
  */
-template <BufferType TBUFFER_TYPE> class TensorBuffer3D : public TensorBufferBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE> class TensorBuffer3D : public TensorBufferBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -157,8 +157,8 @@ template <BufferType TBUFFER_TYPE> class TensorBuffer3D : public TensorBufferBas
 /**
  * A 3D collection of 6 2D TensorBuffers
  */
-template <BufferType TBUFFER_TYPE>
-class TensorBufferCubemap : public TensorBufferBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class TensorBufferCubemap : public TensorBufferBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -180,15 +180,15 @@ class TensorBufferCubemap : public TensorBufferBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to a TensorBuffer2D face of this cubemap
      */
-    virtual dynasma::IndirectPtr<TensorBuffer2D<TBUFFER_TYPE>> getFace(Side side) = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer2D<TBUFFER_TYPE>> getFace(Side side) const = 0;
+    virtual dynasma::IndirectPtr<TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) const = 0;
 };
 
 /**
  * A list of 1D TensorBuffers of shared size
  */
-template <BufferType TBUFFER_TYPE>
-class TensorBuffer1DLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class TensorBuffer1DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -210,16 +210,16 @@ class TensorBuffer1DLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to a 1D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer1D<TBUFFER_TYPE>> getLayer(std::size_t y) = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer1D<TBUFFER_TYPE>> getLayer(
+    virtual dynasma::IndirectPtr<TensorBuffer1D<TPIXEL_TYPE>> getLayer(std::size_t y) = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer1D<TPIXEL_TYPE>> getLayer(
         std::size_t y) const = 0;
 };
 
 /**
  * A list of 2D TensorBuffers of shared size
  */
-template <BufferType TBUFFER_TYPE>
-class TensorBuffer2DLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class TensorBuffer2DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -241,16 +241,16 @@ class TensorBuffer2DLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to a 2D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer2D<TBUFFER_TYPE>> getLayer(std::size_t z) = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer2D<TBUFFER_TYPE>> getLayer(
+    virtual dynasma::IndirectPtr<TensorBuffer2D<TPIXEL_TYPE>> getLayer(std::size_t z) = 0;
+    virtual dynasma::IndirectPtr<const TensorBuffer2D<TPIXEL_TYPE>> getLayer(
         std::size_t z) const = 0;
 };
 
 /**
  * A list of Cubemap TensorBuffers of shared size
  */
-template <BufferType TBUFFER_TYPE>
-class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
+template <PixelType TPIXEL_TYPE>
+class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -272,8 +272,8 @@ class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TBUFFER_TYPE>
     /**
      * @returns pointer to a Cubemap TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::IndirectPtr<TensorBufferCubemap<TBUFFER_TYPE>> getLayer(std::size_t w) = 0;
-    virtual dynasma::IndirectPtr<const TensorBufferCubemap<TBUFFER_TYPE>> getLayer(
+    virtual dynasma::IndirectPtr<TensorBufferCubemap<TPIXEL_TYPE>> getLayer(std::size_t w) = 0;
+    virtual dynasma::IndirectPtr<const TensorBufferCubemap<TPIXEL_TYPE>> getLayer(
         std::size_t w) const = 0;
 };
 

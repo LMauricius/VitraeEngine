@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Vitrae/Data/BufferFormat.hpp"
 #include "Vitrae/Data/Monostates.hpp"
+#include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/SamplingMode.hpp"
 #include "Vitrae/Setup/TextureFiltering.hpp"
 
@@ -18,7 +18,7 @@ namespace Vitrae
  * enable special sampling operations (e.g. hardware accelerated shadow sampling using parametrized
  * sampling), and to read/write to image buffers directly.
  *
- *@note To use parametrized sampling BufferType of the texture must be BufferType::DEPTH.
+ *@note To use parametrized sampling PixelType of the texture must be PixelType::DEPTH.
  */
 struct ShadingImageUse
 {
@@ -29,10 +29,10 @@ struct ShadingImageUse
     TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
 
     /// How we interpret the image buffer when reading from it, or UNUSED if we don't read from it
-    std::variant<UnusedT, AnyBufferFormat> bufferReadFormat = UNUSED;
+    std::variant<UnusedT, AnyPixelFormat> bufferReadFormat = UNUSED;
 
     /// How we interpret the image buffer when writing to it, or UNUSED if we don't write to it
-    std::variant<UnusedT, AnyBufferFormat> bufferWriteFormat = UNUSED;
+    std::variant<UnusedT, AnyPixelFormat> bufferWriteFormat = UNUSED;
 };
 
 } // namespace Vitrae
