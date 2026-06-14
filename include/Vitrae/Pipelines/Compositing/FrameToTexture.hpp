@@ -3,6 +3,7 @@
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Data/BufferFormat.hpp"
+#include "Vitrae/Data/ClearColor.hpp"
 #include "Vitrae/Data/RenderComponents.hpp"
 #include "Vitrae/Params/ArgumentGetter.hpp"
 #include "Vitrae/Pipelines/Compositing/Task.hpp"
@@ -29,6 +30,7 @@ class ComposeFrameToTexture : public ComposeTask
         String textureName;
         std::vector<String> inputTokenNames;
         RenderComponent shaderComponent;
+        ClearColor clearColor = FixedClearColor::Default;
     };
 
     template <> struct SetupParams<BufferType::DEPTH>
@@ -43,6 +45,7 @@ class ComposeFrameToTexture : public ComposeTask
         constexpr static SwizzleSpec<BufferType::DEPTH> swizzle =
             CommonSwizzleSpecs<BufferType::DEPTH>::NATURAL;
         constexpr static RenderComponent shaderComponent = FixedRenderComponent::DEPTH;
+        ClearColor clearColor = FixedClearColor::Default;
     };
 
     template <> struct SetupParams<BufferType::STENCIL>
@@ -57,6 +60,7 @@ class ComposeFrameToTexture : public ComposeTask
         constexpr static SwizzleSpec<BufferType::STENCIL> swizzle =
             CommonSwizzleSpecs<BufferType::STENCIL>::NATURAL;
         constexpr static RenderComponent shaderComponent = FixedRenderComponent::STENCIL;
+        ClearColor clearColor = FixedClearColor::Default;
     };
 
     template <> struct SetupParams<BufferType::DEPTH_AND_STENCIL>
@@ -71,6 +75,7 @@ class ComposeFrameToTexture : public ComposeTask
         constexpr static SwizzleSpec<BufferType::DEPTH_AND_STENCIL> swizzle =
             CommonSwizzleSpecs<BufferType::DEPTH_AND_STENCIL>::NATURAL;
         constexpr static RenderComponent shaderComponent = FixedRenderComponent::DEPTH_AND_STENCIL;
+        ClearColor clearColor = FixedClearColor::Default;
     };
 
     using AnySetupParams = VariantForBufferTypes<SetupParams>;

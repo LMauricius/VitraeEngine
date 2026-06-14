@@ -133,7 +133,7 @@ void ComposeFrameToFrame::prepareRequiredLocalAssets(RenderComposeContext ctx) c
             frameManager
                 .register_asset_k(FrameStore::TextureBindParams{
                     .root = m_params.root,
-                    .outputTextureSpecs = {outputSpec},
+                    .renderTextureSpecs = {outputSpec},
                     .friendlyName = ctx.aliases.choiceStringFor(StandardParam::fs_target.name),
                 })
                 .getLoaded();

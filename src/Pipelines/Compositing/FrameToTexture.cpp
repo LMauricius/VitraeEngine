@@ -140,7 +140,8 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
                                                              .filtering = params.filtering,
                                                              .friendlyName = params.textureName}})
                     .getLoaded();
-            auto outputSpec = RenderTextureSpec::fromUnsafe(p_texture, params.shaderComponent);
+            auto outputSpec =
+                RenderTextureSpec::fromUnsafe(p_texture, params.shaderComponent, params.clearColor);
 
             /*
             Now create the FB only if it didn't exist beforehand
@@ -151,7 +152,7 @@ void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx)
                 auto p_frame = frameManager
                                    .register_asset_k(FrameStore::TextureBindParams{
                                        .root = params.root,
-                                       .outputTextureSpecs{outputSpec},
+                                       .renderTextureSpecs{outputSpec},
                                        .friendlyName = ctx.aliases.choiceStringFor(
                                            StandardParam::fs_target.name),
                                    })
