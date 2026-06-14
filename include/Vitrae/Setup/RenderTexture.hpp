@@ -29,26 +29,26 @@ struct RenderTextureSpec
      * @param p_texture Converted to Texture2DBase
      * @param name The name for the ParamSpec of shaderComponent. typeInfo is set automatically
      */
-    template <BufferType PIXEL_TYPE>
+    template <PixelType PIXEL_TYPE>
     RenderTextureSpec(dynasma::FirmPtr<Texture2D<PIXEL_TYPE>> p_texture, String componentName,
                       ClearColor clearColor = FixedClearColor::Default);
 
     /**
      * Sets p_texture=the texture and shaderComponent=FixedRenderComponent::DEPTH
      */
-    RenderTextureSpec(dynasma::FirmPtr<Texture2D<BufferType::DEPTH>> p_texture,
+    RenderTextureSpec(dynasma::FirmPtr<Texture2D<PixelType::DEPTH>> p_texture,
                       ClearColor clearColor = FixedClearColor::Default);
 
     /**
      * Sets p_texture=the texture and shaderComponent=FixedRenderComponent::STENCIL
      */
-    RenderTextureSpec(dynasma::FirmPtr<Texture2D<BufferType::STENCIL>> p_texture,
+    RenderTextureSpec(dynasma::FirmPtr<Texture2D<PixelType::STENCIL>> p_texture,
                       ClearColor clearColor = FixedClearColor::Default);
 
     /**
      * Sets p_texture=the texture and shaderComponent=FixedRenderComponent::DEPTH_AND_STENCIL
      */
-    RenderTextureSpec(dynasma::FirmPtr<Texture2D<BufferType::DEPTH_AND_STENCIL>> p_texture,
+    RenderTextureSpec(dynasma::FirmPtr<Texture2D<PixelType::DEPTH_AND_STENCIL>> p_texture,
                       ClearColor clearColor = FixedClearColor::Default);
 
     /**
@@ -66,7 +66,7 @@ struct RenderTextureSpec
 
 // ==== Implementation for templates ===============================================================
 
-template <BufferType PIXEL_TYPE>
+template <PixelType PIXEL_TYPE>
 inline RenderTextureSpec::RenderTextureSpec(dynasma::FirmPtr<Texture2D<PIXEL_TYPE>> p_texture,
                                             String componentName, ClearColor clearColor)
     : p_texture{p_texture}, shaderComponent{ParamSpec{
@@ -76,18 +76,18 @@ inline RenderTextureSpec::RenderTextureSpec(dynasma::FirmPtr<Texture2D<PIXEL_TYP
       clearColor{clearColor}
 {}
 
-inline RenderTextureSpec::RenderTextureSpec(
-    dynasma::FirmPtr<Texture2D<BufferType::DEPTH>> p_texture, ClearColor clearColor)
+inline RenderTextureSpec::RenderTextureSpec(dynasma::FirmPtr<Texture2D<PixelType::DEPTH>> p_texture,
+                                            ClearColor clearColor)
     : p_texture{p_texture}, shaderComponent{FixedRenderComponent::DEPTH}, clearColor{clearColor}
 {}
 
 inline RenderTextureSpec::RenderTextureSpec(
-    dynasma::FirmPtr<Texture2D<BufferType::STENCIL>> p_texture, ClearColor clearColor)
+    dynasma::FirmPtr<Texture2D<PixelType::STENCIL>> p_texture, ClearColor clearColor)
     : p_texture{p_texture}, shaderComponent{FixedRenderComponent::STENCIL}, clearColor{clearColor}
 {}
 
 inline RenderTextureSpec::RenderTextureSpec(
-    dynasma::FirmPtr<Texture2D<BufferType::DEPTH_AND_STENCIL>> p_texture, ClearColor clearColor)
+    dynasma::FirmPtr<Texture2D<PixelType::DEPTH_AND_STENCIL>> p_texture, ClearColor clearColor)
     : p_texture{p_texture}, shaderComponent{FixedRenderComponent::DEPTH_AND_STENCIL},
       clearColor{clearColor}
 {}

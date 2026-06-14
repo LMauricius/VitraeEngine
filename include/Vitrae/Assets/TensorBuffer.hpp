@@ -66,7 +66,7 @@ template <PixelType TPIXEL_TYPE> class TensorBufferBaseTyped : public TensorBuff
      */
     const TypeInfo &getElementType() const override
     {
-        return TYPE_INFO<BufferValueType<PIXEL_TYPE>>;
+        return TYPE_INFO<PixelValueType<PIXEL_TYPE>>;
     }
 
     /**

@@ -89,7 +89,7 @@ class AssimpConvCollection
         aiTextureType aiTextureId;
 
         /// The color which will be set as the texture if the texture is missing
-        BufferValueType<TextureT::PIXEL_TYPE> defaultColor;
+        PixelValueType<TextureT::PIXEL_TYPE> defaultColor;
     };
 
     /**

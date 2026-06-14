@@ -35,7 +35,7 @@ template <PixelType PIXEL_TYPE, typename SizeT> struct EmptyParams
 template <PixelType PIXEL_TYPE> struct PureColorParams
 {
     ComponentRoot &root;
-    BufferValueType<PIXEL_TYPE> color;
+    PixelValueType<PIXEL_TYPE> color;
     PixelFormat<PIXEL_TYPE> storageFormat;
 };
 
