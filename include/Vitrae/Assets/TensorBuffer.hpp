@@ -4,7 +4,7 @@
 #include "Vitrae/Data/Sides.hpp"
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 #include "Vitrae/Dynamic/TypeMeta/Tensor.hpp"
-#include "dynasma/indirect.hpp"
+#include "dynasma/pin.hpp"
 #include "glm/glm.hpp"
 
 namespace Vitrae
@@ -180,8 +180,8 @@ class TensorBufferCubemap : public TensorBufferBaseTyped<TPIXEL_TYPE>
     /**
      * @returns pointer to a TensorBuffer2D face of this cubemap
      */
-    virtual dynasma::IndirectPtr<TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) const = 0;
+    virtual dynasma::PinPtr<TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) = 0;
+    virtual dynasma::PinPtr<const TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) const = 0;
 };
 
 /**
@@ -210,9 +210,8 @@ class TensorBuffer1DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
     /**
      * @returns pointer to a 1D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer1D<TPIXEL_TYPE>> getLayer(std::size_t y) = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer1D<TPIXEL_TYPE>> getLayer(
-        std::size_t y) const = 0;
+    virtual dynasma::PinPtr<TensorBuffer1D<TPIXEL_TYPE>> getLayer(std::size_t y) = 0;
+    virtual dynasma::PinPtr<const TensorBuffer1D<TPIXEL_TYPE>> getLayer(std::size_t y) const = 0;
 };
 
 /**
@@ -241,9 +240,8 @@ class TensorBuffer2DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
     /**
      * @returns pointer to a 2D TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::IndirectPtr<TensorBuffer2D<TPIXEL_TYPE>> getLayer(std::size_t z) = 0;
-    virtual dynasma::IndirectPtr<const TensorBuffer2D<TPIXEL_TYPE>> getLayer(
-        std::size_t z) const = 0;
+    virtual dynasma::PinPtr<TensorBuffer2D<TPIXEL_TYPE>> getLayer(std::size_t z) = 0;
+    virtual dynasma::PinPtr<const TensorBuffer2D<TPIXEL_TYPE>> getLayer(std::size_t z) const = 0;
 };
 
 /**
@@ -272,8 +270,8 @@ class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
     /**
      * @returns pointer to a Cubemap TensorBuffer layer of this multi-layer
      */
-    virtual dynasma::IndirectPtr<TensorBufferCubemap<TPIXEL_TYPE>> getLayer(std::size_t w) = 0;
-    virtual dynasma::IndirectPtr<const TensorBufferCubemap<TPIXEL_TYPE>> getLayer(
+    virtual dynasma::PinPtr<TensorBufferCubemap<TPIXEL_TYPE>> getLayer(std::size_t w) = 0;
+    virtual dynasma::PinPtr<const TensorBufferCubemap<TPIXEL_TYPE>> getLayer(
         std::size_t w) const = 0;
 };
 
