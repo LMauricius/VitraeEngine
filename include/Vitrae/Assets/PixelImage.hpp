@@ -15,17 +15,17 @@ class ComponentRoot;
  * A tensor buffer is a multi-dimensional buffer that has tensors as its elements.
  * Unlike SharedBuffers which map data directly, it gives more control over data formatting and
  * supports 1-3 dimensions and a number of layers as an additional dimension. While SharedBuffers
- * support any kind of structures as data, TensorBuffers have a limitation that their data need to
+ * support any kind of structures as data, PixelImages have a limitation that their data need to
  * be tensor-like structures serialized using vectors as their basic building blocks.
  *
- * TensorBuffers are how texture data is stored, but can be used by themselves for more complex
+ * PixelImages are how texture data is stored, but can be used by themselves for more complex
  * tensors.
  * @see SharedBuffer
  */
-class TensorBufferBase : public dynasma::PolymorphicBase
+class PixelImageBase : public dynasma::PolymorphicBase
 {
   public:
-    virtual ~TensorBufferBase() = default;
+    virtual ~PixelImageBase() = default;
 
     virtual std::size_t memory_cost() const = 0;
 
@@ -52,10 +52,10 @@ class TensorBufferBase : public dynasma::PolymorphicBase
 };
 
 /**
- * Base for any TensorBufferBase type that has this Tensor type
+ * Base for any PixelImageBase type that has this Tensor type
  * @tparam TPIXEL_TYPE The element type of the buffer
  */
-template <PixelType TPIXEL_TYPE> class TensorBufferBaseTyped : public TensorBufferBase
+template <PixelType TPIXEL_TYPE> class PixelImageBaseTyped : public PixelImageBase
 {
   public:
     /// The element type
@@ -86,9 +86,9 @@ template <PixelType TPIXEL_TYPE> class TensorBufferBaseTyped : public TensorBuff
 };
 
 /**
- * A 1D TensorBuffer
+ * A 1D PixelImage
  */
-template <PixelType TPIXEL_TYPE> class TensorBuffer1D : public TensorBufferBaseTyped<TPIXEL_TYPE>
+template <PixelType TPIXEL_TYPE> class PixelImage1D : public PixelImageBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -109,9 +109,9 @@ template <PixelType TPIXEL_TYPE> class TensorBuffer1D : public TensorBufferBaseT
 };
 
 /**
- * A 2D TensorBuffer
+ * A 2D PixelImage
  */
-template <PixelType TPIXEL_TYPE> class TensorBuffer2D : public TensorBufferBaseTyped<TPIXEL_TYPE>
+template <PixelType TPIXEL_TYPE> class PixelImage2D : public PixelImageBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -132,9 +132,9 @@ template <PixelType TPIXEL_TYPE> class TensorBuffer2D : public TensorBufferBaseT
 };
 
 /**
- * A 3D TensorBuffer
+ * A 3D PixelImage
  */
-template <PixelType TPIXEL_TYPE> class TensorBuffer3D : public TensorBufferBaseTyped<TPIXEL_TYPE>
+template <PixelType TPIXEL_TYPE> class PixelImage3D : public PixelImageBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -155,10 +155,9 @@ template <PixelType TPIXEL_TYPE> class TensorBuffer3D : public TensorBufferBaseT
 };
 
 /**
- * A 3D collection of 6 2D TensorBuffers
+ * A 3D collection of 6 2D PixelImages
  */
-template <PixelType TPIXEL_TYPE>
-class TensorBufferCubemap : public TensorBufferBaseTyped<TPIXEL_TYPE>
+template <PixelType TPIXEL_TYPE> class PixelImageCubemap : public PixelImageBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -178,17 +177,16 @@ class TensorBufferCubemap : public TensorBufferBaseTyped<TPIXEL_TYPE>
     std::size_t getNumDimensions() const override { return 3; }
 
     /**
-     * @returns pointer to a TensorBuffer2D face of this cubemap
+     * @returns pointer to a PixelImage2D face of this cubemap
      */
-    virtual dynasma::PinPtr<TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) = 0;
-    virtual dynasma::PinPtr<const TensorBuffer2D<TPIXEL_TYPE>> getFace(Side side) const = 0;
+    virtual dynasma::PinPtr<PixelImage2D<TPIXEL_TYPE>> getFace(Side side) = 0;
+    virtual dynasma::PinPtr<const PixelImage2D<TPIXEL_TYPE>> getFace(Side side) const = 0;
 };
 
 /**
- * A list of 1D TensorBuffers of shared size
+ * A list of 1D PixelImages of shared size
  */
-template <PixelType TPIXEL_TYPE>
-class TensorBuffer1DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
+template <PixelType TPIXEL_TYPE> class PixelImage1DLayered : public PixelImageBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -208,17 +206,16 @@ class TensorBuffer1DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
     std::size_t getNumDimensions() const override { return 2; }
 
     /**
-     * @returns pointer to a 1D TensorBuffer layer of this multi-layer
+     * @returns pointer to a 1D PixelImage layer of this multi-layer
      */
-    virtual dynasma::PinPtr<TensorBuffer1D<TPIXEL_TYPE>> getLayer(std::size_t y) = 0;
-    virtual dynasma::PinPtr<const TensorBuffer1D<TPIXEL_TYPE>> getLayer(std::size_t y) const = 0;
+    virtual dynasma::PinPtr<PixelImage1D<TPIXEL_TYPE>> getLayer(std::size_t y) = 0;
+    virtual dynasma::PinPtr<const PixelImage1D<TPIXEL_TYPE>> getLayer(std::size_t y) const = 0;
 };
 
 /**
- * A list of 2D TensorBuffers of shared size
+ * A list of 2D PixelImages of shared size
  */
-template <PixelType TPIXEL_TYPE>
-class TensorBuffer2DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
+template <PixelType TPIXEL_TYPE> class PixelImage2DLayered : public PixelImageBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -238,17 +235,17 @@ class TensorBuffer2DLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
     std::size_t getNumDimensions() const override { return 3; }
 
     /**
-     * @returns pointer to a 2D TensorBuffer layer of this multi-layer
+     * @returns pointer to a 2D PixelImage layer of this multi-layer
      */
-    virtual dynasma::PinPtr<TensorBuffer2D<TPIXEL_TYPE>> getLayer(std::size_t z) = 0;
-    virtual dynasma::PinPtr<const TensorBuffer2D<TPIXEL_TYPE>> getLayer(std::size_t z) const = 0;
+    virtual dynasma::PinPtr<PixelImage2D<TPIXEL_TYPE>> getLayer(std::size_t z) = 0;
+    virtual dynasma::PinPtr<const PixelImage2D<TPIXEL_TYPE>> getLayer(std::size_t z) const = 0;
 };
 
 /**
- * A list of Cubemap TensorBuffers of shared size
+ * A list of Cubemap PixelImages of shared size
  */
 template <PixelType TPIXEL_TYPE>
-class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
+class PixelImageCubemapLayered : public PixelImageBaseTyped<TPIXEL_TYPE>
 {
   public:
     /**
@@ -268,11 +265,10 @@ class TensorBufferCubemapLayered : public TensorBufferBaseTyped<TPIXEL_TYPE>
     std::size_t getNumDimensions() const override { return 4; }
 
     /**
-     * @returns pointer to a Cubemap TensorBuffer layer of this multi-layer
+     * @returns pointer to a Cubemap PixelImage layer of this multi-layer
      */
-    virtual dynasma::PinPtr<TensorBufferCubemap<TPIXEL_TYPE>> getLayer(std::size_t w) = 0;
-    virtual dynasma::PinPtr<const TensorBufferCubemap<TPIXEL_TYPE>> getLayer(
-        std::size_t w) const = 0;
+    virtual dynasma::PinPtr<PixelImageCubemap<TPIXEL_TYPE>> getLayer(std::size_t w) = 0;
+    virtual dynasma::PinPtr<const PixelImageCubemap<TPIXEL_TYPE>> getLayer(std::size_t w) const = 0;
 };
 
 } // namespace Vitrae

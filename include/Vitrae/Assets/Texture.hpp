@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vitrae/Assets/TensorBuffer.hpp"
+#include "Vitrae/Assets/PixelImage.hpp"
 #include "Vitrae/Data/PixelTyping.hpp"
 #include "Vitrae/Data/Sides.hpp"
 #include "Vitrae/Data/StringId.hpp"
@@ -118,8 +118,8 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TPIXEL_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<TensorBuffer1D<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const TensorBuffer1D<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage1D<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::PinPtr<const PixelImage1D<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -147,8 +147,8 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TPIXEL_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<TensorBuffer2D<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const TensorBuffer2D<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage2D<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::PinPtr<const PixelImage2D<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -176,8 +176,8 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TPIXEL_TYPE>
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<TensorBuffer3D<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const TensorBuffer3D<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage3D<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::PinPtr<const PixelImage3D<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -211,8 +211,8 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TPIXEL
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<TensorBufferCubemap<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const TensorBufferCubemap<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImageCubemap<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::PinPtr<const PixelImageCubemap<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -246,8 +246,8 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TP
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<TensorBuffer1DLayered<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const TensorBuffer1DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage1DLayered<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::PinPtr<const PixelImage1DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -281,8 +281,8 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TP
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<TensorBuffer2DLayered<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const TensorBuffer2DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage2DLayered<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::PinPtr<const PixelImage2DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 /**
@@ -317,8 +317,8 @@ class TextureCubemapLayered : public TextureCubemapLayeredBase, public TextureBa
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<TensorBufferCubemapLayered<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const TensorBufferCubemapLayered<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImageCubemapLayered<TPIXEL_TYPE>> getBuffer() = 0;
+    virtual dynasma::PinPtr<const PixelImageCubemapLayered<TPIXEL_TYPE>> getBuffer() const = 0;
 };
 
 // ==== Helpers for handling all these types =======================================================

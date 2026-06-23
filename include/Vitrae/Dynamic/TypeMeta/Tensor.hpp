@@ -25,7 +25,7 @@ class TypeInfo;
  * @note Except for built-in vectors and matrices, TensorMeta's usefulness is usually limited
  * without StructMeta also defined for this type.
  *
- * @see TensorBuffer
+ * @see TensorImage
  */
 struct TensorMeta
 {
