@@ -12,7 +12,6 @@
 namespace Vitrae
 {
 class ComponentRoot;
-class Texture;
 class ParamList;
 
 /**

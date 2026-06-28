@@ -44,7 +44,7 @@ ComposeFrameToTexture::ComposeFrameToTexture(const AnySetupParams &params) : m_p
 
             m_outputSpecs.insert_back({
                 params.textureName,
-                TYPE_INFO<dynasma::FirmPtr<Texture>>,
+                TYPE_INFO<dynasma::FirmPtr<Texture2D<BT>>>,
             });
 
             if (!params.size.isFixed()) {

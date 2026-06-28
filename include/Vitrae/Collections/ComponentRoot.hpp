@@ -15,7 +15,6 @@ class aiMesh;
 
 namespace Vitrae
 {
-class Texture;
 class Material;
 class Mesh;
 class Model;

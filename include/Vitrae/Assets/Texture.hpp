@@ -39,6 +39,8 @@ class TextureBase : public dynasma::PolymorphicBase
     const std::optional<TextureStats> &getStats() const { return m_stats; }
     virtual PixelType getPixelType() const = 0;
     virtual AnyPixelFormat getAnyPixelFormat() const = 0;
+    virtual dynasma::PinPtr<PixelImageBase> getBufferBase() = 0;
+    virtual dynasma::PinPtr<const PixelImageBase> getBufferBase() const = 0;
 
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
@@ -115,6 +117,9 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TPIXEL_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
+    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
+    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+
     /**
      * @returns pointer to the buffer
      */
@@ -143,6 +148,9 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TPIXEL_TYPE>
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
+
+    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
+    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
 
     /**
      * @returns pointer to the buffer
@@ -173,6 +181,9 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TPIXEL_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
+    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
+    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+
     /**
      * @returns pointer to the buffer
      */
@@ -201,6 +212,9 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TPIXEL
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
+
+    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
+    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
 
     /**
      * @returns pointer to a Texture2D face of this cubemap
@@ -237,6 +251,9 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TP
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
+    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
+    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+
     /**
      * @returns pointer to a Texture1D layer
      */
@@ -272,6 +289,9 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TP
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
+    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
+    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+
     /**
      * @returns pointer to a Texture2D layer
      */
@@ -306,6 +326,9 @@ class TextureCubemapLayered : public TextureCubemapLayeredBase, public TextureBa
     using FileLoadParams = ImageCommon::FileLoadParams;
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
+
+    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
+    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
 
     /**
      * @returns pointer to a TextureCubemap layer

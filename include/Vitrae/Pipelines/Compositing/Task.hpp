@@ -11,7 +11,6 @@ namespace Vitrae
 {
 class Renderer;
 class FrameStore;
-class Texture;
 class ComponentRoot;
 
 /*
