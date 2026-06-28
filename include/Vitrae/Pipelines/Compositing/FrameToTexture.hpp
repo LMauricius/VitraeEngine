@@ -20,7 +20,7 @@ namespace Vitrae
 class ComposeFrameToTexture : public ComposeTask
 {
   public:
-    template <PixelType PIXEL_TYPE> struct PTSetupParams
+    template <PixelType PIXEL_TYPE> struct SetupParams
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
@@ -33,7 +33,7 @@ class ComposeFrameToTexture : public ComposeTask
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    template <> struct PTSetupParams<PixelType::DEPTH>
+    template <> struct SetupParams<PixelType::DEPTH>
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
@@ -48,7 +48,7 @@ class ComposeFrameToTexture : public ComposeTask
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    template <> struct PTSetupParams<PixelType::STENCIL>
+    template <> struct SetupParams<PixelType::STENCIL>
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
@@ -63,7 +63,7 @@ class ComposeFrameToTexture : public ComposeTask
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    template <> struct PTSetupParams<PixelType::DEPTH_AND_STENCIL>
+    template <> struct SetupParams<PixelType::DEPTH_AND_STENCIL>
     {
         ComponentRoot &root;
         ArgumentGetter<glm::uvec2> size;
@@ -78,9 +78,9 @@ class ComposeFrameToTexture : public ComposeTask
         ClearColor clearColor = FixedClearColor::Default;
     };
 
-    using SetupParams = VariantForPixelTypes<PTSetupParams>;
+    using AnyPTSetupParams = VariantForPixelTypes<SetupParams>;
 
-    ComposeFrameToTexture(const SetupParams &params);
+    ComposeFrameToTexture(const AnyPTSetupParams &params);
     ~ComposeFrameToTexture() = default;
 
     std::size_t memory_cost() const override;
@@ -101,7 +101,7 @@ class ComposeFrameToTexture : public ComposeTask
     StringView getFriendlyName() const override;
 
   protected:
-    SetupParams m_params;
+    AnyPTSetupParams m_params;
     ParamList m_inputSpecs;
     ParamList m_consumeSpecs;
     ParamList m_outputSpecs;
@@ -112,7 +112,7 @@ class ComposeFrameToTexture : public ComposeTask
 struct ComposeFrameToTextureKeeperSeed
 {
     using Asset = ComposeFrameToTexture;
-    std::variant<ComposeFrameToTexture::SetupParams> kernel;
+    std::variant<ComposeFrameToTexture::AnyPTSetupParams> kernel;
     inline std::size_t load_cost() const { return 1; }
 };
 

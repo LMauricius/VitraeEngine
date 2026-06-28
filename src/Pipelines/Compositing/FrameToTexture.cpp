@@ -11,11 +11,11 @@
 
 namespace Vitrae
 {
-ComposeFrameToTexture::ComposeFrameToTexture(const SetupParams &params) : m_params(params)
+ComposeFrameToTexture::ComposeFrameToTexture(const AnyPTSetupParams &params) : m_params(params)
 {
     m_friendlyName += "Fragment ";
     std::visit(
-        [&]<PixelType BT>(const PTSetupParams<BT> &params) {
+        [&]<PixelType BT>(const SetupParams<BT> &params) {
             std::visit(Overloaded{
                            [&](const FixedRenderComponent &comp) {
                                switch (comp) {
@@ -101,7 +101,7 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 
     glm::uvec2 retrSize =
         std::visit([&]<PixelType BT>(
-                       const PTSetupParams<BT> &params) { return params.size.get(ctx.properties); },
+                       const SetupParams<BT> &params) { return params.size.get(ctx.properties); },
                    m_params);
 
     // reset the whole pipeline if the FrameStore size is invalid
@@ -120,12 +120,12 @@ void ComposeFrameToTexture::run(RenderComposeContext ctx) const
 void ComposeFrameToTexture::prepareRequiredLocalAssets(RenderComposeContext ctx) const
 {
     ComponentRoot &root = *std::visit(
-        [&]<PixelType BT>(const PTSetupParams<BT> &params) { return &params.root; }, m_params);
+        [&]<PixelType BT>(const SetupParams<BT> &params) { return &params.root; }, m_params);
 
     FrameStoreManager &frameManager = root.getComponent<FrameStoreManager>();
 
     std::visit(
-        [&]<PixelType BT>(const PTSetupParams<BT> &params) {
+        [&]<PixelType BT>(const SetupParams<BT> &params) {
             TextureManager<Texture2D<BT>> &textureManager =
                 root.getComponent<TextureManager<Texture2D<BT>>>();
 
