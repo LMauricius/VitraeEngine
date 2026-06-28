@@ -38,7 +38,8 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
                         "sample_" + textureConv.sampleName;
 
                     // set texture
-                    m_root.getComponent<Renderer>().specifyTextureSampler(textureConv.sampleName);
+                    m_root.getComponent<Renderer>().specifyTextureSampler(textureConv.sampleName,
+                                                                          TYPE_INFO<Texture>);
                     m_properties["tex_" + textureConv.sampleName] =
                         textureManager
                             .register_asset({typename Texture::FileLoadParams{
@@ -112,7 +113,7 @@ void Material::setTexturePtr(StringView colorName, const Variant &texture,
     m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
 
     // set texture
-    m_root.getComponent<Renderer>().specifyTextureSampler(colorName);
+    m_root.getComponent<Renderer>().specifyTextureSampler(colorName, texture.getAssignedTypeInfo());
     m_properties["tex_" + std::string(colorName)] = std::move(texture);
 }
 
@@ -127,7 +128,7 @@ void Material::setTexturePtr(StringView colorName, Variant &&texture, StringView
     m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
 
     // set texture
-    m_root.getComponent<Renderer>().specifyTextureSampler(colorName);
+    m_root.getComponent<Renderer>().specifyTextureSampler(colorName, texture.getAssignedTypeInfo());
     m_properties["tex_" + std::string(colorName)] = std::move(texture);
 }
 

@@ -2,6 +2,8 @@
 
 #include "Vitrae/Data/Typedefs.hpp"
 
+#include "Vitrae/Dynamic/TypeInfo.hpp"
+#include "Vitrae/Params/ParamSpec.hpp"
 #include "dynasma/managers/abstract.hpp"
 
 namespace Vitrae
@@ -30,7 +32,7 @@ class Renderer
      * @param colorName The name of the color the texture represents
      * @note Automatically called when Material::setTexture is called
      */
-    virtual void specifyTextureSampler(StringView colorName) = 0;
+    virtual void specifyTextureSampler(StringView colorName, const TypeInfo &texturePtrInfo) = 0;
 };
 
 } // namespace Vitrae
