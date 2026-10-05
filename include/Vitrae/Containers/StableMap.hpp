@@ -197,7 +197,7 @@ template <class KeyT, class MappedT> class StableMap
         }
     }
 
-    StableMap(StableMap &&o) : m_data(o.m_data), m_size(o.m_size)
+    StableMap(StableMap &&o) noexcept : m_data(o.m_data), m_size(o.m_size)
     {
         o.m_size = 0;
         o.m_data = nullptr;
@@ -281,7 +281,7 @@ template <class KeyT, class MappedT> class StableMap
             *this = StableMap(o);
         return *this;
     }
-    StableMap &operator=(StableMap &&o)
+    StableMap &operator=(StableMap &&o) noexcept
     {
         if (this != &o) {
             for (std::size_t i = 0; i < m_size; ++i) {

@@ -47,7 +47,7 @@ class StringId
         }
 #endif
     }
-    constexpr StringId(StringId &&id)
+    constexpr StringId(StringId &&id) noexcept
     {
         m_hash = id.m_hash;
 #ifdef VITRAE_DEBUG_STRINGIDS
