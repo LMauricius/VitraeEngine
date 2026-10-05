@@ -3,10 +3,11 @@
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 
 #include <any>
-#include <cstdlib>
+#include <new>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <typeinfo>
 
 namespace Vitrae
@@ -53,7 +54,7 @@ class VariantVTable
     // memory management
     void (*emptyConstructor)(Variant &self);
     void (*copyConstructor)(Variant &self, const Variant &other);
-    void (*moveConstructor)(Variant &self, Variant &other);
+    void (*moveConstructor)(Variant &self, Variant &other) noexcept;
     void (*destructor)(Variant &self);
 
     // type comparison functions
@@ -107,32 +108,52 @@ class Variant
         if constexpr (requires { new T(); }) {
             table.emptyConstructor = [](Variant &self) { new (&self.getUnsafe<T>()) T(); };
         } else {
-            table.emptyConstructor = [](Variant &self) {};
+            table.emptyConstructor = [](Variant &self) {
+                std::stringstream ss;
+                ss << "default constructor is not implemented for type "
+                   << TYPE_INFO<T>.getShortTypeName();
+                throw std::runtime_error(ss.str());
+            };
         }
 
         // copy constructor
-        if constexpr (requires(const T &t) { new T(t); }) {
+        if constexpr (std::is_void_v<T>) {
+            table.copyConstructor = [](Variant &self, const Variant &other) {};
+        } else if constexpr (requires(const T &t) { new T(t); }) {
             table.copyConstructor = [](Variant &self, const Variant &other) {
                 new (&self.getUnsafe<T>()) T(other.getUnsafe<T>());
             };
         } else {
-            table.copyConstructor = [](Variant &self, const Variant &other) {};
+            table.copyConstructor = [](Variant &self, const Variant &other) {
+                std::stringstream ss;
+                ss << "copy constructor is not implemented for type "
+                   << TYPE_INFO<T>.getShortTypeName();
+                throw std::runtime_error(ss.str());
+            };
         }
 
-        // move constructor
-        if constexpr (requires(T &&t) { new T(t); }) {
-            table.moveConstructor = [](Variant &self, Variant &other) {
+        // move constructor; nothrow required so Variant's move can be noexcept
+        if constexpr (std::is_void_v<T>) {
+            table.moveConstructor = [](Variant &self, Variant &other) noexcept {};
+        } else {
+            static_assert(std::is_nothrow_move_constructible_v<T>,
+                          "Variant's stored type must be nothrow move constructible");
+            table.moveConstructor = [](Variant &self, Variant &other) noexcept {
                 new (&self.getUnsafe<T>()) T(std::move(other.getUnsafe<T>()));
             };
-        } else {
-            table.moveConstructor = [](Variant &self, Variant &other) {};
         }
 
         // destructor
-        if constexpr (requires(T v) { v.~T(); }) {
+        if constexpr (std::is_void_v<T> || std::is_trivially_destructible_v<T>) {
+            table.destructor = [](Variant &self) {};
+        } else if constexpr (requires(T v) { v.~T(); }) {
             table.destructor = [](Variant &self) { self.getUnsafe<T>().~T(); };
         } else {
-            table.destructor = [](Variant &self) {};
+            table.destructor = [](Variant &self) {
+                std::stringstream ss;
+                ss << "destructor is not implemented for type " << TYPE_INFO<T>.getShortTypeName();
+                throw std::runtime_error(ss.str());
+            };
         }
 
         // operator==
@@ -225,23 +246,34 @@ class Variant
     constexpr Variant() : m_val(), m_table(&V_TABLE<void>) {}
 
     /// @brief constructor with a value
-    template <class T> constexpr Variant(T val) : m_table(&V_TABLE<std::decay_t<T>>)
+    template <class T>
+        requires(!std::is_same_v<std::decay_t<T>, Variant>)
+    constexpr Variant(T &&val) : m_table(&V_TABLE<std::decay_t<T>>)
     {
-        allocateBuffer<T>();
-        new (&get<T>()) T(val);
+        using DT = std::decay_t<T>;
+        allocateBuffer<DT>();
+        try {
+            new (&getUnsafe<DT>()) DT(std::forward<T>(val));
+        } catch (...) {
+            // lvalue copy may throw; dtor won't run for a throwing ctor
+            freeBuffer(m_table);
+            throw;
+        }
     }
     /// @brief copy constructor
     constexpr Variant(const Variant &other) : m_table(other.m_table)
     {
         allocateTBuffer(m_table);
-        m_table->copyConstructor(*this, other);
+        try {
+            m_table->copyConstructor(*this, other);
+        } catch (...) {
+            // dtor won't run for a throwing ctor
+            freeBuffer(m_table);
+            throw;
+        }
     }
     /// @brief move constructor
-    constexpr Variant(Variant &&other) : m_table(other.m_table)
-    {
-        allocateTBuffer(m_table);
-        m_table->moveConstructor(*this, other);
-    }
+    constexpr Variant(Variant &&other) noexcept { takeFrom(other); }
 
     /// @brief destructor
     constexpr ~Variant()
@@ -252,42 +284,36 @@ class Variant
 
     // assignment operators
 
+    // copy assignments construct a temporary first, then noexcept-move it in:
+    // self-assignment safe, *this unchanged if construction throws
+
     /// @brief assignment operator with a value
-    template <class T> Variant &operator=(T val)
+    template <class T>
+        requires(!std::is_same_v<std::decay_t<T>, Variant>)
+    Variant &operator=(T &&val)
     {
-        m_table->destructor(*this);
-
-        reallocateBuffer<T>(m_table);
-
-        m_table = &V_TABLE<std::decay_t<T>>;
-        new (&get<T>()) T(val);
-
-        return *this;
+        return *this = Variant(std::forward<T>(val));
     }
     /// @brief assignment operator
-    inline Variant &operator=(const Variant &other)
+    inline Variant &operator=(const Variant &other) { return *this = Variant(other); }
+    /// @brief move assignment; leaves other empty
+    inline Variant &operator=(Variant &&other) noexcept
     {
-        m_table->destructor(*this);
-
-        reallocateTBuffer(m_table, other.m_table);
-
-        m_table = other.m_table;
-        m_table->copyConstructor(*this, other);
-
+        if (this != &other) {
+            reset();
+            takeFrom(other);
+        }
         return *this;
     }
-    /// @brief move assignment
-    inline Variant &operator=(Variant &&other)
+
+    inline void reset()
     {
         m_table->destructor(*this);
-
-        reallocateTBuffer(m_table, other.m_table);
-
-        m_table = other.m_table;
-        m_table->moveConstructor(*this, other);
-
-        return *this;
+        freeBuffer(m_table);
+        m_table = &V_TABLE<void>;
     }
+
+    inline bool hasValue() const { return m_table != &V_TABLE<void>; }
 
     inline const TypeInfo &getAssignedTypeInfo() const { return *m_table->p_typeinfo; }
 
@@ -379,40 +405,37 @@ class Variant
 
     // buffer management
 
+    /**
+     * Takes other's value; *this must hold no value or buffer. Other is left empty.
+     * Long values: steals the heap buffer, payload untouched.
+     * Short values: nothrow-moves the payload, then destroys the source.
+     */
+    constexpr void takeFrom(Variant &other) noexcept
+    {
+        m_table = other.m_table;
+        if (m_table->hasShortObjectOptimization) {
+            m_table->moveConstructor(*this, other);
+            m_table->destructor(other);
+        } else {
+            m_val.mp_longVal = other.m_val.mp_longVal;
+        }
+        other.m_table = &V_TABLE<void>;
+    }
+
+    // aligned operator new: honors over-aligned types, throws std::bad_alloc instead of
+    // returning null. Must be paired with the aligned operator delete below
     inline constexpr void freeBuffer(const VariantVTable *oldt)
     {
         if (!oldt->hasShortObjectOptimization) {
-            std::free(m_val.mp_longVal);
-        }
-    }
-
-    inline constexpr void reallocateTBuffer(const VariantVTable *oldt, const VariantVTable *newt)
-    {
-        if (!oldt->hasShortObjectOptimization) {
-            if (!newt->hasShortObjectOptimization) {
-                if (newt->size != oldt->size) {
-                    m_val.mp_longVal = std::realloc(m_val.mp_longVal, newt->size);
-                }
-            } else {
-                std::free(m_val.mp_longVal);
-            }
-        } else {
-            if (!newt->hasShortObjectOptimization) {
-                m_val.mp_longVal = std::malloc(newt->size);
-            }
+            ::operator delete(m_val.mp_longVal, std::align_val_t(oldt->alignment));
         }
     }
 
     inline constexpr void allocateTBuffer(const VariantVTable *newt)
     {
         if (!newt->hasShortObjectOptimization) {
-            m_val.mp_longVal = std::malloc(newt->size);
+            m_val.mp_longVal = ::operator new(newt->size, std::align_val_t(newt->alignment));
         }
-    }
-
-    template <class T> void reallocateBuffer(const VariantVTable *oldt)
-    {
-        reallocateTBuffer(oldt, &V_TABLE<std::decay_t<T>>);
     }
 
     template <class T> void allocateBuffer() { allocateTBuffer(&V_TABLE<std::decay_t<T>>); }

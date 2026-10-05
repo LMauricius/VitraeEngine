@@ -80,6 +80,7 @@ class StringId
     {
         m_hash = id.m_hash;
 #ifdef VITRAE_DEBUG_STRINGIDS
+        delete[] m_str;
         if (id.m_str) {
             m_str = new char[std::strlen(id.m_str) + 1];
             std::strcpy(m_str, id.m_str);

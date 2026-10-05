@@ -3,7 +3,10 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <iterator>
 #include <map>
+#include <new>
+#include <ranges>
 #include <span>
 #include <stdexcept>
 #include <type_traits>
@@ -170,31 +173,9 @@ template <class KeyT, class MappedT> class StableMap
 
     StableMap() : m_data(nullptr), m_size(0) {};
 
-    StableMap(const StableMap &o) : m_size(o.m_size), m_data(new std::byte[getBufferSize(o.m_size)])
+    StableMap(const StableMap &o) : m_size(o.m_size), m_data(allocateBuffer(o.m_size))
     {
-        // on throw: elements [0,i) are fully constructed; key i is destroyed by the inner catch
-        std::size_t i = 0;
-        try {
-            for (; i < m_size; ++i) {
-                new (getKeyList() + i) KeyT(o.getKeyList()[i]);
-                try {
-                    new (getValueList() + i) MappedT(o.getValueList()[i]);
-                }
-                catch (...) {
-                    getKeyList()[i].~KeyT();
-                    throw;
-                }
-            }
-        }
-        catch (...) {
-            // dtor won't run for a throwing ctor; clean up manually
-            for (std::size_t j = 0; j < i; ++j) {
-                getKeyList()[j].~KeyT();
-                getValueList()[j].~MappedT();
-            }
-            delete[] m_data;
-            throw;
-        }
+        constructAll(o.begin());
     }
 
     StableMap(StableMap &&o) noexcept : m_data(o.m_data), m_size(o.m_size)
@@ -210,26 +191,19 @@ template <class KeyT, class MappedT> class StableMap
             { (*it).second } -> std::convertible_to<MappedT>;
         }
     {
-        std::size_t i;
-        m_size = std::distance(first, last);
-        m_data = new std::byte[getBufferSize(m_size)];
-
+        // sort before allocating: vector/sort may throw, nothing to clean up yet
         std::vector<InputItT> sortedIterators;
-        sortedIterators.reserve(m_size);
-        i = 0;
         for (auto it = first; it != last; ++it) {
             sortedIterators.emplace_back(it);
-            ++i;
         }
         std::sort(sortedIterators.begin(), sortedIterators.end(),
                   [&](auto a, auto b) { return (*a).first < (*b).first; });
 
-        i = 0;
-        for (auto it : sortedIterators) {
-            new (getKeyList() + i) KeyT(it->first);
-            new (getValueList() + i) MappedT(it->second);
-            ++i;
-        }
+        m_size = sortedIterators.size();
+        m_data = allocateBuffer(m_size);
+        constructAll(std::views::transform(sortedIterators, [](const InputItT &it) -> decltype(auto) {
+                         return *it;
+                     }).begin());
     }
 
     StableMap(std::initializer_list<std::pair<KeyT, MappedT>> initList)
@@ -239,40 +213,24 @@ template <class KeyT, class MappedT> class StableMap
     template <class OKeyT, class OMappedT>
     StableMap(const std::map<OKeyT, OMappedT> &orderedList)
         requires std::convertible_to<OKeyT, KeyT> && std::convertible_to<OMappedT, MappedT>
+        : m_size(orderedList.size()), m_data(allocateBuffer(orderedList.size()))
     {
-        m_size = orderedList.size();
-        m_data = new std::byte[getBufferSize(m_size)];
-
-        int i = 0;
-        for (const auto &keyVal : orderedList) {
-            new (getKeyList() + i) KeyT(keyVal.first);
-            new (getValueList() + i) MappedT(keyVal.second);
-            ++i;
-        }
+        constructAll(orderedList.begin());
     }
 
     template <class OKeyT, class OMappedT>
     StableMap(std::map<OKeyT, OMappedT> &&orderedList)
         requires std::convertible_to<OKeyT, KeyT> && std::convertible_to<OMappedT, MappedT>
+        : m_size(orderedList.size()), m_data(allocateBuffer(orderedList.size()))
     {
-        m_size = orderedList.size();
-        m_data = new std::byte[getBufferSize(m_size)];
-
-        int i = 0;
-        for (auto &keyVal : orderedList) {
-            new (getKeyList() + i) KeyT(keyVal.first);
-            new (getValueList() + i) MappedT(std::move(keyVal.second));
-            ++i;
-        }
+        // move iterator yields rvalue pairs: values moved, const keys copied
+        constructAll(std::make_move_iterator(orderedList.begin()));
     }
 
     ~StableMap()
     {
-        for (std::size_t i = 0; i < m_size; ++i) {
-            getKeyList()[i].~KeyT();
-            getValueList()[i].~MappedT();
-        }
-        delete[] m_data;
+        destroyFirst(m_size);
+        freeBuffer(m_data);
     }
 
     StableMap &operator=(const StableMap &o)
@@ -284,12 +242,8 @@ template <class KeyT, class MappedT> class StableMap
     StableMap &operator=(StableMap &&o) noexcept
     {
         if (this != &o) {
-            for (std::size_t i = 0; i < m_size; ++i) {
-                getKeyList()[i].~KeyT();
-                getValueList()[i].~MappedT();
-            }
-
-            delete[] m_data;
+            destroyFirst(m_size);
+            freeBuffer(m_data);
             m_size = o.m_size;
             m_data = o.m_data;
             o.m_size = 0;
@@ -578,12 +532,9 @@ template <class KeyT, class MappedT> class StableMap
 
     void clear()
     {
-        for (std::size_t i = 0; i < m_size; ++i) {
-            getKeyList()[i].~KeyT();
-            getValueList()[i].~MappedT();
-        }
+        destroyFirst(m_size);
+        freeBuffer(m_data);
         m_size = 0;
-        delete[] m_data;
         m_data = nullptr;
     }
 
@@ -602,6 +553,55 @@ template <class KeyT, class MappedT> class StableMap
     static constexpr std::size_t getBufferSize(std::size_t numElements)
     {
         return getValueBufferOffset(numElements) + numElements * sizeof(MappedT);
+    }
+
+    // aligned operator new: honors over-aligned keys/values (new std::byte[] only guarantees
+    // __STDCPP_DEFAULT_NEW_ALIGNMENT__). Must be paired with freeBuffer
+    static std::byte *allocateBuffer(std::size_t numElements)
+    {
+        return static_cast<std::byte *>(::operator new(
+            getBufferSize(numElements), std::align_val_t(std::max(alignof(KeyT), alignof(MappedT)))));
+    }
+
+    static void freeBuffer(std::byte *data) noexcept
+    {
+        ::operator delete(data, std::align_val_t(std::max(alignof(KeyT), alignof(MappedT))));
+    }
+
+    /// destroys elements [0,n)
+    void destroyFirst(std::size_t n) noexcept
+    {
+        for (std::size_t i = 0; i < n; ++i) {
+            getKeyList()[i].~KeyT();
+            getValueList()[i].~MappedT();
+        }
+    }
+
+    /**
+     * Constructs elements [0,m_size) in the allocated m_data from consecutive pair-likes at `it`.
+     * Members of rvalue pairs are forwarded as rvalues (moved).
+     * For constructors only: on throw destroys built elements, frees m_data and rethrows,
+     * since the dtor won't run for a throwing ctor
+     */
+    template <class It> void constructAll(It it)
+    {
+        std::size_t i = 0;
+        try {
+            for (; i < m_size; ++i, ++it) {
+                auto &&kv = *it;
+                new (getKeyList() + i) KeyT(std::forward<decltype(kv)>(kv).first);
+                try {
+                    new (getValueList() + i) MappedT(std::forward<decltype(kv)>(kv).second);
+                } catch (...) {
+                    getKeyList()[i].~KeyT();
+                    throw;
+                }
+            }
+        } catch (...) {
+            destroyFirst(i);
+            freeBuffer(m_data);
+            throw;
+        }
     }
 
     std::size_t findClosestIndex(const KeyT &key) const
@@ -650,7 +650,7 @@ template <class KeyT, class MappedT> class StableMap
         static_assert(std::is_nothrow_move_constructible_v<KeyT> &&
                       std::is_nothrow_move_constructible_v<MappedT>);
 
-        std::byte *newData = new std::byte[getBufferSize(m_size - 1)];
+        std::byte *newData = allocateBuffer(m_size - 1);
         KeyT *newKeyList = reinterpret_cast<KeyT *>(newData);
         MappedT *newValueList =
             reinterpret_cast<MappedT *>(newData + getValueBufferOffset(m_size - 1));
@@ -675,23 +675,21 @@ template <class KeyT, class MappedT> class StableMap
             getValueList()[i].~MappedT();
         }
 
-        delete[] m_data;
+        freeBuffer(m_data);
         m_data = newData;
         --m_size;
     }
 
     void start_realloc_w_uninit()
     {
-        std::size_t newBufferSize = getBufferSize(m_size + 1);
-        std::byte *newData = new std::byte[newBufferSize];
-        m_data = newData;
+        m_data = allocateBuffer(m_size + 1);
         ++m_size;
     }
 
     // undoes start_realloc_w_uninit; new buffer must hold no constructed elems
     void abort_realloc_w_uninit(std::byte *oldData)
     {
-        delete[] m_data;
+        freeBuffer(m_data);
         m_data = oldData;
         --m_size;
     }
@@ -722,7 +720,7 @@ template <class KeyT, class MappedT> class StableMap
             oldValueList[i].~MappedT();
         }
 
-        delete[] oldData;
+        freeBuffer(oldData);
     }
 };
 
