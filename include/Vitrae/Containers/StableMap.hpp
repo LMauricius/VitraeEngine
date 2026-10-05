@@ -170,14 +170,30 @@ template <class KeyT, class MappedT> class StableMap
 
     StableMap() : m_data(nullptr), m_size(0) {};
 
-    StableMap(const StableMap &o)
+    StableMap(const StableMap &o) : m_size(o.m_size), m_data(new std::byte[getBufferSize(o.m_size)])
     {
-        m_size = o.m_size;
-        m_data = new std::byte[getBufferSize(m_size)];
-        ;
-        for (std::size_t i = 0; i < m_size; ++i) {
-            new (getKeyList() + i) KeyT(o.getKeyList()[i]);
-            new (getValueList() + i) MappedT(o.getValueList()[i]);
+        // on throw: elements [0,i) are fully constructed; key i is destroyed by the inner catch
+        std::size_t i = 0;
+        try {
+            for (; i < m_size; ++i) {
+                new (getKeyList() + i) KeyT(o.getKeyList()[i]);
+                try {
+                    new (getValueList() + i) MappedT(o.getValueList()[i]);
+                }
+                catch (...) {
+                    getKeyList()[i].~KeyT();
+                    throw;
+                }
+            }
+        }
+        catch (...) {
+            // dtor won't run for a throwing ctor; clean up manually
+            for (std::size_t j = 0; j < i; ++j) {
+                getKeyList()[j].~KeyT();
+                getValueList()[j].~MappedT();
+            }
+            delete[] m_data;
+            throw;
         }
     }
 
@@ -451,8 +467,21 @@ template <class KeyT, class MappedT> class StableMap
 
             std::byte *p_oldData = m_data;
             start_realloc_w_uninit();
-            new (getKeyList() + ind) KeyT(key);
-            new (getValueList() + ind) MappedT();
+            try {
+                new (getKeyList() + ind) KeyT(key);
+            }
+            catch (...) {
+                abort_realloc_w_uninit(p_oldData);
+                throw;
+            }
+            try {
+                new (getValueList() + ind) MappedT();
+            }
+            catch (...) {
+                getKeyList()[ind].~KeyT();
+                abort_realloc_w_uninit(p_oldData);
+                throw;
+            }
             finish_realloc_w_uninit(p_oldData, ind);
             return getValueList()[ind];
         } else {
@@ -497,8 +526,21 @@ template <class KeyT, class MappedT> class StableMap
 
         std::byte *p_oldData = m_data;
         start_realloc_w_uninit();
-        new (getKeyList() + ind) KeyT(key);
-        new (getValueList() + ind) MappedT(std::forward<Args>(args)...);
+        try {
+            new (getKeyList() + ind) KeyT(key);
+        }
+        catch (...) {
+            abort_realloc_w_uninit(p_oldData);
+            throw;
+        }
+        try {
+            new (getValueList() + ind) MappedT(std::forward<Args>(args)...);
+        }
+        catch (...) {
+            getKeyList()[ind].~KeyT();
+            abort_realloc_w_uninit(p_oldData);
+            throw;
+        }
         finish_realloc_w_uninit(p_oldData, ind);
         return std::make_pair(iterator(getKeyList() + ind, getValueList() + ind), true);
     }
@@ -604,6 +646,10 @@ template <class KeyT, class MappedT> class StableMap
 
     void realloc_w_erased(std::size_t erasingIndex)
     {
+        // a throwing move would leave elems split between buffers
+        static_assert(std::is_nothrow_move_constructible_v<KeyT> &&
+                      std::is_nothrow_move_constructible_v<MappedT>);
+
         std::byte *newData = new std::byte[getBufferSize(m_size - 1)];
         KeyT *newKeyList = reinterpret_cast<KeyT *>(newData);
         MappedT *newValueList =
@@ -642,8 +688,20 @@ template <class KeyT, class MappedT> class StableMap
         ++m_size;
     }
 
+    // undoes start_realloc_w_uninit; new buffer must hold no constructed elems
+    void abort_realloc_w_uninit(std::byte *oldData)
+    {
+        delete[] m_data;
+        m_data = oldData;
+        --m_size;
+    }
+
     void finish_realloc_w_uninit(std::byte *oldData, std::size_t uninitIndex)
     {
+        // a throwing move would leave elems split between buffers
+        static_assert(std::is_nothrow_move_constructible_v<KeyT> &&
+                      std::is_nothrow_move_constructible_v<MappedT>);
+
         KeyT *oldKeyList = reinterpret_cast<KeyT *>(oldData);
         MappedT *oldValueList =
             reinterpret_cast<MappedT *>(oldData + getValueBufferOffset(m_size - 1));
