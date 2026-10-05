@@ -11,12 +11,13 @@ VariantScope::VariantScope(const VariantScope *parent) : m_parent{parent} {}
 
 void VariantScope::set(StringId key, const Variant &value)
 {
-    m_dict[key] = value;
+    // value may refer to an element of m_dict (e.g. from get()); operator[] would dangle it
+    m_dict.insert_or_assign(key, value);
 }
 
 void VariantScope::set(StringId key, Variant &&value)
 {
-    m_dict[key] = std::move(value);
+    m_dict.insert_or_assign(key, std::move(value));
 }
 
 const Variant &VariantScope::get(StringId key) const

@@ -499,6 +499,21 @@ template <class KeyT, class MappedT> class StableMap
         return std::make_pair(iterator(getKeyList() + ind, getValueList() + ind), true);
     }
 
+    /**
+     * Safe even if obj refers to an element of this map (unlike `map[key] = obj`, where
+     * operator[] may free the buffer obj lives in before the assignment reads it)
+     */
+    template <class M> std::pair<iterator, bool> insert_or_assign(const KeyT &key, M &&obj)
+    {
+        // emplace constructs from obj before freeing the old buffer.
+        // obj is forwarded twice, but emplace only consumes it when inserting
+        auto res = emplace(key, std::forward<M>(obj));
+        if (!res.second) {
+            (*res.first).second = std::forward<M>(obj);
+        }
+        return res;
+    }
+
     std::pair<iterator, bool> insert(const std::pair<const KeyT, MappedT> &value)
     {
         return emplace(value.first, value.second);
