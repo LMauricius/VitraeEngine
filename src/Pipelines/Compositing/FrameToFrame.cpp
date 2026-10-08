@@ -111,7 +111,7 @@ void ComposeFrameToFrame::prepareRequiredLocalAssets(RenderComposeContext ctx) c
     for (auto &texSpec : p_targetFrame->getRenderTextureSpecs()) {
         if (std::visit(nameGetter, m_params.shaderComponent) ==
                 std::visit(nameGetter, texSpec.shaderComponent) &&
-            texSpec.p_texture) {
+            texSpec.np_texture) {
             p_foundSpec = &texSpec;
             break;
         }

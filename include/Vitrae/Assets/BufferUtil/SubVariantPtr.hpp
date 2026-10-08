@@ -53,9 +53,6 @@ class SharedSubBufferVariantPtr
                                     p_buffer.numElements())
     {}
 
-    /// Default constructor, sets type infos to void
-    SharedSubBufferVariantPtr();
-
     SharedSubBufferVariantPtr(const SharedSubBufferVariantPtr &) = default;
     SharedSubBufferVariantPtr(SharedSubBufferVariantPtr &&) = default;
     ~SharedSubBufferVariantPtr() = default;

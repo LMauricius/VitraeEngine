@@ -39,8 +39,8 @@ class TextureBase : public dynasma::PolymorphicBase
     const std::optional<TextureStats> &getStats() const { return m_stats; }
     virtual PixelType getPixelType() const = 0;
     virtual AnyPixelFormat getAnyPixelFormat() const = 0;
-    virtual dynasma::PinPtr<PixelImageBase> getBufferBase() = 0;
-    virtual dynasma::PinPtr<const PixelImageBase> getBufferBase() const = 0;
+    virtual dynasma::PinPtr<PixelImageBase> getImageBase() = 0;
+    virtual dynasma::PinPtr<const PixelImageBase> getImageBase() const = 0;
 
     void setProperty(StringId key, const Variant &value);
     void setProperty(StringId key, Variant &&value);
@@ -117,14 +117,14 @@ class Texture1D : public Texture1DBase, public TextureBaseTyped<TPIXEL_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
-    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
-    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+    dynasma::PinPtr<PixelImageBase> getImageBase() override { return getImage(); }
+    dynasma::PinPtr<const PixelImageBase> getImageBase() const override { return getImage(); }
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<PixelImage1D<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const PixelImage1D<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage1D<TPIXEL_TYPE>> getImage() = 0;
+    virtual dynasma::PinPtr<const PixelImage1D<TPIXEL_TYPE>> getImage() const = 0;
 };
 
 /**
@@ -149,14 +149,14 @@ class Texture2D : public Texture2DBase, public TextureBaseTyped<TPIXEL_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
-    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
-    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+    dynasma::PinPtr<PixelImageBase> getImageBase() override { return getImage(); }
+    dynasma::PinPtr<const PixelImageBase> getImageBase() const override { return getImage(); }
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<PixelImage2D<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const PixelImage2D<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage2D<TPIXEL_TYPE>> getImage() = 0;
+    virtual dynasma::PinPtr<const PixelImage2D<TPIXEL_TYPE>> getImage() const = 0;
 };
 
 /**
@@ -181,14 +181,14 @@ class Texture3D : public Texture3DBase, public TextureBaseTyped<TPIXEL_TYPE>
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
-    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
-    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+    dynasma::PinPtr<PixelImageBase> getImageBase() override { return getImage(); }
+    dynasma::PinPtr<const PixelImageBase> getImageBase() const override { return getImage(); }
 
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<PixelImage3D<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const PixelImage3D<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage3D<TPIXEL_TYPE>> getImage() = 0;
+    virtual dynasma::PinPtr<const PixelImage3D<TPIXEL_TYPE>> getImage() const = 0;
 };
 
 /**
@@ -213,8 +213,8 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TPIXEL
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, unsigned int>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
-    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
-    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+    dynasma::PinPtr<PixelImageBase> getImageBase() override { return getImage(); }
+    dynasma::PinPtr<const PixelImageBase> getImageBase() const override { return getImage(); }
 
     /**
      * @returns pointer to a Texture2D face of this cubemap
@@ -225,8 +225,8 @@ class TextureCubemap : public TextureCubemapBase, public TextureBaseTyped<TPIXEL
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<PixelImageCubemap<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const PixelImageCubemap<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImageCubemap<TPIXEL_TYPE>> getImage() = 0;
+    virtual dynasma::PinPtr<const PixelImageCubemap<TPIXEL_TYPE>> getImage() const = 0;
 };
 
 /**
@@ -251,8 +251,8 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TP
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
-    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
-    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+    dynasma::PinPtr<PixelImageBase> getImageBase() override { return getImage(); }
+    dynasma::PinPtr<const PixelImageBase> getImageBase() const override { return getImage(); }
 
     /**
      * @returns pointer to a Texture1D layer
@@ -263,8 +263,8 @@ class Texture1DLayered : public Texture1DLayeredBase, public TextureBaseTyped<TP
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<PixelImage1DLayered<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const PixelImage1DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage1DLayered<TPIXEL_TYPE>> getImage() = 0;
+    virtual dynasma::PinPtr<const PixelImage1DLayered<TPIXEL_TYPE>> getImage() const = 0;
 };
 
 /**
@@ -289,8 +289,8 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TP
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec3>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
-    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
-    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+    dynasma::PinPtr<PixelImageBase> getImageBase() override { return getImage(); }
+    dynasma::PinPtr<const PixelImageBase> getImageBase() const override { return getImage(); }
 
     /**
      * @returns pointer to a Texture2D layer
@@ -301,8 +301,8 @@ class Texture2DLayered : public Texture2DLayeredBase, public TextureBaseTyped<TP
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<PixelImage2DLayered<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const PixelImage2DLayered<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImage2DLayered<TPIXEL_TYPE>> getImage() = 0;
+    virtual dynasma::PinPtr<const PixelImage2DLayered<TPIXEL_TYPE>> getImage() const = 0;
 };
 
 /**
@@ -327,8 +327,8 @@ class TextureCubemapLayered : public TextureCubemapLayeredBase, public TextureBa
     using EmptyParams = ImageCommon::EmptyParams<TPIXEL_TYPE, glm::uvec2>;
     using PureColorParams = ImageCommon::PureColorParams<TPIXEL_TYPE>;
 
-    dynasma::PinPtr<PixelImageBase> getBufferBase() override { return getBuffer(); }
-    dynasma::PinPtr<const PixelImageBase> getBufferBase() const override { return getBuffer(); }
+    dynasma::PinPtr<PixelImageBase> getImageBase() override { return getImage(); }
+    dynasma::PinPtr<const PixelImageBase> getImageBase() const override { return getImage(); }
 
     /**
      * @returns pointer to a TextureCubemap layer
@@ -340,8 +340,8 @@ class TextureCubemapLayered : public TextureCubemapLayeredBase, public TextureBa
     /**
      * @returns pointer to the buffer
      */
-    virtual dynasma::PinPtr<PixelImageCubemapLayered<TPIXEL_TYPE>> getBuffer() = 0;
-    virtual dynasma::PinPtr<const PixelImageCubemapLayered<TPIXEL_TYPE>> getBuffer() const = 0;
+    virtual dynasma::PinPtr<PixelImageCubemapLayered<TPIXEL_TYPE>> getImage() = 0;
+    virtual dynasma::PinPtr<const PixelImageCubemapLayered<TPIXEL_TYPE>> getImage() const = 0;
 };
 
 // ==== Helpers for handling all these types =======================================================

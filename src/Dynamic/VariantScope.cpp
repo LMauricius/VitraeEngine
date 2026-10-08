@@ -32,6 +32,17 @@ const Variant &VariantScope::get(StringId key) const
     throw std::runtime_error{"Key not found"};
 }
 
+void VariantScope::erase(StringId key)
+{
+    auto it = m_dict.find(key);
+    if (it != m_dict.end())
+        (*it).second.reset();
+    else if (m_parent && m_parent->has(key))
+        m_dict[key];
+    else
+        throw std::runtime_error{"Key not found"};
+}
+
 const Variant &VariantScope::get(StringId key, const Variant &defaultValue) const
 {
     auto it = m_dict.find(key);
@@ -72,7 +83,14 @@ const Variant *VariantScope::getPtr(StringId key) const
 
 bool VariantScope::has(StringId key) const
 {
-    return m_dict.find(key) != m_dict.end() || (m_parent && m_parent->has(key));
+    auto it = m_dict.find(key);
+    return (it != m_dict.end() && (*it).second.hasValue()) || (m_parent && m_parent->has(key));
+}
+
+bool VariantScope::hasEverHad(StringId key) const
+{
+    auto it = m_dict.find(key);
+    return it != m_dict.end() || (m_parent && m_parent->hasEverHad(key));
 }
 
 void VariantScope::clear()

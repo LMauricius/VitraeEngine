@@ -9,6 +9,12 @@
 namespace Vitrae
 {
 
+Material::Material(const SetupParams &params)
+    : m_root(params.root), m_externalAliases(params.aliases), m_properties(params.properties)
+{
+    m_aliases = ParamAliases({{&m_externalAliases}}, m_tobeInternalAliases);
+}
+
 Material::Material(const AssimpLoadParams &params) : m_root(params.root)
 {
     AssimpConvCollection &convs = params.root.getComponent<AssimpConvCollection>();
@@ -38,8 +44,8 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
                         "sample_" + textureConv.sampleName;
 
                     // set texture
-                    m_root.getComponent<Renderer>().specifyTextureSampler(textureConv.sampleName,
-                                                                          TYPE_INFO<Texture>);
+                    m_root.getComponent<Renderer>().specifyTextureSampler(
+                        textureConv.sampleName, TYPE_INFO<dynasma::FirmPtr<Texture>>);
                     m_properties["tex_" + textureConv.sampleName] =
                         textureManager
                             .register_asset({typename Texture::FileLoadParams{

@@ -20,6 +20,13 @@ class TextureBase;
 class Material : public dynasma::PolymorphicBase
 {
   public:
+    struct SetupParams
+    {
+        ComponentRoot &root;
+        ParamAliases aliases;
+        StableMap<StringId, Variant> properties;
+    };
+
     struct AssimpLoadParams
     {
         ComponentRoot &root;
@@ -27,6 +34,7 @@ class Material : public dynasma::PolymorphicBase
         std::filesystem::path sceneFilepath;
     };
 
+    Material(const SetupParams &params);
     Material(const AssimpLoadParams &params);
     virtual ~Material();
 

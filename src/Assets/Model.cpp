@@ -2,6 +2,7 @@
 #include "Vitrae/Assets/Shapes/Mesh.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
 #include "Vitrae/Params/Standard.hpp"
+#include "Vitrae/Renderer.hpp"
 #include "Vitrae/TypeConversion/StringCvt.hpp"
 
 #include "dynasma/keepers/abstract.hpp"
@@ -12,7 +13,8 @@
 
 namespace Vitrae
 {
-Model::Model(const AssimpLoadParams &params) : m_root(params.root)
+Model::Model(const AssimpLoadParams &params)
+    : m_root(params.root), mp_material(params.root.getComponent<Renderer>().getDefaultMaterial())
 {
     MeshKeeper &meshKeeper = params.root.getComponent<MeshKeeper>();
     auto p_mesh =
@@ -74,8 +76,6 @@ dynasma::LazyPtr<Shape> Model::getBestForm(StringId purpose, const LoDSelectionP
     case LoDSelectionMethod::Maximum:
         return forms.front().second;
     case LoDSelectionMethod::FirstBelowThreshold: {
-        dynasma::LazyPtr<Shape> p_choice;
-
         for (const auto &[p_lodMeasure, p_shape] : forms) {
             if (!p_lodMeasure->isTooDetailed(lodCtx, lodParams.threshold)) {
                 return p_shape;
@@ -85,18 +85,18 @@ dynasma::LazyPtr<Shape> Model::getBestForm(StringId purpose, const LoDSelectionP
         return forms.back().second;
     }
     case LoDSelectionMethod::FirstAboveThreshold: {
-        dynasma::LazyPtr<Shape> p_choice;
+        std::optional<dynasma::LazyPtr<Shape>> np_choice;
 
         for (const auto &[p_lodMeasure, p_shape] : forms) {
             if (!p_lodMeasure->isTooDetailed(lodCtx, lodParams.threshold)) {
                 break;
             } else {
-                p_choice = p_shape;
+                np_choice = p_shape;
             }
         }
 
-        if (p_choice != dynasma::LazyPtr<Shape>())
-            return p_choice;
+        if (np_choice)
+            return *np_choice;
         else
             return forms.back().second;
     }

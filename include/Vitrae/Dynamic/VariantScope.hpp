@@ -96,6 +96,17 @@ class VariantScope
     const Variant &get(StringId key, const Variant &defaultValue) const;
 
     /**
+     * @brief Remove the value associated with a key.
+     *
+     * If the key is not found in the current dictionary, the search continues in the parent
+     * dictionary.
+     *
+     * @param key The key.
+     * @throws std::runtime_error If the key is not found in any dictionary.
+     */
+    void erase(StringId key);
+
+    /**
      * @brief Get a move-reference to the value associated with a key.
      *
      * If the key is not found in the current dictionary, the search continues in the parent
@@ -131,6 +142,17 @@ class VariantScope
      * @return True if the key exists, false otherwise.
      */
     bool has(StringId key) const;
+
+    /**
+     * @brief Check if a key exists in the dictionary, even if it's void
+     *
+     * If the key is not found in the current dictionary, the search continues in the parent
+     * dictionary.
+     *
+     * @param key The key.
+     * @return True if the key exists, false otherwise.
+     */
+    bool hasEverHad(StringId key) const;
 
     /**
      * @brief Erases all keys and values from the dictionary.

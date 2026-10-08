@@ -50,10 +50,6 @@ SharedBufferVariantPtr::SharedBufferVariantPtr(dynasma::FirmPtr<RawSharedBuffer>
     : mp_buffer(buffer), mp_headerTypeinfo(&headerTypeinfo), mp_elementTypeinfo(&elementTypeinfo)
 {}
 
-SharedBufferVariantPtr::SharedBufferVariantPtr()
-    : mp_headerTypeinfo(&TYPE_INFO<void>), mp_elementTypeinfo(&TYPE_INFO<void>)
-{}
-
 void SharedBufferVariantPtr::resizeElements(std::size_t numElements)
 {
     if (*mp_elementTypeinfo == TYPE_INFO<void>) {

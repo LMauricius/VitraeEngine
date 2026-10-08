@@ -77,6 +77,17 @@ class ArgumentScope
     const Variant &get(StringId key) const;
 
     /**
+     * @brief Remove the value associated with a key.
+     *
+     * If the key is not found in the current dictionary, the search continues in the parent
+     * dictionary.
+     *
+     * @param key The key.
+     * @throws std::runtime_error If the key is not found in any dictionary.
+     */
+    void erase(StringId key);
+
+    /**
      * @brief Get a move-reference to the value associated with a key.
      *
      * If the key is not found in the current dictionary, the search continues in the parent

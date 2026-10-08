@@ -186,7 +186,7 @@ void Compositor::regenerateFrameStores()
 
     // process
     try {
-        for (auto p_task : std::ranges::reverse_view{m_pipeline.items}) {
+        for (auto p_task : m_pipeline.items) {
             p_task->prepareRequiredLocalAssets(context);
         }
 

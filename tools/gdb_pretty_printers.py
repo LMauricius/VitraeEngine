@@ -1,5 +1,17 @@
-def toRefString(val):
-    return f"(*static_cast<const {val.type}*>({int(val.address)}))"
+# Max children yielded per container; guards against garbage sizes of uninitialized objects
+MAX_CHILDREN = 100000
+
+# Type name -> gdb.Type (None if lookup failed). lookup_type is slow on big debug info
+_type_cache = {}
+
+
+def lookupTypeCached(name):
+    if name not in _type_cache:
+        try:
+            _type_cache[name] = gdb.lookup_type(name)
+        except Exception:
+            _type_cache[name] = None
+    return _type_cache[name]
 
 
 def typeInfoPtr2TypeName(p_type_info):
@@ -25,8 +37,10 @@ class Variant_Printer:
     def getContainedValue(self):
         try:
             # print("Variant getContainedValue!")
-            contained_type = gdb.lookup_type(self.getTypeName())
+            contained_type = lookupTypeCached(self.getTypeName())
             # print(f"Found type: {contained_type}")
+            if contained_type is None or contained_type.code == gdb.TYPE_CODE_VOID:
+                return None
             return (
                 self.getContainedPtr()
                 .reinterpret_cast(contained_type.pointer())
@@ -56,7 +70,7 @@ class Variant_Printer:
     def to_string(self):
         try:
             # print("Variant to_string!")
-            return f"Variant: {self.getTypeName()} = {str(self.getContainedValue())}"
+            return f"Variant: {self.getTypeName()}"
         except Exception as e:
             print("Variant failed!")
             print(e)
@@ -65,7 +79,9 @@ class Variant_Printer:
     def children(self):
         try:
             yield "table", self.val["m_table"]
-            yield "contained value", self.getContainedValue()
+            contained = self.getContainedValue()
+            if contained is not None:
+                yield "contained value", contained
         except Exception as e:
             print("Variant failed!")
             print(e)
@@ -94,7 +110,7 @@ class FirmPtr_Printer:
                 counter = p_counter.referenced_value()
                 firm_count = counter["m_firmcount"]
                 lazy_count = counter["m_lazycount"]
-                return f"0x{int(self.val["m_p_ctr"]):x}[{firm_count}]({lazy_count}) 0x{int(self.val["m_p_object"]):x} <{str(self.val['m_p_object'].referenced_value())}>"
+                return f"0x{int(self.val["m_p_ctr"]):x}#{firm_count}/{lazy_count} 0x{int(self.val["m_p_object"]):x}"
             else:
                 return f"<unset> 0x0 0x{int(self.val["m_p_object"]):x}"
         except Exception as e:
@@ -213,18 +229,14 @@ class StableMap_Printer:
         try:
             count = int(self.val["m_size"])
             data = self.val["m_data"]
+            if int(data) == 0:
+                return
             keys = data.reinterpret_cast(self.keyT.pointer())
-            offset = (
-                (count * self.keyT.sizeof)
-                if self.mappedT.sizeof < self.keyT.sizeof
-                else (
-                    (count * self.keyT.sizeof + self.mappedT.alignof - 1)
-                    // self.mappedT.alignof
-                    * self.mappedT.alignof
-                )
-            )
-            values = (data[offset].address).reinterpret_cast(self.mappedT.pointer())
-            for i in range(count):
+            # Equals getValueBufferOffset(): rounding is a no-op when alignof(Mapped) <= alignof(Key)
+            align = self.mappedT.alignof
+            offset = (count * self.keyT.sizeof + align - 1) // align * align
+            values = (data + offset).reinterpret_cast(self.mappedT.pointer())
+            for i in range(min(count, MAX_CHILDREN)):
                 yield (str(keys[i]), values[i])
         except Exception as e:
             print("StableMap_Printer failed!")
@@ -244,20 +256,21 @@ class ParamList_Printer:
     def __init__(self, val):
         self.val = val
 
+    # libstdc++ std::vector layout; avoids inferior function calls
+    def getStartAndCount(self):
+        impl = self.val["m_specList"]["_M_impl"]
+        start = impl["_M_start"]
+        return start, int(impl["_M_finish"] - start)
+
     def to_string(self):
-        specs = self.val["m_specList"]
-        name = f"(*(const {specs.type.name}*){specs.address})"
-        count = int(gdb.parse_and_eval(f"{name}.size()"))
+        _, count = self.getStartAndCount()
         return f"{count} Specs"
 
     def children(self):
         try:
-            specs = self.val["m_specList"]
-            valRefName = toRefString(specs)
-            count = int(gdb.parse_and_eval(f"{valRefName}.size()"))
-
-            for i in range(count):
-                yield (str(i), gdb.parse_and_eval(f"{valRefName}[{i}]"))
+            start, count = self.getStartAndCount()
+            for i in range(min(count, MAX_CHILDREN)):
+                yield (str(i), start[i])
         except Exception as e:
             print("ParamList_Printer failed!")
             print(e)

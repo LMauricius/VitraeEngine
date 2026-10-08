@@ -16,22 +16,20 @@
 
 namespace Vitrae
 {
-
-class ComposeFrameToTexture : public ComposeTask
+namespace FrameToTextureSpecialization
 {
-  public:
-    template <PixelType PIXEL_TYPE> struct SetupParams
-    {
-        ComponentRoot &root;
-        ArgumentGetter<glm::uvec2> size;
-        PixelFormat<PIXEL_TYPE> storageFormat;
-        SwizzleSpec<PIXEL_TYPE> swizzle = CommonSwizzleSpecs<PIXEL_TYPE>::NATURAL;
-        TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
-        String textureName;
-        std::vector<String> inputTokenNames;
-        RenderComponent shaderComponent;
-        ClearColor clearColor = FixedClearColor::Default;
-    };
+template <PixelType PIXEL_TYPE> struct SetupParams
+{
+    ComponentRoot &root;
+    ArgumentGetter<glm::uvec2> size;
+    PixelFormat<PIXEL_TYPE> storageFormat;
+    SwizzleSpec<PIXEL_TYPE> swizzle = CommonSwizzleSpecs<PIXEL_TYPE>::NATURAL;
+    TextureFilteringParams filtering = FilteringCommon::INHERIT_ALL;
+    String textureName;
+    std::vector<String> inputTokenNames;
+    RenderComponent shaderComponent;
+    ClearColor clearColor = FixedClearColor::Default;
+};
 
     template <> struct SetupParams<PixelType::DEPTH>
     {
@@ -77,37 +75,44 @@ class ComposeFrameToTexture : public ComposeTask
         constexpr static RenderComponent shaderComponent = FixedRenderComponent::DEPTH_AND_STENCIL;
         ClearColor clearColor = FixedClearColor::Default;
     };
+    } // namespace FrameToTextureSpecialization
 
-    using AnyPTSetupParams = VariantForPixelTypes<SetupParams>;
+    class ComposeFrameToTexture : public ComposeTask
+    {
+      public:
+        template <PixelType PIXEL_TYPE>
+        using SetupParams = FrameToTextureSpecialization::SetupParams<PIXEL_TYPE>;
 
-    ComposeFrameToTexture(const AnyPTSetupParams &params);
-    ~ComposeFrameToTexture() = default;
+        using AnyPTSetupParams = VariantForPixelTypes<SetupParams>;
 
-    std::size_t memory_cost() const override;
+        ComposeFrameToTexture(const AnyPTSetupParams &params);
+        ~ComposeFrameToTexture() = default;
 
-    const ParamList &getInputSpecs(const ParamAliases &) const override;
-    const ParamList &getOutputSpecs() const override;
-    const ParamList &getFilterSpecs(const ParamAliases &) const override;
-    const ParamList &getConsumingSpecs(const ParamAliases &) const override;
+        std::size_t memory_cost() const override;
 
-    void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
-                          const ParamAliases &aliases) const override;
-    void extractSubTasks(std::set<const Task *> &taskSet,
-                         const ParamAliases &aliases) const override;
+        const ParamList &getInputSpecs(const ParamAliases &) const override;
+        const ParamList &getOutputSpecs() const override;
+        const ParamList &getFilterSpecs(const ParamAliases &) const override;
+        const ParamList &getConsumingSpecs(const ParamAliases &) const override;
 
-    void run(RenderComposeContext args) const override;
-    void prepareRequiredLocalAssets(RenderComposeContext args) const override;
+        void extractUsedTypes(std::set<const TypeInfo *> &typeSet,
+                              const ParamAliases &aliases) const override;
+        void extractSubTasks(std::set<const Task *> &taskSet,
+                             const ParamAliases &aliases) const override;
 
-    StringView getFriendlyName() const override;
+        void run(RenderComposeContext args) const override;
+        void prepareRequiredLocalAssets(RenderComposeContext args) const override;
 
-  protected:
-    AnyPTSetupParams m_params;
-    ParamList m_inputSpecs;
-    ParamList m_consumeSpecs;
-    ParamList m_outputSpecs;
+        StringView getFriendlyName() const override;
 
-    String m_friendlyName;
-};
+      protected:
+        AnyPTSetupParams m_params;
+        ParamList m_inputSpecs;
+        ParamList m_consumeSpecs;
+        ParamList m_outputSpecs;
+
+        String m_friendlyName;
+    };
 
 struct ComposeFrameToTextureKeeperSeed
 {

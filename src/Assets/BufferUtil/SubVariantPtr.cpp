@@ -19,8 +19,6 @@ SharedSubBufferVariantPtr::SharedSubBufferVariantPtr(const SharedBufferVariantPt
       m_bytesStride(p_buffer.getElementTypeInfo().size)
 {}
 
-SharedSubBufferVariantPtr::SharedSubBufferVariantPtr() : mp_elementTypeinfo(&TYPE_INFO<void>) {}
-
 void SharedSubBufferVariantPtr::throwIfElementMismatch(const TypeInfo &elementTypeinfo) const
 {
     if (elementTypeinfo != *mp_elementTypeinfo) {

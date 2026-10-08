@@ -1,10 +1,12 @@
 #pragma once
 
+#include "Vitrae/Assets/Material.hpp"
 #include "Vitrae/Data/Typedefs.hpp"
 
 #include "Vitrae/Dynamic/TypeInfo.hpp"
 #include "Vitrae/Params/ParamSpec.hpp"
 #include "dynasma/managers/abstract.hpp"
+#include "dynasma/pointer.hpp"
 
 namespace Vitrae
 {
@@ -33,6 +35,8 @@ class Renderer
      * @note Automatically called when Material::setTexture is called
      */
     virtual void specifyTextureSampler(StringView colorName, const TypeInfo &texturePtrInfo) = 0;
+
+    virtual dynasma::FirmPtr<Material> getDefaultMaterial() const = 0;
 };
 
 } // namespace Vitrae

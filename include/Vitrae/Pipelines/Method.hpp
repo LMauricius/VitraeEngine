@@ -50,7 +50,7 @@ template <TaskChild BasicTask> class Method : public dynasma::PolymorphicBase
     {
         for (auto task : params.tasks) {
             for (auto outputId : task->getOutputSpecs().getSpecNameIds()) {
-                m_tasksPerOutput[outputId] = task;
+                m_tasksPerOutput.emplace(outputId, task);
             }
         }
         for (auto method : params.fallbackMethods) {

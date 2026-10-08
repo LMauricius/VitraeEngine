@@ -33,9 +33,6 @@ class SharedBufferVariantPtr
         : SharedBufferVariantPtr(p_buffer.getRawBuffer(), TYPE_INFO<THeaderT>, TYPE_INFO<TElementT>)
     {}
 
-    /// Default constructor, sets type infos to void
-    SharedBufferVariantPtr();
-
     SharedBufferVariantPtr(const SharedBufferVariantPtr &) = default;
     SharedBufferVariantPtr(SharedBufferVariantPtr &&) = default;
     ~SharedBufferVariantPtr() = default;

@@ -154,9 +154,9 @@ void ComposeAdaptTasks::run(RenderComposeContext ctx) const
     };
 
     // map from external scope to internal scope
-    for (const auto &entry : adaptor.finishingMapping) {
-        if (ctx.properties.has(entry.second)) {
-            encapsulatedArgumentScope.set(entry.first, ctx.properties.move(entry.second));
+    for (const auto &[internal, external] : adaptor.finishingMapping) {
+        if (ctx.properties.has(external)) {
+            encapsulatedArgumentScope.set(internal, ctx.properties.get(external));
         }
     }
 
@@ -177,8 +177,8 @@ void ComposeAdaptTasks::run(RenderComposeContext ctx) const
     }
 
     // map from internal scope to external scope
-    for (const auto &entry : adaptor.finishingMapping) {
-        ctx.properties.set(entry.second, encapsulatedArgumentScope.move(entry.first));
+    for (const auto &[internal, external] : adaptor.finishingMapping) {
+        ctx.properties.set(external, encapsulatedArgumentScope.get(internal));
     }
 }
 
@@ -217,9 +217,9 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
     };
 
     // map from external scope to internal scope
-    for (const auto &entry : adaptor.finishingMapping) {
-        if (ctx.properties.has(entry.second)) {
-            encapsulatedArgumentScope.set(entry.first, ctx.properties.move(entry.second));
+    for (const auto &[internal, external] : adaptor.finishingMapping) {
+        if (ctx.properties.has(external)) {
+            encapsulatedArgumentScope.set(internal, ctx.properties.get(external));
         }
     }
 
@@ -240,9 +240,9 @@ void ComposeAdaptTasks::prepareRequiredLocalAssets(RenderComposeContext ctx) con
     }
 
     // map from internal scope to external scope
-    for (const auto &entry : adaptor.finishingMapping) {
-        if (encapsulatedArgumentScope.has(entry.first)) {
-            ctx.properties.set(entry.second, encapsulatedArgumentScope.move(entry.first));
+    for (const auto &[internal, external] : adaptor.finishingMapping) {
+        if (encapsulatedArgumentScope.has(internal)) {
+            ctx.properties.set(external, encapsulatedArgumentScope.get(internal));
         }
     }
 }
@@ -327,9 +327,11 @@ ComposeAdaptTasks::AdaptorPerAliases::AdaptorPerAliases(const ParamAliases &adap
 
     using ListConvPair = std::pair<const ParamList *, ParamList *>;
 
-    for (auto [p_specs, p_targetSpecs] : {ListConvPair{&pipeline.inputSpecs, &inputSpecs},
-                                          ListConvPair{&pipeline.filterSpecs, &filterSpecs},
-                                          ListConvPair{&pipeline.consumingSpecs, &consumeSpecs}}) {
+    for (auto [p_specs, p_targetSpecs] : (ListConvPair[]){
+             {&pipeline.inputSpecs, &inputSpecs},
+             {&pipeline.filterSpecs, &filterSpecs},
+             {&pipeline.consumingSpecs, &consumeSpecs},
+         }) {
         for (auto &spec : p_specs->getSpecList()) {
             p_targetSpecs->insert_back(ParamSpec{
                 .name = subAliases.choiceStringFor(spec.name),
