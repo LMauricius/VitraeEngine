@@ -2,12 +2,125 @@
 #include "Vitrae/Assets/Texture.hpp"
 #include "Vitrae/Collections/AssimpConv.hpp"
 #include "Vitrae/Collections/ComponentRoot.hpp"
+#include "Vitrae/Data/Monostates.hpp"
 #include "Vitrae/Params/Standard.hpp"
 #include "Vitrae/Renderer.hpp"
+#include "Vitrae/Setup/TextureFiltering.hpp"
 #include "Vitrae/Util/StringProcessing.hpp"
+
+#include <assimp/GltfMaterial.h>
 
 namespace Vitrae
 {
+
+namespace
+{
+TextureFilteringParams extractFiltering(const aiMaterial &mat, aiTextureType type, std::size_t ind)
+{
+    /// TODO: No default, global settings for sampling
+    TextureFilteringParams ret = FilteringCommon::TRILINEAR_TILED;
+
+    // --- Wrapping ---
+
+    static constexpr WrappingType mapMode2wrap[] = {
+        /*[aiTextureMapMode_Wrap]   = */ WrappingType::REPEAT,
+        /*[aiTextureMapMode_Clamp]  = */ WrappingType::CLAMP,
+        /*[aiTextureMapMode_Mirror] = */ WrappingType::MIRROR,
+        /*[aiTextureMapMode_Decal]  = */ WrappingType::BORDER_COLOR,
+    };
+    static constexpr std::size_t sizeMapMode2wrap = sizeof(mapMode2wrap) / sizeof(mapMode2wrap[0]);
+
+    bool isDecalMap = false;
+
+    // Use Get(), not GetTexture(): GetTexture defaults mapmode to Wrap, hiding "absent"
+    if (int gotMode; mat.Get(AI_MATKEY_MAPPINGMODE_U(type, ind), gotMode) == aiReturn_SUCCESS &&
+                     gotMode >= 0 && gotMode < sizeMapMode2wrap) {
+        ret.horWrap = mapMode2wrap[gotMode];
+        isDecalMap |= (gotMode == aiTextureMapMode_Decal);
+    }
+    if (int gotMode; mat.Get(AI_MATKEY_MAPPINGMODE_V(type, ind), gotMode) == aiReturn_SUCCESS &&
+                     gotMode >= 0 && gotMode < sizeMapMode2wrap) {
+        ret.verWrap = mapMode2wrap[gotMode];
+        isDecalMap |= (gotMode == aiTextureMapMode_Decal);
+    }
+
+    // Decals are transparent outside [0,1]
+    if (isDecalMap)
+        ret.borderColor = glm::vec4(0.0f);
+    else
+        ret.borderColor = UNUSED;
+
+    // --- Filtering ---
+
+    // Filter constants
+    // The glTF importer writes them, and uses OpenGL enums,
+    // which aren't available here because the engine is renderer-agnostic
+    // Values are glTF sampler filters (= OpenGL enums); Assimp doesn't expose names for them
+    enum class GltfConstant : int {
+        NEAREST = 9728,
+        LINEAR = 9729,
+        NEAREST_MIPMAP_NEAREST = 9984,
+        LINEAR_MIPMAP_NEAREST = 9985,
+        NEAREST_MIPMAP_LINEAR = 9986,
+        LINEAR_MIPMAP_LINEAR = 9987,
+    };
+
+    // Magnification
+    if (int gotFilter;
+        mat.Get(AI_MATKEY_GLTF_MAPPINGFILTER_MAG(type, ind), gotFilter) == aiReturn_SUCCESS) {
+        switch ((GltfConstant)gotFilter) {
+        case GltfConstant::NEAREST:
+            ret.magFilter = FilterType::NEAREST;
+            break;
+        case GltfConstant::LINEAR:
+            ret.magFilter = FilterType::LINEAR;
+            break;
+        default:
+            // unused
+            break;
+        }
+    }
+
+    // Minification + mipmaps
+    if (int gotFilter;
+        mat.Get(AI_MATKEY_GLTF_MAPPINGFILTER_MIN(type, ind), gotFilter) == aiReturn_SUCCESS) {
+        switch ((GltfConstant)gotFilter) {
+        case GltfConstant::NEAREST:
+            ret.minFilter = FilterType::NEAREST;
+            ret.useMipMaps = false;
+            ret.mipmapFilter = UNUSED;
+            break;
+        case GltfConstant::LINEAR:
+            ret.minFilter = FilterType::LINEAR;
+            ret.useMipMaps = false;
+            ret.mipmapFilter = UNUSED;
+            break;
+        case GltfConstant::NEAREST_MIPMAP_NEAREST:
+            ret.minFilter = FilterType::NEAREST;
+            ret.useMipMaps = true;
+            ret.mipmapFilter = FilterType::NEAREST;
+            break;
+        case GltfConstant::LINEAR_MIPMAP_NEAREST:
+            ret.minFilter = FilterType::LINEAR;
+            ret.useMipMaps = true;
+            ret.mipmapFilter = FilterType::NEAREST;
+            break;
+        case GltfConstant::NEAREST_MIPMAP_LINEAR:
+            ret.minFilter = FilterType::NEAREST;
+            ret.useMipMaps = true;
+            ret.mipmapFilter = FilterType::LINEAR;
+            break;
+        case GltfConstant::LINEAR_MIPMAP_LINEAR:
+            ret.minFilter = FilterType::LINEAR;
+            ret.useMipMaps = true;
+            ret.mipmapFilter = FilterType::LINEAR;
+            break;
+        }
+    }
+
+    return ret;
+}
+} // namespace
 
 Material::Material(const SetupParams &params)
     : m_root(params.root), m_externalAliases(params.aliases), m_properties(params.properties)
@@ -43,17 +156,18 @@ Material::Material(const AssimpLoadParams &params) : m_root(params.root)
                     m_tobeInternalAliases["color_" + textureConv.sampleName] =
                         "sample_" + textureConv.sampleName;
 
-                    // set texture
+                    // set sampler
                     m_root.getComponent<Renderer>().specifyTextureSampler(
                         textureConv.sampleName, TYPE_INFO<dynasma::FirmPtr<Texture>>);
+
+                    // set texture
                     m_properties["tex_" + textureConv.sampleName] =
                         textureManager
                             .register_asset({typename Texture::FileLoadParams{
                                 .root = params.root,
                                 .filepath = parentDirPath / relconvPath,
-                                .filtering{
-                                    .useMipMaps = true,
-                                },
+                                .filtering = extractFiltering(*params.p_extMaterial,
+                                                              textureConv.aiTextureId, 0),
                             }})
                             .getLoaded();
                 } else {
